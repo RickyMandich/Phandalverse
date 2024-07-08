@@ -1,0 +1,194 @@
+{
+  "main": {
+    "id": "826ecafb728cb6da",
+    "type": "split",
+    "children": [
+      {
+        "id": "77ff8b09771beb4b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ecfc7fb49a4ee32c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "universi/phandalmain/GemGrave.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "7e05b4d182566c1c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f92dacc0e7ebf98c",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "8d87a56882adca33",
+    "type": "split",
+    "children": [
+      {
+        "id": "aac4763c47a910e3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4a0168f4c436222b",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "b9827de2db8e94d1",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "fc245400d41d7229",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "1933adafaa71d301",
+    "type": "split",
+    "children": [
+      {
+        "id": "438555d0cbfe4a2d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ce7d97d65a603ff9",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "universi/phandalmain/GemGrave.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "5bb1842f79d09cbc",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "universi/phandalmain/GemGrave.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "5813cac16d713b99",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "c0e47a6e77059a5d",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "universi/phandalmain/GemGrave.md"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Apri selezione rapida": false,
+      "graph:Apri vista grafo": false,
+      "canvas:Crea nuova lavagna": false,
+      "daily-notes:Apri nota del giorno": false,
+      "templates:Inserisci modello": false,
+      "command-palette:Apri riquadro comandi": false
+    }
+  },
+  "active": "4a0168f4c436222b",
+  "lastOpenFiles": [
+    "universi/phandalmain/GemGrave.md",
+    "universi/phandalmain/phandasuland.md",
+    "universi/phandalmain/phandanoland.md",
+    "universi/phandalmain/phandalmain.md",
+    "universi/universi.md",
+    "phandalverse.md",
+    "universi/phandalverse.md",
+    "universi/fandalmein",
+    "universi/phandalmain",
+    "mondi/mondi.md",
+    "universi/fandalmein/fandalmein.md",
+    "universi",
+    "mondi/universo.md",
+    "mondi/phandasuland.md",
+    "mondi/phandanoland.md",
+    "mondi/phandalmain.md",
+    "mondi/fandalmein.md",
+    "universo.md",
+    "phandasuland.md",
+    "phandanoland.md",
+    "phandalmain.md",
+    "fandalmein.md",
+    "cmt.sh",
+    "mondi/phandalverse.md",
+    "mondi",
+    "Benvenuto.md",
+    "Senza nome.canvas",
+    "crea un collegamento.md"
+  ]
+}
