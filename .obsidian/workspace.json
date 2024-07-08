@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "ab8f3960cf2985a0",
+        "id": "0eab0761cf7e4b43",
         "type": "tabs",
         "children": [
           {
-            "id": "be6b605d4d0f0c0e",
+            "id": "409112b4f5316e4e",
             "type": "leaf",
             "state": {
               "type": "empty",
@@ -138,16 +138,19 @@
       "command-palette:Apri riquadro comandi": false
     }
   },
-  "active": "be6b605d4d0f0c0e",
+  "active": "409112b4f5316e4e",
   "lastOpenFiles": [
+    "Senza nome.md",
+    "universi/phandalmain/phandasuland",
+    "universi/phandalmain/phandanoland",
     "README.md",
     "divinità/Krystallō.md",
     "divinità",
-    "universi/phandalmain/Cristalgrave.md",
+    "universi/phandalmain/phandanoland/Cristalgrave.md",
     "divinità/Líthos.md",
-    "universi/phandalmain/GemGrave.md",
-    "universi/phandalmain/phandasuland.md",
-    "universi/phandalmain/phandanoland.md",
+    "universi/phandalmain/phandasuland/GemGrave.md",
+    "universi/phandalmain/phandasuland/phandasuland.md",
+    "universi/phandalmain/phandanoland/phandanoland.md",
     "universi/phandalmain/phandalmain.md",
     "universi/universi.md",
     "universi/phandalverse.md",
@@ -170,7 +173,6 @@
     "mondi/phandalverse.md",
     "mondi",
     "Benvenuto.md",
-    "Senza nome.canvas",
-    "crea un collegamento.md"
+    "Senza nome.canvas"
   ]
 }
