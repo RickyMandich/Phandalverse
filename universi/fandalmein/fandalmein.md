@@ -1,1 +1,2 @@
-[[universi]] codipendente di [[phandalmain]]
+#universo 
+[[universo]] codipendente di [[phandalmain]]

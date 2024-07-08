@@ -4,14 +4,14 @@
     "type": "split",
     "children": [
       {
-        "id": "0eab0761cf7e4b43",
+        "id": "ae14c372d9e6bdac",
         "type": "tabs",
         "children": [
           {
-            "id": "409112b4f5316e4e",
+            "id": "a420063519771050",
             "type": "leaf",
             "state": {
-              "type": "empty",
+              "type": "graph",
               "state": {}
             }
           }
@@ -44,7 +44,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "tag:#divinDivinità",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -121,12 +121,12 @@
               "state": {}
             }
           }
-        ]
+        ],
+        "currentTab": 2
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -138,26 +138,30 @@
       "command-palette:Apri riquadro comandi": false
     }
   },
-  "active": "409112b4f5316e4e",
+  "active": "5813cac16d713b99",
   "lastOpenFiles": [
+    "universi/universo.md",
+    "divinità/Líthos.md",
+    "divinità/Krystallō.md",
+    "universi/fandalmein/fandalmein.md",
+    "universi/phandalmain/phandanoland/Cristalgrave.md",
+    "universi/phandalmain/phandanoland/Nordavilla.md",
+    "universi/phandalmain/phandanoland/phandanoland.md",
+    "universi/phandalmain/phandanoland/Settentrionelle.md",
+    "universi/phandalmain/phandasuland/GemGrave.md",
+    "universi/phandalmain/phandasuland/Meridionelle.md",
+    "universi/phandalmain/phandasuland/phandasuland.md",
+    "universi/phandalmain/phandasuland/Suddaria.md",
+    "universi/phandalmain/phandalmain.md",
     "Senza nome.md",
     "universi/phandalmain/phandasuland",
     "universi/phandalmain/phandanoland",
     "README.md",
-    "divinità/Krystallō.md",
     "divinità",
-    "universi/phandalmain/phandanoland/Cristalgrave.md",
-    "divinità/Líthos.md",
-    "universi/phandalmain/phandasuland/GemGrave.md",
-    "universi/phandalmain/phandasuland/phandasuland.md",
-    "universi/phandalmain/phandanoland/phandanoland.md",
-    "universi/phandalmain/phandalmain.md",
-    "universi/universi.md",
     "universi/phandalverse.md",
     "universi/fandalmein",
     "universi/phandalmain",
     "mondi/mondi.md",
-    "universi/fandalmein/fandalmein.md",
     "universi",
     "mondi/universo.md",
     "mondi/phandasuland.md",
@@ -168,11 +172,8 @@
     "phandasuland.md",
     "phandanoland.md",
     "phandalmain.md",
-    "fandalmein.md",
     "cmt.sh",
-    "mondi/phandalverse.md",
     "mondi",
-    "Benvenuto.md",
     "Senza nome.canvas"
   ]
 }

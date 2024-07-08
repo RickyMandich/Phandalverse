@@ -1,2 +1,3 @@
+#definizione
 - ogni universo è codipendente ad un'altro (questi vengono anche detti universi gemelli).
   questo comporta uno costante scambio di energia cosmica tra i due che li tiene in uno stato di condivisa prosperità e equilibrio generale con un'opposizione costante tra i due (quando uno ha un raccolto florido l'altro ne ha uno scarso, se uno ha un raccolto medio anche l'altro ne avrà uno medio, potremmo dire che lo stato dei due universi è complementare)

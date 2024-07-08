@@ -4,19 +4,55 @@
   "showTags": false,
   "showAttachments": false,
   "hideUnresolved": false,
-  "showOrphans": true,
+  "showOrphans": false,
   "collapse-color-groups": false,
-  "colorGroups": [],
+  "colorGroups": [
+    {
+      "query": "#regno",
+      "color": {
+        "a": 1,
+        "rgb": 14069084
+      }
+    },
+    {
+      "query": "#universo",
+      "color": {
+        "a": 1,
+        "rgb": 11392604
+      }
+    },
+    {
+      "query": "#divinità",
+      "color": {
+        "a": 1,
+        "rgb": 6084188
+      }
+    },
+    {
+      "query": "#definizione",
+      "color": {
+        "a": 1,
+        "rgb": 6084269
+      }
+    },
+    {
+      "query": "#città",
+      "color": {
+        "a": 1,
+        "rgb": 11236867
+      }
+    }
+  ],
   "collapse-display": true,
-  "showArrow": false,
+  "showArrow": true,
   "textFadeMultiplier": 0,
-  "nodeSizeMultiplier": 1,
-  "lineSizeMultiplier": 1,
-  "collapse-forces": true,
-  "centerStrength": 0.518713248970312,
-  "repelStrength": 10,
+  "nodeSizeMultiplier": 1.45260416666667,
+  "lineSizeMultiplier": 1.73333333333333,
+  "collapse-forces": false,
+  "centerStrength": 0,
+  "repelStrength": 8.22916666666667,
   "linkStrength": 1,
-  "linkDistance": 250,
-  "scale": 0.5734516453154946,
+  "linkDistance": 30,
+  "scale": 0.6896018897191613,
   "close": true
 }
