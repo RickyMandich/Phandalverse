@@ -1,1 +1,1 @@
-città costruita sul cadavere di pollutimus lithos petrali blastos
+città costruita sul cadavere di [[Líthos]]

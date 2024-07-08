@@ -4,32 +4,14 @@
     "type": "split",
     "children": [
       {
-        "id": "77ff8b09771beb4b",
+        "id": "ab8f3960cf2985a0",
         "type": "tabs",
         "children": [
           {
-            "id": "ecfc7fb49a4ee32c",
+            "id": "be6b605d4d0f0c0e",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "universi/phandalmain/GemGrave.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          }
-        ]
-      },
-      {
-        "id": "7e05b4d182566c1c",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "f92dacc0e7ebf98c",
-            "type": "leaf",
-            "state": {
-              "type": "graph",
+              "type": "empty",
               "state": {}
             }
           }
@@ -99,7 +81,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "universi/phandalmain/GemGrave.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -116,7 +97,6 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "universi/phandalmain/GemGrave.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -138,9 +118,7 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {
-                "file": "universi/phandalmain/GemGrave.md"
-              }
+              "state": {}
             }
           }
         ]
@@ -160,14 +138,18 @@
       "command-palette:Apri riquadro comandi": false
     }
   },
-  "active": "ecfc7fb49a4ee32c",
+  "active": "be6b605d4d0f0c0e",
   "lastOpenFiles": [
+    "README.md",
+    "divinità/Krystallō.md",
+    "divinità",
+    "universi/phandalmain/Cristalgrave.md",
+    "divinità/Líthos.md",
     "universi/phandalmain/GemGrave.md",
     "universi/phandalmain/phandasuland.md",
     "universi/phandalmain/phandanoland.md",
     "universi/phandalmain/phandalmain.md",
     "universi/universi.md",
-    "phandalverse.md",
     "universi/phandalverse.md",
     "universi/fandalmein",
     "universi/phandalmain",
