@@ -121,12 +121,12 @@
               "state": {}
             }
           }
-        ],
-        "currentTab": 2
+        ]
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -138,21 +138,31 @@
       "command-palette:Apri riquadro comandi": false
     }
   },
-  "active": "5813cac16d713b99",
+  "active": "a420063519771050",
   "lastOpenFiles": [
+    "Cristalgreiv.md",
+    "universi/phandalmain/phandalmain.md",
+    "universi/phandalmain/phandanoland/Cristalgrave.md",
+    "Settentrionel.md",
+    "Nordavila.md",
+    "Sudaria.md",
+    "Meridionel.md",
+    "universi/phandalmain/phandasuland/Meridionelle.md",
+    "GemGreiv.md",
+    "universi/phandalmain/phandasuland/GemGrave.md",
+    "universi/fandalmein/fandanolend/fandanolend.md",
+    "universi/phandalmain/phandanoland/phandanoland.md",
+    "universi/fandalmein/fandasulend/fandasulend.md",
+    "universi/phandalmain/phandasuland/phandasuland.md",
+    "universi/fandalmein/fandasulend",
+    "universi/fandalmein/fandanolend",
+    "universi/fandalmein/fandalmein.md",
     "universi/universo.md",
     "divinità/Líthos.md",
     "divinità/Krystallō.md",
-    "universi/fandalmein/fandalmein.md",
-    "universi/phandalmain/phandanoland/Cristalgrave.md",
     "universi/phandalmain/phandanoland/Nordavilla.md",
-    "universi/phandalmain/phandanoland/phandanoland.md",
     "universi/phandalmain/phandanoland/Settentrionelle.md",
-    "universi/phandalmain/phandasuland/GemGrave.md",
-    "universi/phandalmain/phandasuland/Meridionelle.md",
-    "universi/phandalmain/phandasuland/phandasuland.md",
     "universi/phandalmain/phandasuland/Suddaria.md",
-    "universi/phandalmain/phandalmain.md",
     "Senza nome.md",
     "universi/phandalmain/phandasuland",
     "universi/phandalmain/phandanoland",
@@ -164,14 +174,6 @@
     "mondi/mondi.md",
     "universi",
     "mondi/universo.md",
-    "mondi/phandasuland.md",
-    "mondi/phandanoland.md",
-    "mondi/phandalmain.md",
-    "mondi/fandalmein.md",
-    "universo.md",
-    "phandasuland.md",
-    "phandanoland.md",
-    "phandalmain.md",
     "cmt.sh",
     "mondi",
     "Senza nome.canvas"
