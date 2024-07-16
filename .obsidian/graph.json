@@ -1,11 +1,11 @@
 {
-  "collapse-filter": false,
+  "collapse-filter": true,
   "search": "",
   "showTags": false,
   "showAttachments": false,
   "hideUnresolved": false,
   "showOrphans": true,
-  "collapse-color-groups": false,
+  "collapse-color-groups": true,
   "colorGroups": [
     {
       "query": "tag:#universo",
@@ -49,8 +49,8 @@
   "nodeSizeMultiplier": 1.83541666666667,
   "lineSizeMultiplier": 3.0859375,
   "collapse-forces": true,
-  "centerStrength": 0.427083333333333,
-  "repelStrength": 8.75,
+  "centerStrength": 1,
+  "repelStrength": 19.8958333333333,
   "linkStrength": 1,
   "linkDistance": 30,
   "scale": 0.48363596730899594,
