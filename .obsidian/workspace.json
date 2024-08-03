@@ -4,18 +4,31 @@
     "type": "split",
     "children": [
       {
-        "id": "ae14c372d9e6bdac",
+        "id": "f15d5122b18ce8ae",
         "type": "tabs",
         "children": [
           {
-            "id": "a420063519771050",
+            "id": "df4e0eb7e9baca3f",
             "type": "leaf",
             "state": {
               "type": "graph",
               "state": {}
             }
+          },
+          {
+            "id": "254682bc533d4b30",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Personaggi/Giocanti/Marcus Anduril.md",
+                "mode": "source",
+                "source": false
+              }
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -81,6 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "Personaggi/Giocanti/Marcus Anduril.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -97,6 +111,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "Personaggi/Giocanti/Marcus Anduril.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -118,7 +133,9 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {}
+              "state": {
+                "file": "Personaggi/Giocanti/Marcus Anduril.md"
+              }
             }
           }
         ]
@@ -138,8 +155,22 @@
       "command-palette:Apri riquadro comandi": false
     }
   },
-  "active": "a420063519771050",
+  "active": "254682bc533d4b30",
   "lastOpenFiles": [
+    "Personaggi/Giocanti/Roland Figarland.md",
+    "Personaggi/Giocanti/Marcus Anduril.md",
+    "Personaggi/Giocanti/Rogby Mountainfeller.md",
+    "Personaggi/Giocanti/Zylian.md",
+    "Personaggi/Giocanti/Sana Marijuana.md",
+    "Personaggi/Giocanti/Ares.md",
+    "Personaggi/Non Giocanti/Kaia.md",
+    "Personaggi/Non Giocanti/Dark Kaia.md",
+    "cio.md",
+    "universi/phandalmain/phandasuland/GemGrave.md",
+    "Personaggi/Non Giocanti",
+    "Personaggi/Giocanti",
+    "Personaggi",
+    "Senza nome",
     "universi/fandalmein/fandasulend/Sudaria.md",
     "universi/fandalmein/fandasulend/Meridionel.md",
     "universi/fandalmein/fandasulend/GemGreiv.md",
@@ -155,27 +186,13 @@
     "Meridionel.md",
     "universi/phandalmain/phandasuland/Meridionelle.md",
     "GemGreiv.md",
-    "universi/phandalmain/phandasuland/GemGrave.md",
     "universi/fandalmein/fandanolend/fandanolend.md",
-    "universi/phandalmain/phandanoland/phandanoland.md",
-    "universi/fandalmein/fandasulend/fandasulend.md",
-    "universi/phandalmain/phandasuland/phandasuland.md",
     "universi/fandalmein/fandasulend",
     "universi/fandalmein/fandanolend",
-    "universi/fandalmein/fandalmein.md",
-    "universi/universo.md",
-    "divinità/Líthos.md",
-    "divinità/Krystallō.md",
-    "universi/phandalmain/phandanoland/Nordavilla.md",
-    "universi/phandalmain/phandanoland/Settentrionelle.md",
     "universi/phandalmain/phandasuland",
     "universi/phandalmain/phandanoland",
     "divinità",
     "universi/fandalmein",
-    "universi/phandalmain",
-    "universi",
-    "cmt.sh",
-    "mondi",
     "Senza nome.canvas"
   ]
 }

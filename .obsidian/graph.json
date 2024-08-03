@@ -4,7 +4,7 @@
   "showTags": false,
   "showAttachments": false,
   "hideUnresolved": false,
-  "showOrphans": true,
+  "showOrphans": false,
   "collapse-color-groups": true,
   "colorGroups": [
     {
@@ -41,6 +41,27 @@
         "a": 1,
         "rgb": 6084269
       }
+    },
+    {
+      "query": "tag:#pg",
+      "color": {
+        "a": 1,
+        "rgb": 12996095
+      }
+    },
+    {
+      "query": "tag:#png  tag:#phandalmain",
+      "color": {
+        "a": 1,
+        "rgb": 8026879
+      }
+    },
+    {
+      "query": "tag:#png  tag:#fandalmein",
+      "color": {
+        "a": 1,
+        "rgb": 262266
+      }
     }
   ],
   "collapse-display": true,
@@ -51,7 +72,7 @@
   "collapse-forces": true,
   "centerStrength": 1,
   "repelStrength": 19.8958333333333,
-  "linkStrength": 1,
+  "linkStrength": 0.661458333333333,
   "linkDistance": 30,
   "scale": 0.48363596730899594,
   "close": true
