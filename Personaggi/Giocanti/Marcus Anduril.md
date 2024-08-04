@@ -1,4 +1,4 @@
-#pg 
+#pg #phandalmain 
 attualmente in gioco
 player: Joy Rahman Mahfuzur
 
