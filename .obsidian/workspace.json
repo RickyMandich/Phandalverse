@@ -4,55 +4,18 @@
     "type": "split",
     "children": [
       {
-        "id": "f15d5122b18ce8ae",
+        "id": "40d42bd10adbe6eb",
         "type": "tabs",
         "children": [
           {
-            "id": "df4e0eb7e9baca3f",
+            "id": "f77d647e1118296b",
             "type": "leaf",
             "state": {
-              "type": "graph",
+              "type": "empty",
               "state": {}
             }
-          },
-          {
-            "id": "254682bc533d4b30",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Personaggi/Giocanti/Marcus Anduril.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "009b8822a626e2b9",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "saghe/Saga di GemGrave.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "ceaf9becf7442c4d",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "artefatti/la chiave.md",
-                "mode": "source",
-                "source": false
-              }
-            }
           }
-        ],
-        "currentTab": 2
+        ]
       }
     ],
     "direction": "vertical"
@@ -81,7 +44,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "tag:#divinDivinità",
+                "query": "",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -118,7 +81,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "saghe/Saga di GemGrave.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -135,7 +97,6 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "saghe/Saga di GemGrave.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -157,9 +118,7 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {
-                "file": "saghe/Saga di GemGrave.md"
-              }
+              "state": {}
             }
           }
         ]
@@ -179,13 +138,19 @@
       "command-palette:Apri riquadro comandi": false
     }
   },
-  "active": "009b8822a626e2b9",
+  "active": "f77d647e1118296b",
   "lastOpenFiles": [
-    "Personaggi/Giocanti/Marcus Anduril.md",
+    "saghe/Saga di Suddaria.md",
+    "sessioni pronte/prossima sessione.md",
     "saghe/Saga di GemGrave.md",
+    "sessioni pronte/sessioni già giocate",
+    "sessioni pronte",
+    "universi/phandalmain/phandasuland/GemGrave.md",
+    "artefatti/la chiave.md",
+    "Personaggi/Giocanti/Marcus Anduril.md",
+    "2024-08-08.md",
     "saghe",
     "artefatti",
-    "artefatti/la chiave.md",
     "Personaggi/Giocanti/Roland Figarland.md",
     "Personaggi/Giocanti/Rogby Mountainfeller.md",
     "Personaggi/Giocanti/Zylian.md",
@@ -194,7 +159,6 @@
     "Personaggi/Non Giocanti/Kaia.md",
     "Personaggi/Non Giocanti/Dark Kaia.md",
     "cio.md",
-    "universi/phandalmain/phandasuland/GemGrave.md",
     "Personaggi/Non Giocanti",
     "Personaggi/Giocanti",
     "Personaggi",
@@ -209,14 +173,9 @@
     "universi/phandalmain/phandanoland/Cristalgrave.md",
     "Settentrionel.md",
     "Nordavila.md",
-    "Sudaria.md",
-    "Meridionel.md",
-    "universi/phandalmain/phandasuland/Meridionelle.md",
     "universi/fandalmein/fandasulend",
     "universi/fandalmein/fandanolend",
     "universi/phandalmain/phandasuland",
-    "universi/phandalmain/phandanoland",
-    "divinità",
     "Senza nome.canvas"
   ]
 }
