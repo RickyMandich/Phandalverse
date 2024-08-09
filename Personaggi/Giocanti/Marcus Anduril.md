@@ -5,5 +5,4 @@ player: Joy Rahman Mahfuzur
 # Background
 guardia cittadina della città di [[GemGrave]], fa una vita normale 
 # Campagna
-## saga di [[GemGrave]] (incipit)
-conosce 
+## [[Saga di GemGrave]] (incipit)
