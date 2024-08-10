@@ -16,24 +16,12 @@
             }
           },
           {
-            "id": "494c88eab6371e81",
+            "id": "a828ff42becbf19d",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Personaggi/Giocanti/Sana Marijuana.md",
-                "mode": "source",
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "5f665a6a16710225",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Personaggi/Giocanti/Marcus Anduril.md",
+                "file": "saghe/Saga di Suddaria.md",
                 "mode": "source",
                 "source": false
               }
@@ -106,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Personaggi/Giocanti/Sana Marijuana.md",
+                "file": "universi/phandalmain/phandasuland/suddaria/castello abbandonato sul dirupo vicino la città.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -123,7 +111,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Personaggi/Giocanti/Sana Marijuana.md",
+                "file": "universi/phandalmain/phandasuland/suddaria/castello abbandonato sul dirupo vicino la città.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -146,7 +134,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Personaggi/Giocanti/Sana Marijuana.md"
+                "file": "universi/phandalmain/phandasuland/suddaria/castello abbandonato sul dirupo vicino la città.md"
               }
             }
           }
@@ -167,14 +155,24 @@
       "command-palette:Apri riquadro comandi": false
     }
   },
-  "active": "494c88eab6371e81",
+  "active": "4a0168f4c436222b",
   "lastOpenFiles": [
-    "Personaggi/Giocanti/Marcus Anduril.md",
-    "Personaggi/Giocanti/Sana Marijuana.md",
-    "macrosaga della chiave.md",
     "saghe/Saga di Suddaria.md",
+    "universi/phandalmain/phandasuland/suddaria/castello abbandonato sul dirupo vicino la città.md",
+    "universi/phandalmain/phandasuland/suddaria/castello abbandonato sul dirupo vicino la città.xcf",
+    "universi/phandalmain/phandasuland/suddaria/castello abbandonato sul dirupo vicino la città.png",
     "sessioni pronte/prossima sessione.md",
+    "universi/phandalmain/phandasuland/suddaria",
+    "Senza nome",
+    "Personaggi/gruppi/prescelti di fandalmein.md",
+    "Personaggi/gruppi",
+    "Personaggi/gruppi/la mano bianca.md",
+    "Personaggi/Giocanti/Sana Marijuana.md",
+    "Personaggi/Giocanti/Marcus Anduril.md",
     "saghe/Saga di GemGrave.md",
+    "Personaggi/Giocanti/Zylian.md",
+    "saghe/Saga di Suddaria, dungeon con il frammento di chiave.png.crdownload",
+    "saghe/macrosaga della chiave.md",
     "sessioni pronte/sessioni già giocate",
     "sessioni pronte",
     "universi/phandalmain/phandasuland/GemGrave.md",
@@ -184,27 +182,17 @@
     "artefatti",
     "Personaggi/Giocanti/Roland Figarland.md",
     "Personaggi/Giocanti/Rogby Mountainfeller.md",
-    "Personaggi/Giocanti/Zylian.md",
     "Personaggi/Giocanti/Ares.md",
     "Personaggi/Non Giocanti/Kaia.md",
     "Personaggi/Non Giocanti/Dark Kaia.md",
     "cio.md",
     "Personaggi/Non Giocanti",
-    "Personaggi/Giocanti",
-    "Personaggi",
     "universi/fandalmein/fandasulend/Sudaria.md",
     "universi/fandalmein/fandasulend/Meridionel.md",
     "universi/fandalmein/fandasulend/GemGreiv.md",
     "universi/fandalmein/fandanolend/Settentrionel.md",
     "universi/fandalmein/fandanolend/Nordavila.md",
     "universi/fandalmein/fandanolend/Cristalgreiv.md",
-    "Cristalgreiv.md",
-    "universi/phandalmain/phandalmain.md",
-    "universi/phandalmain/phandanoland/Cristalgrave.md",
-    "Settentrionel.md",
-    "universi/fandalmein/fandasulend",
-    "universi/fandalmein/fandanolend",
-    "universi/phandalmain/phandasuland",
     "Senza nome.canvas"
   ]
 }

@@ -1,0 +1,2 @@
+è il gruppo dei protagonisti.
+viene fondato da [[Marcus Anduril]] e [[Rogby Mountainfeller]] a [[GemGrave]] durante la [[Saga di GemGrave]] vista la loro missione di salvare il mondo in qualità del loro essere prescelti. poco dopo la fondazione a loro si aggiunge [[Roland Figarland]] con l'intento di vendicare suo fratello, ucciso dai [[prescelti di fandalmein|prescelti dell'altro universo]]
