@@ -57,7 +57,7 @@
                 "autoReveal": true
               },
               "icon": "lucide-folder-closed",
-              "title": "Files"
+              "title": "Esplora risorse"
             }
           },
           {
@@ -198,24 +198,24 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Open quick switcher": false,
-      "graph:Open graph view": false,
-      "canvas:Create new canvas": false,
-      "daily-notes:Open today's daily note": false,
-      "templates:Insert template": false,
-      "command-palette:Open command palette": false,
+      "switcher:Apri selezione rapida": false,
+      "graph:Apri vista grafo": false,
+      "canvas:Crea nuova lavagna": false,
+      "daily-notes:Apri nota del giorno": false,
+      "templates:Inserisci modello": false,
+      "command-palette:Apri riquadro comandi": false,
       "bases:Create new base": false,
       "terminal:Open terminal": false
     }
   },
   "active": "2f36d61002062260",
   "lastOpenFiles": [
-    "{163953DF-AA74-4DD2-BF70-9AC2BFBC6120}.png",
+    "Personaggi/Giocanti/Vargas (Paladino Nano, 65).md",
     "saghe/Saga di GemGrave.md",
+    "{163953DF-AA74-4DD2-BF70-9AC2BFBC6120}.png",
     "universi/phandalmain/phandasuland/GemGrave.md",
     "Personaggi/gruppi/la mano rossa.md",
     "saghe/macrosaga della chiave.md",
-    "Personaggi/Giocanti/Vargas (Paladino Nano).md",
     "Personaggi/Giocanti/Morbiarum (Paladino Dragonide, 24).md",
     "Personaggi/Giocanti/Attila Slayer (Guerriero Elfo, 100).md",
     "Personaggi/Giocanti/Than (Warlock tiefling, 30).md",
