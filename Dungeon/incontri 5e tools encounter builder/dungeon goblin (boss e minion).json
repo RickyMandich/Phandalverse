@@ -1,0 +1,36 @@
+{
+	"fileType": "encounter",
+	"siteVersion": "2.16.0",
+	"items": [
+		{
+			"h": "bugbear%20chief_mm",
+			"c": 1
+		},
+		{
+			"h": "goblin%20minion_xmm",
+			"c": 5
+		}
+	],
+	"sources": [
+		"MM",
+		"XMM"
+	],
+	"name": "goblin dungeon",
+	"saveId": "0e672c56-d8f7-4644-bcef-04ce0fee8b15",
+	"playersSimple": [
+		{
+			"count": 5,
+			"level": 3
+		}
+	],
+	"isAdvanced": false,
+	"colsExtraAdvanced": [],
+	"playersAdvanced": [
+		{
+			"name": "",
+			"level": 1,
+			"extras": [],
+			"extraCols": []
+		}
+	]
+}
