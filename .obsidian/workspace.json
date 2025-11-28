@@ -20,7 +20,7 @@
             }
           },
           {
-            "id": "7d28f779d9a7f658",
+            "id": "05b978c3fba6a398",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -32,9 +32,23 @@
               "icon": "lucide-file",
               "title": "Saga di GemGrave"
             }
+          },
+          {
+            "id": "77279836fcfca5a2",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Personaggi/gruppi/la mano rossa.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "la mano rossa"
+            }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -208,19 +222,25 @@
       "terminal:Open terminal": false
     }
   },
-  "active": "7d28f779d9a7f658",
+  "active": "77279836fcfca5a2",
   "lastOpenFiles": [
+    "universi/phandalmain/phandasuland/GemGrave.md",
+    "saghe/Saga di GemGrave.md",
+    "Personaggi/gruppi/la mano rossa.md",
+    "artefatti/il Portale.md",
+    "universi/fandalmein/atalantide.md",
+    "universi/phandalmain/atlantide.md",
+    "artefatti/la chiave.md",
+    "artefatti/la bussola.md",
+    "Personaggi/Non Giocanti/nonno Roshi.md",
+    "Personaggi/Giocanti/Vargas (Paladino Nano, 65).md",
     "Personaggi/Non Giocanti/perrin.md",
     "Personaggi/Non Giocanti/perrin.jpg",
-    "saghe/Saga di GemGrave.md",
     "saghe/Saga di Suddaria.md",
     "saghe/macrosaga della chiave.md",
     "Untitled.md",
     "Personaggi/Non Giocanti/Dark Kaia.md",
-    "Personaggi/Giocanti/Vargas (Paladino Nano, 65).md",
     "{163953DF-AA74-4DD2-BF70-9AC2BFBC6120}.png",
-    "universi/phandalmain/phandasuland/GemGrave.md",
-    "Personaggi/gruppi/la mano rossa.md",
     "Personaggi/Giocanti/Morbiarum (Paladino Dragonide, 24).md",
     "Personaggi/Giocanti/Attila Slayer (Guerriero Elfo, 100).md",
     "Personaggi/Giocanti/Than (Warlock tiefling, 30).md",
@@ -234,11 +254,6 @@
     "eventi",
     "copilot-custom-prompts/Emojify.md",
     "copilot-custom-prompts/Generate glossary.md",
-    "copilot-custom-prompts/Rewrite as tweet thread.md",
-    "copilot-custom-prompts/Rewrite as tweet.md",
-    "copilot-custom-prompts/Remove URLs.md",
-    "copilot-custom-prompts/Generate table of contents.md",
-    "copilot-custom-prompts/Make longer.md",
     "copilot-custom-prompts",
     "Senza nome.canvas",
     "universi/phandalmain/Phandalmain.jpg.crdownload",
