@@ -38,6 +38,9 @@
 </style>
 <body>
     <div id="app" class="d-flex flex-column justify-content-between min-vh-100">
+        <header>
+            
+        </header>
 
         <main class="py-4 flex-grow-1">
             <div class="container content @yield('content-class')">
