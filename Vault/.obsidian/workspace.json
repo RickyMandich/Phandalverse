@@ -1,0 +1,269 @@
+{
+  "main": {
+    "id": "826ecafb728cb6da",
+    "type": "split",
+    "children": [
+      {
+        "id": "2a02b292f5de3402",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c2dffc8f5a92487b",
+            "type": "leaf",
+            "pinned": true,
+            "state": {
+              "type": "graph",
+              "state": {},
+              "pinned": true,
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          },
+          {
+            "id": "05b978c3fba6a398",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "saghe/Saga di GemGrave.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Saga di GemGrave"
+            }
+          },
+          {
+            "id": "77279836fcfca5a2",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Personaggi/gruppi/la mano rossa.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "la mano rossa"
+            }
+          }
+        ],
+        "currentTab": 2
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "8d87a56882adca33",
+    "type": "split",
+    "children": [
+      {
+        "id": "aac4763c47a910e3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4a0168f4c436222b",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": true
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "b9827de2db8e94d1",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "[\"copilot-command-slash-enabled\"]",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Ricerca"
+            }
+          },
+          {
+            "id": "fc245400d41d7229",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Segnalibri"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "1933adafaa71d301",
+    "type": "split",
+    "children": [
+      {
+        "id": "438555d0cbfe4a2d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ce7d97d65a603ff9",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "saghe/Saga di Suddaria.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Riferimenti a Saga di Suddaria"
+            }
+          },
+          {
+            "id": "5bb1842f79d09cbc",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "saghe/Saga di Suddaria.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Collegamenti in uscita da Saga di Suddaria"
+            }
+          },
+          {
+            "id": "5813cac16d713b99",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequencyReverse",
+                "useHierarchy": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etichette"
+            }
+          },
+          {
+            "id": "c0e47a6e77059a5d",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "saghe/Saga di Suddaria.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Struttura di Saga di Suddaria"
+            }
+          },
+          {
+            "id": "d5d54c7702c698a2",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Tutte le proprietà"
+            }
+          },
+          {
+            "id": "5f336eab4e735bd5",
+            "type": "leaf",
+            "state": {
+              "type": "github-copilot-chat-view",
+              "state": {},
+              "icon": "lucide-ghost",
+              "title": "github-copilot-chat-view"
+            }
+          }
+        ],
+        "currentTab": 5
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
+      "terminal:Open terminal": false
+    }
+  },
+  "active": "77279836fcfca5a2",
+  "lastOpenFiles": [
+    "Personaggi/Giocanti/Than (Warlock tiefling, 30).md",
+    "Personaggi/Giocanti/pet/Ren.md",
+    "Personaggi/gruppi/la mano rossa.md",
+    "Personaggi/Giocanti/pet/Thraal.md",
+    "Personaggi/Giocanti/pet",
+    "universi/phandalmain/phandasuland/GemGrave.md",
+    "saghe/Saga di GemGrave.md",
+    "artefatti/il Portale.md",
+    "universi/fandalmein/atalantide.md",
+    "universi/phandalmain/atlantide.md",
+    "artefatti/la chiave.md",
+    "artefatti/la bussola.md",
+    "Personaggi/Non Giocanti/nonno Roshi.md",
+    "Personaggi/Giocanti/Vargas (Paladino Nano, 65).md",
+    "Personaggi/Non Giocanti/perrin.md",
+    "Personaggi/Non Giocanti/perrin.jpg",
+    "saghe/Saga di Suddaria.md",
+    "saghe/macrosaga della chiave.md",
+    "Untitled.md",
+    "Personaggi/Non Giocanti/Dark Kaia.md",
+    "{163953DF-AA74-4DD2-BF70-9AC2BFBC6120}.png",
+    "Personaggi/Giocanti/Morbiarum (Paladino Dragonide, 24).md",
+    "Personaggi/Giocanti/Attila Slayer (Guerriero Elfo, 100).md",
+    "Personaggi/Giocanti/Dontavious (Ladro Mezzelfo, 25).md",
+    "universi/phandalmain/Phandalmain.jpg",
+    "divinità/Líthos.md",
+    "divinità/Krystallō.md",
+    "universi/universo.md",
+    "eventi/La frattura.md",
+    "Personaggi/gruppi/prescelti di fandalmein.md",
+    "eventi",
+    "copilot-custom-prompts",
+    "Senza nome.canvas",
+    "universi/phandalmain/Phandalmain.jpg.crdownload",
+    "universi/phandalmain/phandasuland/suddaria/castello abbandonato sul dirupo vicino la città.png",
+    "bash/cmt.sh",
+    "bash/pull.sh",
+    "bash",
+    "Nuova cartella",
+    "universi/phandalmain/phandasuland/suddaria/castello abbandonato sul dirupo vicino la città.xcf",
+    "universi/phandalmain/phandasuland/suddaria"
+  ]
+}

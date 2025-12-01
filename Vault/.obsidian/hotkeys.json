@@ -1,0 +1,11 @@
+{
+  "terminal:close-terminal": [],
+  "terminal:open-terminal.external.root": [
+    {
+      "modifiers": [
+        "Mod"
+      ],
+      "key": "`"
+    }
+  ]
+}
