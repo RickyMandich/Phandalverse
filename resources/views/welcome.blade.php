@@ -40,7 +40,7 @@
     <div id="app" class="d-flex flex-column justify-content-between min-vh-100">
         <header>
             <h1>
-                {{ config(app.name) }}
+                {{ config('app.name') }}
             </h1>
         </header>
 
