@@ -1,0 +1,14 @@
+RewriteEngine On
+RewriteBase /
+
+# Eccezioni per i file nella root
+RewriteCond %{REQUEST_URI} ^/collezione\.json$ [OR]
+RewriteCond %{REQUEST_URI} ^/README\.md$ [OR]
+RewriteCond %{REQUEST_URI} ^/WebScrapingStarWars\.jar$
+RewriteRule ^ - [L]
+
+# Regola di riscrittura generale
+RewriteRule ^(.*)$ public/$1 [L]
+
+# Specifica la versione di PHP
+AddHandler av-php82 .php

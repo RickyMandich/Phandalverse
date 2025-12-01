@@ -1,0 +1,1 @@
+è l'imp di [[Thraal]], quando è sotto forma di corvo viene presentato come Ren
