@@ -8,7 +8,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/x-icon" href="/favicon.ico?v={{ time() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ @yield('title', config('app.name', 'Laravel')) }}</title>
 
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
@@ -16,6 +16,9 @@
     
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- inclusion -->
+    @yield('include')
 </head>
 <style>
     .bg-custom-light{
@@ -86,9 +89,35 @@
         </nav>
 
 
-        <main class="py-4">
-            @yield('content')
+        <main class="py-4 flex-grow-1">
+            <div class="container content @yield('content-class')">
+                @yield('content')
+            </div>
         </main>
+
+        <footer class="bg-custom-light mt-auto pt-2">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <p>
+                            {{ env('APP_VERSION') }}
+                            Created by 
+                            <small class="text-muted text-uppercase">
+                                <a href="https://github.com/MandichRiccardoITS" target="_blank" rel="author noopener noreferrer">Mandich Riccardo</a>
+                            </small>
+                            <br>
+                            with
+                            <small class="text-muted text-uppercase">
+                                <a href="https://laravel.com/docs/12.x" target="_blank" rel="noopener noreferrer">laravel</a>
+                            </small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
+    @yield('script')
 </body>
+@yield('style')
 </html>
+@yield("php")
