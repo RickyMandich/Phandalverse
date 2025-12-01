@@ -106,7 +106,7 @@
                             {{ env('APP_VERSION') }}
                             Created by 
                             <small class="text-muted text-uppercase">
-                                <a href="https://github.com/MandichRiccardoITS" target="_blank" rel="author noopener noreferrer">Mandich Riccardo</a>
+                                <a href="https://github.com/RickyMandich" target="_blank" rel="author noopener noreferrer">Mandich Riccardo</a>
                             </small>
                             <br>
                             with
