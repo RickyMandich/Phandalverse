@@ -19,21 +19,43 @@
 
     <!-- inclusion -->
     @yield('include')
+
+    <style>
+        .bg-custom-light{
+            background-color: #555555;
+        }
+        nav{
+            z-index: 1021;
+        }
+        a{
+            text-decoration: none;
+            color: inherit;
+        }
+        /* Fix per conflitto Tailwind/Bootstrap - forza visibilità pulsanti navbar */
+        .navbar-toggler {
+            display: inline-block !important;
+            border: 1px solid rgba(255,255,255,.1) !important;
+            padding: 0.25rem 0.75rem !important;
+        }
+        .navbar-toggler-icon {
+            display: inline-block !important;
+            width: 1.5em !important;
+            height: 1.5em !important;
+            vertical-align: middle !important;
+            background-image: var(--bs-navbar-toggler-icon-bg) !important;
+            background-repeat: no-repeat !important;
+            background-position: center !important;
+            background-size: 100% !important;
+        }
+        button {
+            all: revert;
+        }
+    </style>
+
+    @yield('style')
 </head>
-<style>
-    .bg-custom-light{
-        background-color: #555555;
-    }
-    nav{
-        z-index: 1021;
-    }
-    a{
-        text-decoration: none;
-        color: inherit;
-    }
-</style>
 <body>
-    <div id="app">
+    <div id="app" class="d-flex flex-column min-vh-100">
         <nav class="navbar navbar-expand-md navbar-dark bg-dark shadow-sm">
             <div class="container">
                 <a class="navbar-brand" href="{{ url('/') }}">
@@ -118,6 +140,4 @@
     </div>
     @yield('script')
 </body>
-@yield('style')
 </html>
-@yield("php")
