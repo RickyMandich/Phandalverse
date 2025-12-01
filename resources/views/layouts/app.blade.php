@@ -69,6 +69,16 @@
             </div>
         </nav>
 
+        {{ isset($_SERVER['HTTPS']) }}
+        <br>
+        |
+        <br>
+        server: <br>{{$_SERVER['HTTPS']}}
+        <br>
+        |
+        <br>
+        {{ $_SERVER['HTTPS'] === 'on' }}
+
         <main class="py-4">
             @yield('content')
         </main>
