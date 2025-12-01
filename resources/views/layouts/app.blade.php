@@ -19,37 +19,30 @@
 
     <!-- inclusion -->
     @yield('include')
-
-    <style>
-        .bg-custom-light{
-            background-color: #555555;
-        }
-        nav{
-            z-index: 1021;
-        }
-        a{
-            text-decoration: none;
-            color: inherit;
-        }
-        /* Fix per conflitto Tailwind/Bootstrap */
-        .navbar-toggler {
-            border-color: rgba(255,255,255,.1);
-        }
-        .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-        }
-    </style>
-
-    @yield('style')
 </head>
+
+<style>
+    .bg-custom-light{
+        background-color: #555555;
+    }
+    nav{
+        z-index: 1021;
+    }
+    a{
+        text-decoration: none;
+        color: inherit;
+    }
+</style>
+
+@yield('style')
 <body>
-    <div id="app" class="d-flex flex-column min-vh-100">
+    <div id="app" class="d-flex flex-column justify-content-between min-vh-100">
         <nav class="navbar navbar-expand-md shadow-sm bg-custom-light">
             <div class="container">
                 <a class="navbar-brand" href="{{ url('/') }}">
                     {{ config('app.name', 'Laravel') }}
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="true">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
