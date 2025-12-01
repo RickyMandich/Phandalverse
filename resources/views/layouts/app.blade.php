@@ -19,22 +19,46 @@
 
     <!-- inclusion -->
     @yield('include')
+
+    <style>
+        .bg-custom-light{
+            background-color: #555555;
+        }
+        nav{
+            z-index: 1021;
+        }
+        /* Fix per visibilità link navbar */
+        .navbar .nav-link,
+        .navbar .navbar-brand {
+            color: rgba(255, 255, 255, 0.9) !important;
+            text-decoration: none;
+        }
+        .navbar .nav-link:hover,
+        .navbar .navbar-brand:hover {
+            color: rgba(255, 255, 255, 1) !important;
+        }
+        .dropdown-item {
+            color: #212529 !important;
+        }
+        /* Fix per toggler icon */
+        .navbar-toggler {
+            border-color: rgba(255,255,255,.1);
+            padding: 0.25rem 0.75rem;
+        }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+            width: 1.5em;
+            height: 1.5em;
+        }
+        /* Fix generale per link */
+        a:not(.navbar a):not(.dropdown-item) {
+            text-decoration: none;
+            color: inherit;
+        }
+    </style>
+
+    @yield('style')
 </head>
-
-<style>
-    .bg-custom-light{
-        background-color: #555555;
-    }
-    /* nav{
-        z-index: 1021;
-    } */
-    a{
-        text-decoration: none;
-        color: inherit;
-    }
-</style>
-
-@yield('style')
 <body>
     <div id="app" class="d-flex flex-column justify-content-between min-vh-100">
         <nav class="navbar navbar-expand-md shadow-sm bg-custom-light">
