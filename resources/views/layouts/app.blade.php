@@ -17,9 +17,21 @@
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+<style>
+    .bg-custom-light{
+        background-color: #555555;
+    }
+    nav{
+        z-index: 1021;
+    }
+    a{
+        text-decoration: none;
+        color: inherit;
+    }
+</style>
 <body>
     <div id="app">
-        <nav class="navbar navbar-expand-md navbar shadow-sm">
+        <nav class="navbar navbar-expand-md navbar-dark bg-dark shadow-sm">
             <div class="container">
                 <a class="navbar-brand" href="{{ url('/') }}">
                     {{ config('app.name', 'Laravel') }}
