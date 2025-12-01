@@ -8,7 +8,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/x-icon" href="/favicon.ico?v={{ time() }}">
 
-    <title>{{ @yield('title', config('app.name', 'Laravel')) }}</title>
+    <title>@yield('title', config('app.name'))</title>
 
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
