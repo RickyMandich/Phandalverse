@@ -1,15 +1,16 @@
 <?php
 
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 Auth::routes();
 
-Route::get('/', function () {
+Route::get('/test', function () {
     return view('welcome');
 })->name('index');
 
-Route::get('/test', function(){
-    return view('layouts.app');
+Route::get('/', function(){
+    return Artisan::command("route:list");
 })->name('test');
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
