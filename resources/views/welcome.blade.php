@@ -38,7 +38,7 @@
 </style>
 <body>
     <div id="app" class="d-flex flex-column justify-content-between min-vh-100">
-        <header>
+        <header class="bg-custom-light mt-auto pt-2">
             <h1>
                 {{ config('app.name') }}
             </h1>
