@@ -25,9 +25,9 @@
     .bg-custom-light{
         background-color: #555555;
     }
-    nav{
+    /* nav{
         z-index: 1021;
-    }
+    } */
     a{
         text-decoration: none;
         color: inherit;
