@@ -6,7 +6,7 @@
 
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta rel="icon" type="image/x-icon" href="/favicon.ico?v={{ time() }}">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v={{ time() }}">
 
     <title>@yield('title', config('app.name'))</title>
 
