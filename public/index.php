@@ -5,58 +5,82 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-echo "<!-- DEBUG STEP 1: PHP funziona -->\n";
+echo "<pre>";
+echo "=== DEBUG LARAVEL BOOTSTRAP ===\n\n";
 
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-echo "<!-- DEBUG STEP 2: Costanti definite -->\n";
-
 // Determine if the application is in maintenance mode...
 if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
     require $maintenance;
 }
 
-echo "<!-- DEBUG STEP 3: Controllo maintenance passato -->\n";
-
-// Verifica che il file autoload esista
-$autoloadPath = __DIR__.'/../vendor/autoload.php';
-if (!file_exists($autoloadPath)) {
-    die("ERRORE: File autoload.php non trovato in: " . realpath(__DIR__.'/../') . "/vendor/autoload.php");
-}
-
-echo "<!-- DEBUG STEP 4: File autoload.php trovato -->\n";
-
 // Register the Composer autoloader...
-try {
-    require $autoloadPath;
-    echo "<!-- DEBUG STEP 5: Autoload caricato con successo -->\n";
-} catch (Throwable $e) {
-    die("ERRORE nel caricamento autoload: " . $e->getMessage());
-}
+$autoloadPath = __DIR__.'/../vendor/autoload.php';
+require $autoloadPath;
+echo "STEP 1: Autoload OK\n";
 
-// Verifica che bootstrap/app.php esista
+// Bootstrap Laravel
 $bootstrapPath = __DIR__.'/../bootstrap/app.php';
-if (!file_exists($bootstrapPath)) {
-    die("ERRORE: File bootstrap/app.php non trovato");
-}
 
-echo "<!-- DEBUG STEP 6: File bootstrap/app.php trovato -->\n";
-
-// Bootstrap Laravel and handle the request...
 try {
     /** @var Application $app */
     $app = require_once $bootstrapPath;
-    echo "<!-- DEBUG STEP 7: Bootstrap completato -->\n";
+    echo "STEP 2: Bootstrap OK\n";
+    echo "App class: " . get_class($app) . "\n";
 } catch (Throwable $e) {
-    die("ERRORE nel bootstrap: " . $e->getMessage() . "\n\nStack trace:\n" . $e->getTraceAsString());
+    die("ERRORE nel bootstrap: " . $e->getMessage() . "\n\n" . $e->getTraceAsString());
 }
 
+// Verifica i service providers registrati
+echo "\nSTEP 3: Controllo Service Providers...\n";
+
 try {
-    echo "<!-- DEBUG STEP 8: Avvio gestione richiesta -->\n";
-    $app->handleRequest(Request::capture());
+    // Prova a fare il boot manualmente
+    $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
+    echo "STEP 4: Kernel creato OK\n";
 } catch (Throwable $e) {
-    die("ERRORE nella gestione richiesta: " . $e->getMessage() . "\n\nStack trace:\n" . $e->getTraceAsString());
+    echo "ERRORE creazione Kernel: " . $e->getMessage() . "\n";
 }
+
+// Verifica binding 'view'
+echo "\nSTEP 5: Verifica binding container...\n";
+$bindings = ['view', 'view.finder', 'blade.compiler', 'config', 'router', 'events'];
+foreach ($bindings as $binding) {
+    try {
+        if ($app->bound($binding)) {
+            echo "✓ '$binding' è registrato\n";
+        } else {
+            echo "✗ '$binding' NON è registrato!\n";
+        }
+    } catch (Throwable $e) {
+        echo "✗ '$binding' errore: " . $e->getMessage() . "\n";
+    }
+}
+
+// Verifica providers caricati
+echo "\nSTEP 6: Service Providers caricati:\n";
+try {
+    $loadedProviders = $app->getLoadedProviders();
+    foreach ($loadedProviders as $provider => $loaded) {
+        echo "- $provider\n";
+    }
+    if (empty($loadedProviders)) {
+        echo "(nessun provider caricato!)\n";
+    }
+} catch (Throwable $e) {
+    echo "Errore lettura providers: " . $e->getMessage() . "\n";
+}
+
+echo "\n=== FINE DEBUG ===\n";
+echo "</pre>";
+
+// Commenta queste righe per fermarti al debug
+// try {
+//     $app->handleRequest(Request::capture());
+// } catch (Throwable $e) {
+//     die("ERRORE nella gestione richiesta: " . $e->getMessage() . "\n\nStack trace:\n" . $e->getTraceAsString());
+// }
