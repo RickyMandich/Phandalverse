@@ -11,4 +11,4 @@ RewriteRule ^ - [L]
 RewriteRule ^(.*)$ public/$1 [L]
 
 # Specifica la versione di PHP
-AddHandler av-php82 .php
+AddHandler av-php84 .php
