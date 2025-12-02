@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 use App\Services\MarkdownPreprocessor;
 
 class VaultController extends Controller
@@ -21,8 +20,8 @@ class VaultController extends Controller
         // Rimuove i blocchi master
         $content = MarkdownPreprocessor::filterMasterBlocks($content);
 
-        // Converte Markdown → HTML con CommonMark
-        $html = Str::markdown($content);
+        // Converte Markdown → HTML con supporto wikilink/embed
+        $html = MarkdownPreprocessor::toHtml($content);
 
         return view('vault.note', [
             'title' => $note,
