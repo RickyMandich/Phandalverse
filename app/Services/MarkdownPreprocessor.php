@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Services;
 
@@ -8,41 +8,79 @@ use League\CommonMark\Extension\Table\TableExtension;
 use League\CommonMark\Extension\TaskList\TaskListExtension;
 use League\CommonMark\Extension\Strikethrough\StrikethroughExtension;
 use League\CommonMark\MarkdownConverter;
+use Illuminate\Support\Facades\File;
 
 class MarkdownPreprocessor
 {
-    /**
-     * Rimuove i blocchi master (#startMaster ... #endMaster)
-     */
+    private static ?array $fileIndex = null;
+
+    public static function buildFileIndex(): array
+    {
+        if (self::$fileIndex !== null) {
+            return self::$fileIndex;
+        }
+
+        self::$fileIndex = [];
+        $vaultPath = base_path('Vault');
+        $files = File::allFiles($vaultPath);
+
+        foreach ($files as $file) {
+            if ($file->getExtension() === 'md') {
+                $name = $file->getFilenameWithoutExtension();
+                $relativePath = str_replace('\\', '/', $file->getRelativePath());
+                if ($relativePath) {
+                    self::$fileIndex[$name] = $relativePath . '/' . $name;
+                } else {
+                    self::$fileIndex[$name] = $name;
+                }
+            }
+        }
+
+        return self::$fileIndex;
+    }
+
+    public static function findNotePath(string $noteName): string
+    {
+        $index = self::buildFileIndex();
+        $cleanName = explode('#', $noteName)[0];
+        $cleanName = trim($cleanName);
+
+        if (isset($index[$cleanName])) {
+            return $index[$cleanName];
+        }
+
+        return $cleanName;
+    }
+
     public static function filterMasterBlocks(string $text): string
     {
         $start = '#startMaster';
         $end   = '#endMaster';
 
         if (!str_contains($text, $start)) {
-            $startPos = null;
-        } else {
-            $startPos = strpos($text, $start);
+            return $text;
         }
 
-        if (!str_contains($text, $end)) {
-            $endPos = strlen($text);
-        } else {
-            $endPos = strpos($text, $end) + strlen($end);
-        }
+        $startPos = strpos($text, $start);
+        $endPos = str_contains($text, $end) 
+            ? strpos($text, $end) + strlen($end) 
+            : strlen($text);
 
-        if ($startPos !== null) {
-            $before = substr($text, 0, $startPos);
-            $after  = substr($text, $endPos);
-            return $before . $after;
-        }
-
-        return $text;
+        return substr($text, 0, $startPos) . substr($text, $endPos);
     }
 
-    /**
-     * Converte wikilink [[Nota]] e [[Nota|Testo]] in link HTML
-     */
+    public static function convertTags(string $text): string
+    {
+        return preg_replace_callback(
+            '/(?<=^|\s)#([a-zA-Z][a-zA-Z0-9_-]*)(?=\s|$)/m',
+            function ($matches) {
+                $tag = $matches[1];
+                return '<span class="obsidian-tag">#' . htmlspecialchars($tag) . '</span>';
+            },
+            $text
+        );
+    }
+
     public static function convertWikilinks(string $text): string
     {
         return preg_replace_callback(
@@ -50,44 +88,40 @@ class MarkdownPreprocessor
             function ($matches) {
                 $nota = $matches[1];
                 $label = $matches[2] ?? $nota;
-                $url = '/vault/' . rawurlencode($nota);
+                $path = self::findNotePath($nota);
+                $url = '/vault/' . rawurlencode($path);
                 return '<a href="' . $url . '" class="wikilink">' . htmlspecialchars($label) . '</a>';
             },
             $text
         );
     }
 
-    /**
-     * Converte embed ![[Nota]] in contenuto embedded
-     */
     public static function convertEmbeds(string $text): string
     {
         return preg_replace_callback(
             '/!\[\[([^\]]+)\]\]/',
             function ($matches) {
                 $content = $matches[1];
-                $imageExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'];
-                $extension = strtolower(pathinfo($content, PATHINFO_EXTENSION));
+                $imageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'];
+                $ext = strtolower(pathinfo($content, PATHINFO_EXTENSION));
 
-                if (in_array($extension, $imageExtensions)) {
+                if (in_array($ext, $imageExt)) {
                     $url = '/vault/images/' . rawurlencode($content);
                     return '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image">';
                 }
 
-                $notaParts = explode('#', $content);
-                $nota = $notaParts[0];
-                $url = '/vault/' . rawurlencode($nota);
-                return '<div class="embed-note"><a href="' . $url . '" class="wikilink">📄 ' . htmlspecialchars($content) . '</a></div>';
+                $path = self::findNotePath($content);
+                $url = '/vault/' . rawurlencode($path);
+                $label = explode('#', $content)[0];
+                return '<div class="embed-note"><a href="' . $url . '" class="wikilink">' . htmlspecialchars($label) . '</a></div>';
             },
             $text
         );
     }
 
-    /**
-     * Converte Markdown in HTML con supporto Obsidian
-     */
     public static function toHtml(string $text): string
     {
+        $text = self::convertTags($text);
         $text = self::convertEmbeds($text);
         $text = self::convertWikilinks($text);
 
