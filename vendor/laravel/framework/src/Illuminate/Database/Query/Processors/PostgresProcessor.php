@@ -30,12 +30,7 @@ class PostgresProcessor extends Processor
         return is_numeric($id) ? (int) $id : $id;
     }
 
-    /**
-     * Process the results of a types query.
-     *
-     * @param  array  $results
-     * @return array
-     */
+    /** @inheritDoc */
     public function processTypes($results)
     {
         return array_map(function ($result) {
@@ -79,12 +74,7 @@ class PostgresProcessor extends Processor
         }, $results);
     }
 
-    /**
-     * Process the results of a columns query.
-     *
-     * @param  array  $results
-     * @return array
-     */
+    /** @inheritDoc */
     public function processColumns($results)
     {
         return array_map(function ($result) {
@@ -104,6 +94,7 @@ class PostgresProcessor extends Processor
                 'generation' => $result->generated ? [
                     'type' => match ($result->generated) {
                         's' => 'stored',
+                        'v' => 'virtual',
                         default => null,
                     },
                     'expression' => $result->default,
@@ -112,12 +103,7 @@ class PostgresProcessor extends Processor
         }, $results);
     }
 
-    /**
-     * Process the results of an indexes query.
-     *
-     * @param  array  $results
-     * @return array
-     */
+    /** @inheritDoc */
     public function processIndexes($results)
     {
         return array_map(function ($result) {
@@ -133,12 +119,7 @@ class PostgresProcessor extends Processor
         }, $results);
     }
 
-    /**
-     * Process the results of a foreign keys query.
-     *
-     * @param  array  $results
-     * @return array
-     */
+    /** @inheritDoc */
     public function processForeignKeys($results)
     {
         return array_map(function ($result) {

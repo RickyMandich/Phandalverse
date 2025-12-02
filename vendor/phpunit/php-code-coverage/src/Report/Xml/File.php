@@ -9,16 +9,19 @@
  */
 namespace SebastianBergmann\CodeCoverage\Report\Xml;
 
+use function assert;
 use DOMDocument;
 use DOMElement;
+use DOMNode;
 
 /**
  * @internal This class is not covered by the backward compatibility promise for phpunit/php-code-coverage
  */
 class File
 {
-    private readonly DOMDocument $dom;
+    protected readonly DOMDocument $dom;
     private readonly DOMElement $contextNode;
+    private ?DOMNode $lineCoverage = null;
 
     public function __construct(DOMElement $context)
     {
@@ -28,42 +31,38 @@ class File
 
     public function totals(): Totals
     {
-        $totalsContainer = $this->contextNode->firstChild;
+        $totalsContainer = $this->contextNode->appendChild(
+            $this->dom->createElementNS(
+                Facade::XML_NAMESPACE,
+                'totals',
+            ),
+        );
 
-        if (!$totalsContainer) {
-            $totalsContainer = $this->contextNode->appendChild(
-                $this->dom->createElementNS(
-                    'https://schema.phpunit.de/coverage/1.0',
-                    'totals',
-                ),
-            );
-        }
+        assert($totalsContainer instanceof DOMElement);
 
         return new Totals($totalsContainer);
     }
 
     public function lineCoverage(string $line): Coverage
     {
-        $coverage = $this->contextNode->getElementsByTagNameNS(
-            'https://schema.phpunit.de/coverage/1.0',
-            'coverage',
-        )->item(0);
-
-        if (!$coverage) {
-            $coverage = $this->contextNode->appendChild(
+        if ($this->lineCoverage === null) {
+            $this->lineCoverage = $this->contextNode->appendChild(
                 $this->dom->createElementNS(
-                    'https://schema.phpunit.de/coverage/1.0',
+                    Facade::XML_NAMESPACE,
                     'coverage',
                 ),
             );
         }
+        assert($this->lineCoverage instanceof DOMElement);
 
-        $lineNode = $coverage->appendChild(
+        $lineNode = $this->lineCoverage->appendChild(
             $this->dom->createElementNS(
-                'https://schema.phpunit.de/coverage/1.0',
+                Facade::XML_NAMESPACE,
                 'line',
             ),
         );
+
+        assert($lineNode instanceof DOMElement);
 
         return new Coverage($lineNode, $line);
     }
@@ -71,10 +70,5 @@ class File
     protected function contextNode(): DOMElement
     {
         return $this->contextNode;
-    }
-
-    protected function dom(): DOMDocument
-    {
-        return $this->dom;
     }
 }

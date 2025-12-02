@@ -7,13 +7,7 @@ use Illuminate\Support\Fluent;
 
 class MariaDbGrammar extends MySqlGrammar
 {
-    /**
-     * Compile a rename column command.
-     *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
-     * @param  \Illuminate\Support\Fluent  $command
-     * @return array|string
-     */
+    /** @inheritDoc */
     public function compileRenameColumn(Blueprint $blueprint, Fluent $command)
     {
         if (version_compare($this->connection->getServerVersion(), '10.5.2', '<')) {
@@ -31,6 +25,10 @@ class MariaDbGrammar extends MySqlGrammar
      */
     protected function typeUuid(Fluent $column)
     {
+        if (version_compare($this->connection->getServerVersion(), '10.7.0', '<')) {
+            return 'char(36)';
+        }
+
         return 'uuid';
     }
 
@@ -52,5 +50,18 @@ class MariaDbGrammar extends MySqlGrammar
             $subtype ?? 'geometry',
             $column->srid ? ' ref_system_id='.$column->srid : ''
         );
+    }
+
+    /**
+     * Wrap the given JSON selector.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    protected function wrapJsonSelector($value)
+    {
+        [$field, $path] = $this->wrapJsonFieldAndPath($value);
+
+        return 'json_value('.$field.$path.')';
     }
 }

@@ -13,6 +13,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Fluent;
 use Illuminate\Support\Traits\Macroable;
 
+use function Illuminate\Support\enum_value;
+
 class Blueprint
 {
     use Macroable;
@@ -96,7 +98,6 @@ class Blueprint
      * @param  \Illuminate\Database\Connection  $connection
      * @param  string  $table
      * @param  \Closure|null  $callback
-     * @return void
      */
     public function __construct(Connection $connection, $table, ?Closure $callback = null)
     {
@@ -180,9 +181,8 @@ class Blueprint
      */
     protected function commandsNamed(array $names)
     {
-        return (new Collection($this->commands))->filter(function ($command) use ($names) {
-            return in_array($command->name, $names);
-        });
+        return (new Collection($this->commands))
+            ->filter(fn ($command) => in_array($command->name, $names));
     }
 
     /**
@@ -317,9 +317,8 @@ class Blueprint
      */
     public function creating()
     {
-        return (new Collection($this->commands))->contains(function ($command) {
-            return ! $command instanceof ColumnDefinition && $command->name === 'create';
-        });
+        return (new Collection($this->commands))
+            ->contains(fn ($command) => ! $command instanceof ColumnDefinition && $command->name === 'create');
     }
 
     /**
@@ -408,7 +407,7 @@ class Blueprint
     /**
      * Indicate that the given columns should be dropped.
      *
-     * @param  array|mixed  $columns
+     * @param  mixed  $columns
      * @return \Illuminate\Support\Fluent
      */
     public function dropColumn($columns)
@@ -687,11 +686,12 @@ class Blueprint
      *
      * @param  string|array  $columns
      * @param  string|null  $name
+     * @param  string|null  $operatorClass
      * @return \Illuminate\Database\Schema\IndexDefinition
      */
-    public function spatialIndex($columns, $name = null)
+    public function spatialIndex($columns, $name = null, $operatorClass = null)
     {
-        return $this->indexCommand('spatialIndex', $columns, $name);
+        return $this->indexCommand('spatialIndex', $columns, $name, null, $operatorClass);
     }
 
     /**
@@ -1104,6 +1104,8 @@ class Blueprint
      */
     public function enum($column, array $allowed)
     {
+        $allowed = array_map(fn ($value) => enum_value($value), $allowed);
+
         return $this->addColumn('enum', $column, compact('allowed'));
     }
 
@@ -1240,13 +1242,14 @@ class Blueprint
      * Add nullable creation and update timestamps to the table.
      *
      * @param  int|null  $precision
-     * @return void
+     * @return \Illuminate\Support\Collection<int, \Illuminate\Database\Schema\ColumnDefinition>
      */
     public function timestamps($precision = null)
     {
-        $this->timestamp('created_at', $precision)->nullable();
-
-        $this->timestamp('updated_at', $precision)->nullable();
+        return new Collection([
+            $this->timestamp('created_at', $precision)->nullable(),
+            $this->timestamp('updated_at', $precision)->nullable(),
+        ]);
     }
 
     /**
@@ -1255,37 +1258,52 @@ class Blueprint
      * Alias for self::timestamps().
      *
      * @param  int|null  $precision
-     * @return void
+     * @return \Illuminate\Support\Collection<int, \Illuminate\Database\Schema\ColumnDefinition>
      */
     public function nullableTimestamps($precision = null)
     {
-        $this->timestamps($precision);
+        return $this->timestamps($precision);
     }
 
     /**
-     * Add creation and update timestampTz columns to the table.
+     * Add nullable creation and update timestampTz columns to the table.
      *
      * @param  int|null  $precision
-     * @return void
+     * @return \Illuminate\Support\Collection<int, \Illuminate\Database\Schema\ColumnDefinition>
      */
     public function timestampsTz($precision = null)
     {
-        $this->timestampTz('created_at', $precision)->nullable();
+        return new Collection([
+            $this->timestampTz('created_at', $precision)->nullable(),
+            $this->timestampTz('updated_at', $precision)->nullable(),
+        ]);
+    }
 
-        $this->timestampTz('updated_at', $precision)->nullable();
+    /**
+     * Add nullable creation and update timestampTz columns to the table.
+     *
+     * Alias for self::timestampsTz().
+     *
+     * @param  int|null  $precision
+     * @return \Illuminate\Support\Collection<int, \Illuminate\Database\Schema\ColumnDefinition>
+     */
+    public function nullableTimestampsTz($precision = null)
+    {
+        return $this->timestampsTz($precision);
     }
 
     /**
      * Add creation and update datetime columns to the table.
      *
      * @param  int|null  $precision
-     * @return void
+     * @return \Illuminate\Support\Collection<int, \Illuminate\Database\Schema\ColumnDefinition>
      */
     public function datetimes($precision = null)
     {
-        $this->datetime('created_at', $precision)->nullable();
-
-        $this->datetime('updated_at', $precision)->nullable();
+        return new Collection([
+            $this->datetime('created_at', $precision)->nullable(),
+            $this->datetime('updated_at', $precision)->nullable(),
+        ]);
     }
 
     /**
@@ -1480,16 +1498,17 @@ class Blueprint
      *
      * @param  string  $name
      * @param  string|null  $indexName
+     * @param  string|null  $after
      * @return void
      */
-    public function morphs($name, $indexName = null)
+    public function morphs($name, $indexName = null, $after = null)
     {
         if (Builder::$defaultMorphKeyType === 'uuid') {
-            $this->uuidMorphs($name, $indexName);
+            $this->uuidMorphs($name, $indexName, $after);
         } elseif (Builder::$defaultMorphKeyType === 'ulid') {
-            $this->ulidMorphs($name, $indexName);
+            $this->ulidMorphs($name, $indexName, $after);
         } else {
-            $this->numericMorphs($name, $indexName);
+            $this->numericMorphs($name, $indexName, $after);
         }
     }
 
@@ -1498,16 +1517,17 @@ class Blueprint
      *
      * @param  string  $name
      * @param  string|null  $indexName
+     * @param  string|null  $after
      * @return void
      */
-    public function nullableMorphs($name, $indexName = null)
+    public function nullableMorphs($name, $indexName = null, $after = null)
     {
         if (Builder::$defaultMorphKeyType === 'uuid') {
-            $this->nullableUuidMorphs($name, $indexName);
+            $this->nullableUuidMorphs($name, $indexName, $after);
         } elseif (Builder::$defaultMorphKeyType === 'ulid') {
-            $this->nullableUlidMorphs($name, $indexName);
+            $this->nullableUlidMorphs($name, $indexName, $after);
         } else {
-            $this->nullableNumericMorphs($name, $indexName);
+            $this->nullableNumericMorphs($name, $indexName, $after);
         }
     }
 
@@ -1516,13 +1536,16 @@ class Blueprint
      *
      * @param  string  $name
      * @param  string|null  $indexName
+     * @param  string|null  $after
      * @return void
      */
-    public function numericMorphs($name, $indexName = null)
+    public function numericMorphs($name, $indexName = null, $after = null)
     {
-        $this->string("{$name}_type");
+        $this->string("{$name}_type")
+            ->after($after);
 
-        $this->unsignedBigInteger("{$name}_id");
+        $this->unsignedBigInteger("{$name}_id")
+            ->after(! is_null($after) ? "{$name}_type" : null);
 
         $this->index(["{$name}_type", "{$name}_id"], $indexName);
     }
@@ -1532,13 +1555,18 @@ class Blueprint
      *
      * @param  string  $name
      * @param  string|null  $indexName
+     * @param  string|null  $after
      * @return void
      */
-    public function nullableNumericMorphs($name, $indexName = null)
+    public function nullableNumericMorphs($name, $indexName = null, $after = null)
     {
-        $this->string("{$name}_type")->nullable();
+        $this->string("{$name}_type")
+            ->nullable()
+            ->after($after);
 
-        $this->unsignedBigInteger("{$name}_id")->nullable();
+        $this->unsignedBigInteger("{$name}_id")
+            ->nullable()
+            ->after(! is_null($after) ? "{$name}_type" : null);
 
         $this->index(["{$name}_type", "{$name}_id"], $indexName);
     }
@@ -1548,13 +1576,16 @@ class Blueprint
      *
      * @param  string  $name
      * @param  string|null  $indexName
+     * @param  string|null  $after
      * @return void
      */
-    public function uuidMorphs($name, $indexName = null)
+    public function uuidMorphs($name, $indexName = null, $after = null)
     {
-        $this->string("{$name}_type");
+        $this->string("{$name}_type")
+            ->after($after);
 
-        $this->uuid("{$name}_id");
+        $this->uuid("{$name}_id")
+            ->after(! is_null($after) ? "{$name}_type" : null);
 
         $this->index(["{$name}_type", "{$name}_id"], $indexName);
     }
@@ -1564,13 +1595,18 @@ class Blueprint
      *
      * @param  string  $name
      * @param  string|null  $indexName
+     * @param  string|null  $after
      * @return void
      */
-    public function nullableUuidMorphs($name, $indexName = null)
+    public function nullableUuidMorphs($name, $indexName = null, $after = null)
     {
-        $this->string("{$name}_type")->nullable();
+        $this->string("{$name}_type")
+            ->nullable()
+            ->after($after);
 
-        $this->uuid("{$name}_id")->nullable();
+        $this->uuid("{$name}_id")
+            ->nullable()
+            ->after(! is_null($after) ? "{$name}_type" : null);
 
         $this->index(["{$name}_type", "{$name}_id"], $indexName);
     }
@@ -1580,13 +1616,16 @@ class Blueprint
      *
      * @param  string  $name
      * @param  string|null  $indexName
+     * @param  string|null  $after
      * @return void
      */
-    public function ulidMorphs($name, $indexName = null)
+    public function ulidMorphs($name, $indexName = null, $after = null)
     {
-        $this->string("{$name}_type");
+        $this->string("{$name}_type")
+            ->after($after);
 
-        $this->ulid("{$name}_id");
+        $this->ulid("{$name}_id")
+            ->after(! is_null($after) ? "{$name}_type" : null);
 
         $this->index(["{$name}_type", "{$name}_id"], $indexName);
     }
@@ -1596,13 +1635,18 @@ class Blueprint
      *
      * @param  string  $name
      * @param  string|null  $indexName
+     * @param  string|null  $after
      * @return void
      */
-    public function nullableUlidMorphs($name, $indexName = null)
+    public function nullableUlidMorphs($name, $indexName = null, $after = null)
     {
-        $this->string("{$name}_type")->nullable();
+        $this->string("{$name}_type")
+            ->nullable()
+            ->after($after);
 
-        $this->ulid("{$name}_id")->nullable();
+        $this->ulid("{$name}_id")
+            ->nullable()
+            ->after(! is_null($after) ? "{$name}_type" : null);
 
         $this->index(["{$name}_type", "{$name}_id"], $indexName);
     }
@@ -1641,15 +1685,16 @@ class Blueprint
     }
 
     /**
-     * Add a new index command to the blueprint.
+     * Create a new index command on the blueprint.
      *
      * @param  string  $type
      * @param  string|array  $columns
      * @param  string  $index
      * @param  string|null  $algorithm
+     * @param  string|null  $operatorClass
      * @return \Illuminate\Support\Fluent
      */
-    protected function indexCommand($type, $columns, $index, $algorithm = null)
+    protected function indexCommand($type, $columns, $index, $algorithm = null, $operatorClass = null)
     {
         $columns = (array) $columns;
 
@@ -1659,7 +1704,7 @@ class Blueprint
         $index = $index ?: $this->createIndexName($type, $columns);
 
         return $this->addCommand(
-            $type, compact('index', 'columns', 'algorithm')
+            $type, compact('index', 'columns', 'algorithm', 'operatorClass')
         );
     }
 

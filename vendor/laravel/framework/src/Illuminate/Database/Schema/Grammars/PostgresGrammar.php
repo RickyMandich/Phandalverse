@@ -277,13 +277,7 @@ class PostgresGrammar extends Grammar
         }
     }
 
-    /**
-     * Compile a change column command into a series of SQL statements.
-     *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
-     * @param  \Illuminate\Support\Fluent  $command
-     * @return array|string
-     */
+    /** @inheritDoc */
     public function compileChange(Blueprint $blueprint, Fluent $command)
     {
         $column = $command->column;
@@ -329,15 +323,39 @@ class PostgresGrammar extends Grammar
      *
      * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
-     * @return string
+     * @return string[]
      */
     public function compileUnique(Blueprint $blueprint, Fluent $command)
     {
-        $sql = sprintf('alter table %s add constraint %s unique (%s)',
-            $this->wrapTable($blueprint),
-            $this->wrap($command->index),
-            $this->columnize($command->columns)
-        );
+        $uniqueStatement = 'unique';
+
+        if (! is_null($command->nullsNotDistinct)) {
+            $uniqueStatement .= ' nulls '.($command->nullsNotDistinct ? 'not distinct' : 'distinct');
+        }
+
+        if ($command->online || $command->algorithm) {
+            $createIndexSql = sprintf('create unique index %s%s on %s%s (%s)',
+                $command->online ? 'concurrently ' : '',
+                $this->wrap($command->index),
+                $this->wrapTable($blueprint),
+                $command->algorithm ? ' using '.$command->algorithm : '',
+                $this->columnize($command->columns)
+            );
+
+            $sql = sprintf('alter table %s add constraint %s unique using index %s',
+                $this->wrapTable($blueprint),
+                $this->wrap($command->index),
+                $this->wrap($command->index)
+            );
+        } else {
+            $sql = sprintf(
+                'alter table %s add constraint %s %s (%s)',
+                $this->wrapTable($blueprint),
+                $this->wrap($command->index),
+                $uniqueStatement,
+                $this->columnize($command->columns)
+            );
+        }
 
         if (! is_null($command->deferrable)) {
             $sql .= $command->deferrable ? ' deferrable' : ' not deferrable';
@@ -347,7 +365,7 @@ class PostgresGrammar extends Grammar
             $sql .= $command->initiallyImmediate ? ' initially immediate' : ' initially deferred';
         }
 
-        return $sql;
+        return isset($createIndexSql) ? [$createIndexSql, $sql] : [$sql];
     }
 
     /**
@@ -359,7 +377,8 @@ class PostgresGrammar extends Grammar
      */
     public function compileIndex(Blueprint $blueprint, Fluent $command)
     {
-        return sprintf('create index %s on %s%s (%s)',
+        return sprintf('create index %s%s on %s%s (%s)',
+            $command->online ? 'concurrently ' : '',
             $this->wrap($command->index),
             $this->wrapTable($blueprint),
             $command->algorithm ? ' using '.$command->algorithm : '',
@@ -384,7 +403,8 @@ class PostgresGrammar extends Grammar
             return "to_tsvector({$this->quoteString($language)}, {$this->wrap($column)})";
         }, $command->columns);
 
-        return sprintf('create index %s on %s using gin ((%s))',
+        return sprintf('create index %s%s on %s using gin ((%s))',
+            $command->online ? 'concurrently ' : '',
             $this->wrap($command->index),
             $this->wrapTable($blueprint),
             implode(' || ', $columns)
@@ -402,7 +422,45 @@ class PostgresGrammar extends Grammar
     {
         $command->algorithm = 'gist';
 
+        if (! is_null($command->operatorClass)) {
+            return $this->compileIndexWithOperatorClass($blueprint, $command);
+        }
+
         return $this->compileIndex($blueprint, $command);
+    }
+
+    /**
+     * Compile a spatial index with operator class key command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    protected function compileIndexWithOperatorClass(Blueprint $blueprint, Fluent $command)
+    {
+        $columns = $this->columnizeWithOperatorClass($command->columns, $command->operatorClass);
+
+        return sprintf('create index %s%s on %s%s (%s)',
+            $command->online ? 'concurrently ' : '',
+            $this->wrap($command->index),
+            $this->wrapTable($blueprint),
+            $command->algorithm ? ' using '.$command->algorithm : '',
+            $columns
+        );
+    }
+
+    /**
+     * Convert an array of column names to a delimited string with operator class.
+     *
+     * @param  array  $columns
+     * @param  string  $operatorClass
+     * @return string
+     */
+    protected function columnizeWithOperatorClass(array $columns, $operatorClass)
+    {
+        return implode(', ', array_map(function ($column) use ($operatorClass) {
+            return $this->wrap($column).' '.$operatorClass;
+        }, $columns));
     }
 
     /**
@@ -458,45 +516,45 @@ class PostgresGrammar extends Grammar
     /**
      * Compile the SQL needed to drop all tables.
      *
-     * @param  array  $tables
+     * @param  array<string>  $tables
      * @return string
      */
     public function compileDropAllTables($tables)
     {
-        return 'drop table '.implode(',', $this->escapeNames($tables)).' cascade';
+        return 'drop table '.implode(', ', $this->escapeNames($tables)).' cascade';
     }
 
     /**
      * Compile the SQL needed to drop all views.
      *
-     * @param  array  $views
+     * @param  array<string>  $views
      * @return string
      */
     public function compileDropAllViews($views)
     {
-        return 'drop view '.implode(',', $this->escapeNames($views)).' cascade';
+        return 'drop view '.implode(', ', $this->escapeNames($views)).' cascade';
     }
 
     /**
      * Compile the SQL needed to drop all types.
      *
-     * @param  array  $types
+     * @param  array<string>  $types
      * @return string
      */
     public function compileDropAllTypes($types)
     {
-        return 'drop type '.implode(',', $this->escapeNames($types)).' cascade';
+        return 'drop type '.implode(', ', $this->escapeNames($types)).' cascade';
     }
 
     /**
      * Compile the SQL needed to drop all domains.
      *
-     * @param  array  $domains
+     * @param  array<string>  $domains
      * @return string
      */
     public function compileDropAllDomains($domains)
     {
-        return 'drop domain '.implode(',', $this->escapeNames($domains)).' cascade';
+        return 'drop domain '.implode(', ', $this->escapeNames($domains)).' cascade';
     }
 
     /**
@@ -677,16 +735,15 @@ class PostgresGrammar extends Grammar
     /**
      * Quote-escape the given tables, views, or types.
      *
-     * @param  array  $names
-     * @return array
+     * @param  array<string>  $names
+     * @return array<string>
      */
     public function escapeNames($names)
     {
-        return array_map(static function ($name) {
-            return '"'.(new Collection(explode('.', $name)))
-                ->map(fn ($segment) => trim($segment, '\'"'))
-                ->implode('"."').'"';
-        }, $names);
+        return array_map(
+            fn ($name) => (new Collection(explode('.', $name)))->map($this->wrapValue(...))->implode('.'),
+            $names
+        );
     }
 
     /**
@@ -922,6 +979,10 @@ class PostgresGrammar extends Grammar
      */
     protected function typeDate(Fluent $column)
     {
+        if ($column->useCurrent) {
+            $column->default(new Expression('CURRENT_DATE'));
+        }
+
         return 'date';
     }
 
@@ -1007,6 +1068,10 @@ class PostgresGrammar extends Grammar
      */
     protected function typeYear(Fluent $column)
     {
+        if ($column->useCurrent) {
+            $column->default(new Expression('EXTRACT(YEAR FROM CURRENT_DATE)'));
+        }
+
         return $this->typeInteger($column);
     }
 
@@ -1192,7 +1257,7 @@ class PostgresGrammar extends Grammar
         }
 
         if (! is_null($column->virtualAs)) {
-            return " generated always as ({$this->getValue($column->virtualAs)})";
+            return " generated always as ({$this->getValue($column->virtualAs)}) virtual";
         }
     }
 
@@ -1225,7 +1290,7 @@ class PostgresGrammar extends Grammar
      *
      * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $column
-     * @return string|array|null
+     * @return string|list<string>|null
      */
     protected function modifyGeneratedAs(Blueprint $blueprint, Fluent $column)
     {

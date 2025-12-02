@@ -72,14 +72,25 @@ class ResendTransport extends AbstractTransport
         if ($email->getAttachments()) {
             foreach ($email->getAttachments() as $attachment) {
                 $attachmentHeaders = $attachment->getPreparedHeaders();
-
+                $contentType = $attachmentHeaders->get('Content-Type')->getBody();
+                $disposition = $attachmentHeaders->getHeaderBody('Content-Disposition');
                 $filename = $attachmentHeaders->getHeaderParameter('Content-Disposition', 'filename');
 
+                if ($contentType == 'text/calendar') {
+                    $content = $attachment->getBody();
+                } else {
+                    $content = str_replace("\r\n", '', $attachment->bodyToString());
+                }
+
                 $item = [
-                    'content_type' => $attachmentHeaders->get('Content-Type')->getBody(),
-                    'content' => str_replace("\r\n", '', $attachment->bodyToString()),
+                    'content_type' => $contentType,
+                    'content' => $content,
                     'filename' => $filename,
                 ];
+
+                if ($disposition === 'inline') {
+                    $item['content_id'] = $attachment->hasContentId() ? $attachment->getContentId() : $filename;
+                }
 
                 $attachments[] = $item;
             }

@@ -23,14 +23,17 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Illuminate\Http\Middleware\TrustHosts;
 use Illuminate\Http\Middleware\TrustProxies;
+use Illuminate\Mail\Markdown;
 use Illuminate\Queue\Console\WorkCommand;
 use Illuminate\Queue\Queue;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\EncodedHtmlString;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Support\Once;
 use Illuminate\Support\Sleep;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Validator;
 use Illuminate\View\Component;
 use Mockery;
 use Mockery\Exception\InvalidCountException;
@@ -171,8 +174,10 @@ trait InteractsWithTestCaseLifecycle
         Component::forgetFactory();
         ConvertEmptyStringsToNull::flushState();
         Factory::flushState();
+        EncodedHtmlString::flushState();
         EncryptCookies::flushState();
-        HandleExceptions::flushState();
+        HandleExceptions::flushState($this);
+        Markdown::flushState();
         Migrator::withoutMigrations([]);
         Once::flush();
         PreventRequestsDuringMaintenance::flushState();
@@ -183,6 +188,7 @@ trait InteractsWithTestCaseLifecycle
         TrustProxies::flushState();
         TrustHosts::flushState();
         ValidateCsrfToken::flushState();
+        Validator::flushState();
         WorkCommand::flushState();
 
         if ($this->callbackException) {
@@ -197,7 +203,7 @@ trait InteractsWithTestCaseLifecycle
      */
     protected function setUpTraits()
     {
-        $uses = array_flip(class_uses_recursive(static::class));
+        $uses = $this->traitsUsedByTest ?? array_flip(class_uses_recursive(static::class));
 
         if (isset($uses[RefreshDatabase::class])) {
             $this->refreshDatabase();

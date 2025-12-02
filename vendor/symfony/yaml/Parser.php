@@ -198,7 +198,7 @@ class Parser
                 }
             } elseif (
                 self::preg_match('#^(?P<key>(?:![^\s]++\s++)?(?:'.Inline::REGEX_QUOTED_STRING.'|[^ \'"\[\{!].*?)) *\:(( |\t)++(?P<value>.+))?$#u', rtrim($this->currentLine), $values)
-                && (!str_contains($values['key'], ' #') || \in_array($values['key'][0], ['"', "'"]))
+                && (!str_contains($values['key'], ' #') || \in_array($values['key'][0], ['"', "'"], true))
             ) {
                 if ($context && 'sequence' == $context) {
                     throw new ParseException('You cannot define a mapping item when in a sequence.', $this->currentLineNb + 1, $this->currentLine, $this->filename);
@@ -769,10 +769,19 @@ class Parser
                     $lines = [];
 
                     while ($this->moveToNextLine()) {
+                        if ($this->isCurrentLineBlank()) {
+                            $lines[] = '';
+                            continue;
+                        }
+
                         // unquoted strings end before the first unindented line
                         if (0 === $this->getCurrentLineIndentation()) {
                             $this->moveToPreviousLine();
 
+                            break;
+                        }
+
+                        if ($this->isCurrentLineComment()) {
                             break;
                         }
 
@@ -1165,7 +1174,18 @@ class Parser
     private function lexUnquotedString(int &$cursor): string
     {
         $offset = $cursor;
-        $cursor += strcspn($this->currentLine, '[]{},:', $cursor);
+
+        while ($cursor < \strlen($this->currentLine)) {
+            if (\in_array($this->currentLine[$cursor], ['[', ']', '{', '}', ',', ':'], true)) {
+                break;
+            }
+
+            if (\in_array($this->currentLine[$cursor], [' ', "\t"], true) && '#' === ($this->currentLine[$cursor + 1] ?? '')) {
+                break;
+            }
+
+            ++$cursor;
+        }
 
         if ($cursor === $offset) {
             throw new ParseException('Malformed unquoted YAML string.');
@@ -1213,8 +1233,8 @@ class Parser
                         $value .= $this->currentLine[$cursor];
                         ++$cursor;
 
-                        if ($consumeUntilEol && isset($this->currentLine[$cursor]) && ($whitespaces = strspn($this->currentLine, ' ', $cursor) + $cursor) < strlen($this->currentLine) && '#' !== $this->currentLine[$whitespaces]) {
-                            throw new ParseException(sprintf('Unexpected token "%s".', trim(substr($this->currentLine, $cursor))));
+                        if ($consumeUntilEol && isset($this->currentLine[$cursor]) && ($whitespaces = strspn($this->currentLine, ' ', $cursor) + $cursor) < \strlen($this->currentLine) && '#' !== $this->currentLine[$whitespaces]) {
+                            throw new ParseException(\sprintf('Unexpected token "%s".', trim(substr($this->currentLine, $cursor))));
                         }
 
                         return $value;
@@ -1242,7 +1262,7 @@ class Parser
         $whitespacesConsumed = 0;
 
         do {
-            $whitespaceOnlyTokenLength = strspn($this->currentLine, ' ', $cursor);
+            $whitespaceOnlyTokenLength = strspn($this->currentLine, " \t", $cursor);
             $whitespacesConsumed += $whitespaceOnlyTokenLength;
             $cursor += $whitespaceOnlyTokenLength;
 

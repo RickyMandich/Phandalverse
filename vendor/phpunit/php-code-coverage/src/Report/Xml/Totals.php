@@ -11,48 +11,45 @@ namespace SebastianBergmann\CodeCoverage\Report\Xml;
 
 use function sprintf;
 use DOMElement;
-use DOMNode;
 use SebastianBergmann\CodeCoverage\Util\Percentage;
 
 /**
  * @internal This class is not covered by the backward compatibility promise for phpunit/php-code-coverage
  */
-final class Totals
+final readonly class Totals
 {
-    private readonly DOMNode $container;
-    private readonly DOMElement $linesNode;
-    private readonly DOMElement $methodsNode;
-    private readonly DOMElement $functionsNode;
-    private readonly DOMElement $classesNode;
-    private readonly DOMElement $traitsNode;
+    private DOMElement $linesNode;
+    private DOMElement $methodsNode;
+    private DOMElement $functionsNode;
+    private DOMElement $classesNode;
+    private DOMElement $traitsNode;
 
     public function __construct(DOMElement $container)
     {
-        $this->container = $container;
-        $dom             = $container->ownerDocument;
+        $dom = $container->ownerDocument;
 
         $this->linesNode = $dom->createElementNS(
-            'https://schema.phpunit.de/coverage/1.0',
+            Facade::XML_NAMESPACE,
             'lines',
         );
 
         $this->methodsNode = $dom->createElementNS(
-            'https://schema.phpunit.de/coverage/1.0',
+            Facade::XML_NAMESPACE,
             'methods',
         );
 
         $this->functionsNode = $dom->createElementNS(
-            'https://schema.phpunit.de/coverage/1.0',
+            Facade::XML_NAMESPACE,
             'functions',
         );
 
         $this->classesNode = $dom->createElementNS(
-            'https://schema.phpunit.de/coverage/1.0',
+            Facade::XML_NAMESPACE,
             'classes',
         );
 
         $this->traitsNode = $dom->createElementNS(
-            'https://schema.phpunit.de/coverage/1.0',
+            Facade::XML_NAMESPACE,
             'traits',
         );
 
@@ -61,11 +58,6 @@ final class Totals
         $container->appendChild($this->functionsNode);
         $container->appendChild($this->classesNode);
         $container->appendChild($this->traitsNode);
-    }
-
-    public function container(): DOMNode
-    {
-        return $this->container;
     }
 
     public function setNumLines(int $loc, int $cloc, int $ncloc, int $executable, int $executed): void

@@ -39,7 +39,6 @@ class ExceptionHandlerFake implements ExceptionHandler, Fake
      *
      * @param  \Illuminate\Contracts\Debug\ExceptionHandler  $handler
      * @param  list<class-string<\Throwable>>  $exceptions
-     * @return void
      */
     public function __construct(
         protected ExceptionHandler $handler,
@@ -114,7 +113,7 @@ class ExceptionHandlerFake implements ExceptionHandler, Fake
     {
         try {
             $this->assertReported($exception);
-        } catch (ExpectationFailedException $e) {
+        } catch (ExpectationFailedException) {
             return;
         }
 
@@ -247,6 +246,16 @@ class ExceptionHandlerFake implements ExceptionHandler, Fake
         }
 
         return $this;
+    }
+
+    /**
+     * Get the exceptions that have been reported.
+     *
+     * @return list<\Throwable>
+     */
+    public function reported()
+    {
+        return $this->reported;
     }
 
     /**

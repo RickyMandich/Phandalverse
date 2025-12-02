@@ -2,13 +2,15 @@
 
 namespace Illuminate\Database\Schema\Grammars;
 
-use BackedEnum;
 use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Concerns\CompilesJsonPaths;
 use Illuminate\Database\Grammar as BaseGrammar;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Fluent;
 use RuntimeException;
+use UnitEnum;
+
+use function Illuminate\Support\enum_value;
 
 abstract class Grammar extends BaseGrammar
 {
@@ -169,7 +171,7 @@ abstract class Grammar extends BaseGrammar
      *
      * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
-     * @return array|string
+     * @return list<string>|string
      */
     public function compileRenameColumn(Blueprint $blueprint, Fluent $command)
     {
@@ -185,7 +187,7 @@ abstract class Grammar extends BaseGrammar
      *
      * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
-     * @return array|string
+     * @return list<string>|string
      *
      * @throws \RuntimeException
      */
@@ -387,7 +389,7 @@ abstract class Grammar extends BaseGrammar
         $commands = $this->getCommandsByName($blueprint, $name);
 
         if (count($commands) > 0) {
-            return reset($commands);
+            return array_first($commands);
         }
     }
 
@@ -427,8 +429,8 @@ abstract class Grammar extends BaseGrammar
      * Add a prefix to an array of values.
      *
      * @param  string  $prefix
-     * @param  array  $values
-     * @return array
+     * @param  array<string>  $values
+     * @return array<string>
      */
     public function prefixArray($prefix, array $values)
     {
@@ -477,13 +479,13 @@ abstract class Grammar extends BaseGrammar
             return $this->getValue($value);
         }
 
-        if ($value instanceof BackedEnum) {
-            return "'{$value->value}'";
+        if ($value instanceof UnitEnum) {
+            return "'".str_replace("'", "''", enum_value($value))."'";
         }
 
         return is_bool($value)
-                    ? "'".(int) $value."'"
-                    : "'".(string) $value."'";
+            ? "'".(int) $value."'"
+            : "'".str_replace("'", "''", $value)."'";
     }
 
     /**

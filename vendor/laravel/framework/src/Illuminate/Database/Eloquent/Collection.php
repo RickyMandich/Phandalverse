@@ -2,6 +2,7 @@
 
 namespace Illuminate\Database\Eloquent;
 
+use Closure;
 use Illuminate\Contracts\Queue\QueueableCollection;
 use Illuminate\Contracts\Queue\QueueableEntity;
 use Illuminate\Contracts\Support\Arrayable;
@@ -221,31 +222,60 @@ class Collection extends BaseCollection implements QueueableCollection
             $relations = func_get_args();
         }
 
-        foreach ($relations as $key => $value) {
-            if (is_numeric($key)) {
-                $key = $value;
+        if ($this->isNotEmpty()) {
+            $query = $this->first()->newQueryWithoutRelationships()->with($relations);
+
+            foreach ($query->getEagerLoads() as $key => $value) {
+                $segments = explode('.', explode(':', $key)[0]);
+
+                if (str_contains($key, ':')) {
+                    $segments[count($segments) - 1] .= ':'.explode(':', $key)[1];
+                }
+
+                $path = [];
+
+                foreach ($segments as $segment) {
+                    $path[] = [$segment => $segment];
+                }
+
+                if (is_callable($value)) {
+                    $path[count($segments) - 1][array_last($segments)] = $value;
+                }
+
+                $this->loadMissingRelation($this, $path);
             }
-
-            $segments = explode('.', explode(':', $key)[0]);
-
-            if (str_contains($key, ':')) {
-                $segments[count($segments) - 1] .= ':'.explode(':', $key)[1];
-            }
-
-            $path = [];
-
-            foreach ($segments as $segment) {
-                $path[] = [$segment => $segment];
-            }
-
-            if (is_callable($value)) {
-                $path[count($segments) - 1][end($segments)] = $value;
-            }
-
-            $this->loadMissingRelation($this, $path);
         }
 
         return $this;
+    }
+
+    /**
+     * Load a relationship path for models of the given type if it is not already eager loaded.
+     *
+     * @param  array<int, <string, class-string>>  $tuples
+     * @return void
+     */
+    public function loadMissingRelationshipChain(array $tuples)
+    {
+        [$relation, $class] = array_shift($tuples);
+
+        $this->filter(function ($model) use ($relation, $class) {
+            return ! is_null($model) &&
+                ! $model->relationLoaded($relation) &&
+                $model::class === $class;
+        })->load($relation);
+
+        if (empty($tuples)) {
+            return;
+        }
+
+        $models = $this->pluck($relation)->whereNotNull();
+
+        if ($models->first() instanceof BaseCollection) {
+            $models = $models->collapse();
+        }
+
+        (new static($models))->loadMissingRelationshipChain($tuples);
     }
 
     /**
@@ -584,6 +614,27 @@ class Collection extends BaseCollection implements QueueableCollection
     }
 
     /**
+     * Sets the appends on every element of the collection, overwriting the existing appends for each.
+     *
+     * @param  array<array-key, mixed>  $appends
+     * @return $this
+     */
+    public function setAppends(array $appends)
+    {
+        return $this->each->setAppends($appends);
+    }
+
+    /**
+     * Remove appended properties from every element in the collection.
+     *
+     * @return $this
+     */
+    public function withoutAppends()
+    {
+        return $this->setAppends([]);
+    }
+
+    /**
      * Get a dictionary keyed by primary keys.
      *
      * @param  iterable<array-key, TModel>|null  $items
@@ -676,20 +727,20 @@ class Collection extends BaseCollection implements QueueableCollection
      * Partition the collection into two arrays using the given callback or key.
      *
      * @param  (callable(TModel, TKey): bool)|TModel|string  $key
-     * @param  TModel|string|null  $operator
-     * @param  TModel|null  $value
+     * @param  mixed  $operator
+     * @param  mixed  $value
      * @return \Illuminate\Support\Collection<int<0, 1>, static<TKey, TModel>>
      */
     public function partition($key, $operator = null, $value = null)
     {
-        return parent::partition($key, $operator, $value)->toBase();
+        return parent::partition(...func_get_args())->toBase();
     }
 
     /**
      * Get an array with the values of a given key.
      *
-     * @param  string|array<array-key, string>|null  $value
-     * @param  string|null  $key
+     * @param  string|array<array-key, string>|Closure|null  $value
+     * @param  string|Closure|null  $key
      * @return \Illuminate\Support\Collection<array-key, mixed>
      */
     public function pluck($value, $key = null)
@@ -719,6 +770,24 @@ class Collection extends BaseCollection implements QueueableCollection
     protected function duplicateComparator($strict)
     {
         return fn ($a, $b) => $a->is($b);
+    }
+
+    /**
+     * Enable relationship autoloading for all models in this collection.
+     *
+     * @return $this
+     */
+    public function withRelationshipAutoloading()
+    {
+        $callback = fn ($tuples) => $this->loadMissingRelationshipChain($tuples);
+
+        foreach ($this as $model) {
+            if (! $model->hasRelationAutoloadCallback()) {
+                $model->autoloadRelationsUsing($callback, $this);
+            }
+        }
+
+        return $this;
     }
 
     /**
@@ -754,8 +823,8 @@ class Collection extends BaseCollection implements QueueableCollection
     protected function getQueueableModelClass($model)
     {
         return method_exists($model, 'getQueueableClassName')
-                ? $model->getQueueableClassName()
-                : get_class($model);
+            ? $model->getQueueableClassName()
+            : get_class($model);
     }
 
     /**
@@ -770,8 +839,8 @@ class Collection extends BaseCollection implements QueueableCollection
         }
 
         return $this->first() instanceof QueueableEntity
-                    ? $this->map->getQueueableId()->all()
-                    : $this->modelKeys();
+            ? $this->map->getQueueableId()->all()
+            : $this->modelKeys();
     }
 
     /**

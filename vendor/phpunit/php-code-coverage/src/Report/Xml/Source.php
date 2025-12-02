@@ -17,9 +17,9 @@ use TheSeer\Tokenizer\XMLSerializer;
 /**
  * @internal This class is not covered by the backward compatibility promise for phpunit/php-code-coverage
  */
-final class Source
+final readonly class Source
 {
-    private readonly DOMElement $context;
+    private DOMElement $context;
 
     public function __construct(DOMElement $context)
     {
@@ -31,7 +31,7 @@ final class Source
         $context = $this->context;
 
         $tokens = (new Tokenizer)->parse($source);
-        $srcDom = (new XMLSerializer(new NamespaceUri($context->namespaceURI)))->toDom($tokens);
+        $srcDom = (new XMLSerializer(new NamespaceUri(Facade::XML_NAMESPACE)))->toDom($tokens);
 
         $context->parentNode->replaceChild(
             $context->ownerDocument->importNode($srcDom->documentElement, true),
