@@ -1,6 +1,6 @@
 <?php
 
-use app\Http\Controllers\VaultController;
+use App\Http\Controllers\VaultController;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
