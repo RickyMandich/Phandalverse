@@ -12,4 +12,4 @@ Route::get('/test', function(){
     return view('layouts.app');
 })->name('test');
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
