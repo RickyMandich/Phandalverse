@@ -2,7 +2,7 @@ RewriteEngine On
 RewriteBase /
 
 # Regola di riscrittura generale
-RewriteRule ^(.*)$ public/$1 [L]
+# RewriteRule ^(.*)$ public/$1 [L]
 
 # Specifica la versione di PHP
 AddHandler av-php84 .php
