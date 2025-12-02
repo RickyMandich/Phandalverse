@@ -1,15 +1,7 @@
 RewriteEngine On
 RewriteBase /
 
-# Eccezioni per i file nella root
-RewriteCond %{REQUEST_URI} ^/collezione\.json$ [OR]
-RewriteCond %{REQUEST_URI} ^/README\.md$ [OR]
-RewriteCond %{REQUEST_URI} ^/WebScrapingStarWars\.jar$
-RewriteRule ^ - [L]
-
-# Reindirizza verso public/ solo se il file/directory non esiste nella root
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+# Reindirizza tutte le richieste verso public/
 RewriteCond %{REQUEST_URI} !^/public/
 RewriteRule ^(.*)$ public/$1 [L]
 
