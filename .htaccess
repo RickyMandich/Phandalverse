@@ -10,5 +10,5 @@
 # # Regola di riscrittura generale
 # RewriteRule ^(.*)$ public/$1 [L]
 
-# # Specifica la versione di PHP
-# AddHandler av-php82 .php
+# Specifica la versione di PHP
+AddHandler av-php82 .php
