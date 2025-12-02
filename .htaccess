@@ -1,10 +1,8 @@
 RewriteEngine On
 RewriteBase /
 
-# Reindirizza tutte le richieste verso public/
-RewriteCond %{REQUEST_URI} !^/public/
+# Regola di riscrittura generale
 RewriteRule ^(.*)$ public/$1 [L]
 
 # Specifica la versione di PHP
 AddHandler av-php84 .php
-
