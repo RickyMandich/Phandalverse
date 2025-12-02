@@ -4,11 +4,7 @@ namespace Illuminate\Broadcasting\Broadcasters;
 
 use Illuminate\Broadcasting\BroadcastException;
 use Illuminate\Contracts\Redis\Factory as Redis;
-use Illuminate\Redis\Connections\PhpRedisClusterConnection;
-use Illuminate\Redis\Connections\PredisClusterConnection;
-use Illuminate\Redis\Connections\PredisConnection;
 use Illuminate\Support\Arr;
-use Predis\Connection\Cluster\RedisCluster;
 use Predis\Connection\ConnectionException;
 use RedisException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -44,6 +40,7 @@ class RedisBroadcaster extends Broadcaster
      * @param  \Illuminate\Contracts\Redis\Factory  $redis
      * @param  string|null  $connection
      * @param  string  $prefix
+     * @return void
      */
     public function __construct(Redis $redis, $connection = null, $prefix = '')
     {
@@ -95,8 +92,8 @@ class RedisBroadcaster extends Broadcaster
         $user = $this->retrieveUser($request, $channelName);
 
         $broadcastIdentifier = method_exists($user, 'getAuthIdentifierForBroadcasting')
-            ? $user->getAuthIdentifierForBroadcasting()
-            : $user->getAuthIdentifier();
+                        ? $user->getAuthIdentifierForBroadcasting()
+                        : $user->getAuthIdentifier();
 
         return json_encode(['channel_data' => [
             'user_id' => $broadcastIdentifier,
@@ -129,30 +126,10 @@ class RedisBroadcaster extends Broadcaster
         ]);
 
         try {
-            if ($connection instanceof PhpRedisClusterConnection) {
-                foreach ($channels as $channel) {
-                    $connection->publish($channel, $payload);
-                }
-            } elseif ($connection instanceof PredisClusterConnection &&
-                $connection->client()->getConnection() instanceof RedisCluster) {
-                $randomClusterNodeConnection = new PredisConnection(
-                    $connection->client()->getClientBy('slot', mt_rand(0, 16383))
-                );
-
-                if ($events = $connection->getEventDispatcher()) {
-                    $randomClusterNodeConnection->setEventDispatcher($events);
-                }
-
-                $randomClusterNodeConnection->eval(
-                    $this->broadcastMultipleChannelsScript(),
-                    0, $payload, ...$this->formatChannels($channels)
-                );
-            } else {
-                $connection->eval(
-                    $this->broadcastMultipleChannelsScript(),
-                    0, $payload, ...$this->formatChannels($channels)
-                );
-            }
+            $connection->eval(
+                $this->broadcastMultipleChannelsScript(),
+                0, $payload, ...$this->formatChannels($channels)
+            );
         } catch (ConnectionException|RedisException $e) {
             throw new BroadcastException(
                 sprintf('Redis error: %s.', $e->getMessage())

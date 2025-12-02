@@ -5,11 +5,7 @@ namespace PhpParser\Node\Scalar;
 require __DIR__ . '/Int_.php';
 
 if (false) {
-    /**
-     * For classmap-authoritative support.
-     *
-     * @deprecated use \PhpParser\Node\Scalar\Int_ instead.
-     */
+    // For classmap-authoritative support.
     class LNumber extends Int_ {
     }
 }

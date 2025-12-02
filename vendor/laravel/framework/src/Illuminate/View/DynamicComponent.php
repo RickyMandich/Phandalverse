@@ -2,13 +2,10 @@
 
 namespace Illuminate\View;
 
-use BackedEnum;
 use Illuminate\Container\Container;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\View\Compilers\ComponentTagCompiler;
-
-use function Illuminate\Support\enum_value;
 
 class DynamicComponent extends Component
 {
@@ -36,11 +33,12 @@ class DynamicComponent extends Component
     /**
      * Create a new component instance.
      *
-     * @param  \BackedEnum|string  $component
+     * @param  string  $component
+     * @return void
      */
-    public function __construct(BackedEnum|string $component)
+    public function __construct(string $component)
     {
-        $this->component = (string) enum_value($component);
+        $this->component = $component;
     }
 
     /**

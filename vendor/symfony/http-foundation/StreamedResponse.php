@@ -14,7 +14,7 @@ namespace Symfony\Component\HttpFoundation;
 /**
  * StreamedResponse represents a streamed HTTP response.
  *
- * A StreamedResponse uses a callback or an iterable of strings for its content.
+ * A StreamedResponse uses a callback for its content.
  *
  * The callback should use the standard PHP functions like echo
  * to stream the response back to the client. The flush() function
@@ -32,36 +32,17 @@ class StreamedResponse extends Response
     private bool $headersSent = false;
 
     /**
-     * @param callable|iterable<string>|null $callbackOrChunks
-     * @param int                            $status           The HTTP status code (200 "OK" by default)
+     * @param int $status The HTTP status code (200 "OK" by default)
      */
-    public function __construct(callable|iterable|null $callbackOrChunks = null, int $status = 200, array $headers = [])
+    public function __construct(?callable $callback = null, int $status = 200, array $headers = [])
     {
         parent::__construct(null, $status, $headers);
 
-        if (\is_callable($callbackOrChunks)) {
-            $this->setCallback($callbackOrChunks);
-        } elseif ($callbackOrChunks) {
-            $this->setChunks($callbackOrChunks);
+        if (null !== $callback) {
+            $this->setCallback($callback);
         }
         $this->streamed = false;
         $this->headersSent = false;
-    }
-
-    /**
-     * @param iterable<string> $chunks
-     */
-    public function setChunks(iterable $chunks): static
-    {
-        $this->callback = static function () use ($chunks): void {
-            foreach ($chunks as $chunk) {
-                echo $chunk;
-                @ob_flush();
-                flush();
-            }
-        };
-
-        return $this;
     }
 
     /**

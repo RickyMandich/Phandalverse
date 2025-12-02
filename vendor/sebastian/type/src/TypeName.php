@@ -48,17 +48,13 @@ final readonly class TypeName
     }
 
     /**
-     * @param ReflectionClass<object> $type
+     * @phpstan-ignore missingType.generics
      */
     public static function fromReflection(ReflectionClass $type): self
     {
-        $simpleName = $type->getShortName();
-
-        assert($simpleName !== '');
-
         return new self(
             $type->getNamespaceName(),
-            $simpleName,
+            $type->getShortName(),
         );
     }
 

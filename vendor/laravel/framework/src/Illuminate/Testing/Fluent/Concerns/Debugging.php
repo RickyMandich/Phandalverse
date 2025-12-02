@@ -14,7 +14,7 @@ trait Debugging
      * @param  string|null  $prop
      * @return $this
      */
-    public function dump(?string $prop = null): static
+    public function dump(?string $prop = null): self
     {
         dump($this->prop($prop));
 

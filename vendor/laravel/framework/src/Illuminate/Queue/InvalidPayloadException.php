@@ -18,6 +18,7 @@ class InvalidPayloadException extends InvalidArgumentException
      *
      * @param  string|null  $message
      * @param  mixed  $value
+     * @return void
      */
     public function __construct($message = null, $value = null)
     {

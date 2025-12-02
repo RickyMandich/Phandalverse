@@ -36,6 +36,7 @@ class MailChannel
      *
      * @param  \Illuminate\Contracts\Mail\Factory  $mailer
      * @param  \Illuminate\Mail\Markdown  $markdown
+     * @return void
      */
     public function __construct(MailFactory $mailer, Markdown $markdown)
     {
@@ -262,13 +263,11 @@ class MailChannel
             $recipients = [$recipients];
         }
 
-        return (new Collection($recipients))
-            ->mapWithKeys(function ($recipient, $email) {
-                return is_numeric($email)
+        return (new Collection($recipients))->mapWithKeys(function ($recipient, $email) {
+            return is_numeric($email)
                     ? [$email => (is_string($recipient) ? $recipient : $recipient->email)]
                     : [$email => $recipient];
-            })
-            ->all();
+        })->all();
     }
 
     /**

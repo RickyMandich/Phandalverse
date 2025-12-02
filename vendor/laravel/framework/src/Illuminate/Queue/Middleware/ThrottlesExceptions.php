@@ -58,20 +58,6 @@ class ThrottlesExceptions
     protected $whenCallback;
 
     /**
-     * The callbacks that determine if the job should be deleted.
-     *
-     * @var callable[]
-     */
-    protected array $deleteWhenCallbacks = [];
-
-    /**
-     * The callbacks that determine if the job should be failed.
-     *
-     * @var callable[]
-     */
-    protected array $failWhenCallbacks = [];
-
-    /**
      * The prefix of the rate limiter key.
      *
      * @var string
@@ -90,6 +76,7 @@ class ThrottlesExceptions
      *
      * @param  int  $maxAttempts
      * @param  int  $decaySeconds
+     * @return void
      */
     public function __construct($maxAttempts = 10, $decaySeconds = 600)
     {
@@ -117,20 +104,12 @@ class ThrottlesExceptions
 
             $this->limiter->clear($jobKey);
         } catch (Throwable $throwable) {
-            if ($this->whenCallback && ! call_user_func($this->whenCallback, $throwable, $this->limiter)) {
+            if ($this->whenCallback && ! call_user_func($this->whenCallback, $throwable)) {
                 throw $throwable;
             }
 
-            if ($this->reportCallback && call_user_func($this->reportCallback, $throwable, $this->limiter)) {
+            if ($this->reportCallback && call_user_func($this->reportCallback, $throwable)) {
                 report($throwable);
-            }
-
-            if ($this->shouldDelete($throwable)) {
-                return $job->delete();
-            }
-
-            if ($this->shouldFail($throwable)) {
-                return $job->fail($throwable);
             }
 
             $this->limiter->hit($jobKey, $this->decaySeconds);
@@ -150,70 +129,6 @@ class ThrottlesExceptions
         $this->whenCallback = $callback;
 
         return $this;
-    }
-
-    /**
-     * Add a callback that should determine if the job should be deleted.
-     *
-     * @param  callable|string  $callback
-     * @return $this
-     */
-    public function deleteWhen(callable|string $callback)
-    {
-        $this->deleteWhenCallbacks[] = is_string($callback)
-            ? fn (Throwable $e) => $e instanceof $callback
-            : $callback;
-
-        return $this;
-    }
-
-    /**
-     * Add a callback that should determine if the job should be failed.
-     *
-     * @param  callable|string  $callback
-     * @return $this
-     */
-    public function failWhen(callable|string $callback)
-    {
-        $this->failWhenCallbacks[] = is_string($callback)
-            ? fn (Throwable $e) => $e instanceof $callback
-            : $callback;
-
-        return $this;
-    }
-
-    /**
-     * Run the skip / delete callbacks to determine if the job should be deleted for the given exception.
-     *
-     * @param  Throwable  $throwable
-     * @return bool
-     */
-    protected function shouldDelete(Throwable $throwable): bool
-    {
-        foreach ($this->deleteWhenCallbacks as $callback) {
-            if (call_user_func($callback, $throwable)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Run the skip / fail callbacks to determine if the job should be failed for the given exception.
-     *
-     * @param  Throwable  $throwable
-     * @return bool
-     */
-    protected function shouldFail(Throwable $throwable): bool
-    {
-        foreach ($this->failWhenCallbacks as $callback) {
-            if (call_user_func($callback, $throwable)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**

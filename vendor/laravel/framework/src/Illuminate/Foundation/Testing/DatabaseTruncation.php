@@ -5,7 +5,6 @@ namespace Illuminate\Foundation\Testing;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Foundation\Testing\Traits\CanConfigureMigrationCommands;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 trait DatabaseTruncation
@@ -121,7 +120,7 @@ trait DatabaseTruncation
 
         $schema = $connection->getSchemaBuilder();
 
-        return static::$allTables[$name] = Arr::from($schema->getTables($schema->getCurrentSchemaListing()));
+        return static::$allTables[$name] = (new Collection($schema->getTables($schema->getCurrentSchemaListing())))->all();
     }
 
     /**
@@ -142,8 +141,7 @@ trait DatabaseTruncation
     protected function connectionsToTruncate(): array
     {
         return property_exists($this, 'connectionsToTruncate')
-            ? $this->connectionsToTruncate
-            : [null];
+                    ? $this->connectionsToTruncate : [null];
     }
 
     /**

@@ -54,6 +54,7 @@ class CompiledRouteCollection extends AbstractRouteCollection
      *
      * @param  array  $compiled
      * @param  array  $attributes
+     * @return void
      */
     public function __construct(array $compiled, array $attributes)
     {

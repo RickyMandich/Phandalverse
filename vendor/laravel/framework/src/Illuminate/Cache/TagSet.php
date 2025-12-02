@@ -25,6 +25,7 @@ class TagSet
      *
      * @param  \Illuminate\Contracts\Cache\Store  $store
      * @param  array  $names
+     * @return void
      */
     public function __construct(Store $store, array $names = [])
     {

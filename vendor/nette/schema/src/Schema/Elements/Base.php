@@ -12,7 +12,6 @@ namespace Nette\Schema\Elements;
 use Nette;
 use Nette\Schema\Context;
 use Nette\Schema\Helpers;
-use function count, is_string;
 
 
 /**

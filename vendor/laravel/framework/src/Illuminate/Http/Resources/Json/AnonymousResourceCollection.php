@@ -23,6 +23,7 @@ class AnonymousResourceCollection extends ResourceCollection
      *
      * @param  mixed  $resource
      * @param  string  $collects
+     * @return void
      */
     public function __construct($resource, $collects)
     {

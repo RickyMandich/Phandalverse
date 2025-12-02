@@ -21,6 +21,7 @@ class HandlePrecognitiveRequests
      * Create a new middleware instance.
      *
      * @param  \Illuminate\Container\Container  $container
+     * @return void
      */
     public function __construct(Container $container)
     {

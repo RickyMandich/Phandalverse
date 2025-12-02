@@ -87,7 +87,7 @@ class LocalFilesystemAdapter extends FilesystemAdapter
     }
 
     /**
-     * Indicate that signed URLs should serve the corresponding files.
+     * Indiate that signed URLs should serve the corresponding files.
      *
      * @param  bool  $serve
      * @param  \Closure|null  $urlGeneratorResolver

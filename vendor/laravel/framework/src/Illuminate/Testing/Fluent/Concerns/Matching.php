@@ -18,7 +18,7 @@ trait Matching
      * @param  mixed|\Closure  $expected
      * @return $this
      */
-    public function where(string $key, $expected): static
+    public function where(string $key, $expected): self
     {
         $this->has($key);
 
@@ -56,7 +56,7 @@ trait Matching
      * @param  mixed|\Closure  $expected
      * @return $this
      */
-    public function whereNot(string $key, $expected): static
+    public function whereNot(string $key, $expected): self
     {
         $this->has($key);
 
@@ -93,58 +93,12 @@ trait Matching
     }
 
     /**
-     * Asserts that the property is null.
-     *
-     * @param  string  $key
-     * @return $this
-     */
-    public function whereNull(string $key): static
-    {
-        $this->has($key);
-
-        $actual = $this->prop($key);
-
-        PHPUnit::assertNull(
-            $actual,
-            sprintf(
-                'Property [%s] should be null.',
-                $this->dotPath($key),
-            )
-        );
-
-        return $this;
-    }
-
-    /**
-     * Asserts that the property is not null.
-     *
-     * @param  string  $key
-     * @return $this
-     */
-    public function whereNotNull(string $key): static
-    {
-        $this->has($key);
-
-        $actual = $this->prop($key);
-
-        PHPUnit::assertNotNull(
-            $actual,
-            sprintf(
-                'Property [%s] should not be null.',
-                $this->dotPath($key),
-            )
-        );
-
-        return $this;
-    }
-
-    /**
      * Asserts that all properties match their expected values.
      *
      * @param  array  $bindings
      * @return $this
      */
-    public function whereAll(array $bindings): static
+    public function whereAll(array $bindings): self
     {
         foreach ($bindings as $key => $value) {
             $this->where($key, $value);
@@ -160,7 +114,7 @@ trait Matching
      * @param  string|array  $expected
      * @return $this
      */
-    public function whereType(string $key, $expected): static
+    public function whereType(string $key, $expected): self
     {
         $this->has($key);
 
@@ -185,7 +139,7 @@ trait Matching
      * @param  array  $bindings
      * @return $this
      */
-    public function whereAllType(array $bindings): static
+    public function whereAllType(array $bindings): self
     {
         foreach ($bindings as $key => $value) {
             $this->whereType($key, $value);

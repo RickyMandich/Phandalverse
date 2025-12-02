@@ -51,6 +51,7 @@ class WithoutOverlapping
      * @param  string  $key
      * @param  \DateTimeInterface|int|null  $releaseAfter
      * @param  \DateTimeInterface|int  $expiresAfter
+     * @return void
      */
     public function __construct($key = '', $releaseAfter = 0, $expiresAfter = 0)
     {

@@ -43,7 +43,6 @@ class TraceableEventDispatcher implements EventDispatcherInterface, ResetInterfa
         protected Stopwatch $stopwatch,
         protected ?LoggerInterface $logger = null,
         private ?RequestStack $requestStack = null,
-        protected readonly ?\Closure $disabled = null,
     ) {
     }
 
@@ -104,9 +103,6 @@ class TraceableEventDispatcher implements EventDispatcherInterface, ResetInterfa
 
     public function dispatch(object $event, ?string $eventName = null): object
     {
-        if ($this->disabled?->__invoke()) {
-            return $this->dispatcher->dispatch($event, $eventName);
-        }
         $eventName ??= $event::class;
 
         $this->callStack ??= new \SplObjectStorage();
@@ -259,7 +255,7 @@ class TraceableEventDispatcher implements EventDispatcherInterface, ResetInterfa
             $this->wrappedListeners[$eventName][] = $wrappedListener;
             $this->dispatcher->removeListener($eventName, $listener);
             $this->dispatcher->addListener($eventName, $wrappedListener, $priority);
-            $this->callStack[$wrappedListener] = [$eventName, $this->currentRequestHash];
+            $this->callStack->attach($wrappedListener, [$eventName, $this->currentRequestHash]);
         }
     }
 
@@ -283,7 +279,7 @@ class TraceableEventDispatcher implements EventDispatcherInterface, ResetInterfa
             if ($listener->wasCalled()) {
                 $this->logger?->debug('Notified event "{event}" to listener "{listener}".', $context);
             } else {
-                unset($this->callStack[$listener]);
+                $this->callStack->detach($listener);
             }
 
             if (null !== $this->logger && $skipped) {

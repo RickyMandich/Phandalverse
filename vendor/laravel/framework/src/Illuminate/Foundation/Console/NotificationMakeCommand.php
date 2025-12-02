@@ -63,14 +63,8 @@ class NotificationMakeCommand extends GeneratorCommand
      */
     protected function writeMarkdownTemplate()
     {
-        $separator = '/';
-
-        if (windows_os()) {
-            $separator = '\\';
-        }
-
         $path = $this->viewPath(
-            str_replace('.', $separator, $this->option('markdown')).'.blade.php'
+            str_replace('.', '/', $this->option('markdown')).'.blade.php'
         );
 
         if (! $this->files->isDirectory(dirname($path))) {

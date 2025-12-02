@@ -18,6 +18,7 @@ class ProcessPoolResults implements ArrayAccess
      * Create a new process pool result set.
      *
      * @param  array  $results
+     * @return void
      */
     public function __construct(array $results)
     {

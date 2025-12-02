@@ -30,7 +30,7 @@ class Builder
     /**
      * The Blueprint resolver callback.
      *
-     * @var \Closure(\Illuminate\Database\Connection, string, \Closure|null): \Illuminate\Database\Schema\Blueprint
+     * @var \Closure
      */
     protected $resolver;
 
@@ -57,6 +57,7 @@ class Builder
      * Create a new database Schema manager.
      *
      * @param  \Illuminate\Database\Connection  $connection
+     * @return void
      */
     public function __construct(Connection $connection)
     {
@@ -149,7 +150,7 @@ class Builder
     /**
      * Get the schemas that belong to the connection.
      *
-     * @return list<array{name: string, path: string|null, default: bool}>
+     * @return array
      */
     public function getSchemas()
     {
@@ -208,7 +209,7 @@ class Builder
      * Get the tables that belong to the connection.
      *
      * @param  string|string[]|null  $schema
-     * @return list<array{name: string, schema: string|null, schema_qualified_name: string, size: int|null, comment: string|null, collation: string|null, engine: string|null}>
+     * @return array
      */
     public function getTables($schema = null)
     {
@@ -222,7 +223,7 @@ class Builder
      *
      * @param  string|string[]|null  $schema
      * @param  bool  $schemaQualified
-     * @return list<string>
+     * @return array
      */
     public function getTableListing($schema = null, $schemaQualified = true)
     {
@@ -236,7 +237,7 @@ class Builder
      * Get the views that belong to the connection.
      *
      * @param  string|string[]|null  $schema
-     * @return list<array{name: string, schema: string|null, schema_qualified_name: string, definition: string}>
+     * @return array
      */
     public function getViews($schema = null)
     {
@@ -249,7 +250,7 @@ class Builder
      * Get the user-defined types that belong to the connection.
      *
      * @param  string|string[]|null  $schema
-     * @return list<array{name: string, schema: string, type: string, type: string, category: string, implicit: bool}>
+     * @return array
      */
     public function getTypes($schema = null)
     {
@@ -276,7 +277,7 @@ class Builder
      * Determine if the given table has given columns.
      *
      * @param  string  $table
-     * @param  array<string>  $columns
+     * @param  array  $columns
      * @return bool
      */
     public function hasColumns($table, array $columns)
@@ -347,7 +348,7 @@ class Builder
      * Get the column listing for a given table.
      *
      * @param  string  $table
-     * @return list<string>
+     * @return array
      */
     public function getColumnListing($table)
     {
@@ -358,7 +359,7 @@ class Builder
      * Get the columns for a given table.
      *
      * @param  string  $table
-     * @return list<array{name: string, type: string, type_name: string, nullable: bool, default: mixed, auto_increment: bool, comment: string|null, generation: array{type: string, expression: string|null}|null}>
+     * @return array
      */
     public function getColumns($table)
     {
@@ -377,7 +378,7 @@ class Builder
      * Get the indexes for a given table.
      *
      * @param  string  $table
-     * @return list<array{name: string, columns: list<string>, type: string, unique: bool, primary: bool}>
+     * @return array
      */
     public function getIndexes($table)
     {
@@ -396,7 +397,7 @@ class Builder
      * Get the names of the indexes for a given table.
      *
      * @param  string  $table
-     * @return list<string>
+     * @return array
      */
     public function getIndexListing($table)
     {
@@ -506,7 +507,7 @@ class Builder
      * Drop columns from a table schema.
      *
      * @param  string  $table
-     * @param  string|array<string>  $columns
+     * @param  string|array  $columns
      * @return void
      */
     public function dropColumns($table, $columns)
@@ -698,7 +699,7 @@ class Builder
     /**
      * Set the Schema Blueprint resolver callback.
      *
-     * @param  \Closure(\Illuminate\Database\Connection, string, \Closure|null): \Illuminate\Database\Schema\Blueprint  $resolver
+     * @param  \Closure  $resolver
      * @return void
      */
     public function blueprintResolver(Closure $resolver)

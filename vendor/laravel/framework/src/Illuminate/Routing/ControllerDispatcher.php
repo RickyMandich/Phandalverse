@@ -21,6 +21,7 @@ class ControllerDispatcher implements ControllerDispatcherContract
      * Create a new controller dispatcher instance.
      *
      * @param  \Illuminate\Container\Container  $container
+     * @return void
      */
     public function __construct(Container $container)
     {
@@ -74,9 +75,8 @@ class ControllerDispatcher implements ControllerDispatcherContract
             return [];
         }
 
-        return (new Collection($controller->getMiddleware()))
-            ->reject(fn ($data) => static::methodExcludedByOptions($method, $data['options']))
-            ->pluck('middleware')
-            ->all();
+        return (new Collection($controller->getMiddleware()))->reject(function ($data) use ($method) {
+            return static::methodExcludedByOptions($method, $data['options']);
+        })->pluck('middleware')->all();
     }
 }

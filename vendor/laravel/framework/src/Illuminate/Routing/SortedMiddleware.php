@@ -11,6 +11,7 @@ class SortedMiddleware extends Collection
      *
      * @param  array  $priorityMap
      * @param  \Illuminate\Support\Collection|array  $middlewares
+     * @return void
      */
     public function __construct(array $priorityMap, $middlewares)
     {

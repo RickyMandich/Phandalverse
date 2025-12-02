@@ -50,20 +50,12 @@ class ThrottlesExceptionsWithRedis extends ThrottlesExceptions
 
             $this->limiter->clear();
         } catch (Throwable $throwable) {
-            if ($this->whenCallback && ! call_user_func($this->whenCallback, $throwable, $this->limiter)) {
+            if ($this->whenCallback && ! call_user_func($this->whenCallback, $throwable)) {
                 throw $throwable;
             }
 
-            if ($this->reportCallback && call_user_func($this->reportCallback, $throwable, $this->limiter)) {
+            if ($this->reportCallback && call_user_func($this->reportCallback, $throwable)) {
                 report($throwable);
-            }
-
-            if ($this->shouldDelete($throwable)) {
-                return $job->delete();
-            }
-
-            if ($this->shouldFail($throwable)) {
-                return $job->fail($throwable);
             }
 
             $this->limiter->acquire();

@@ -67,14 +67,8 @@ class MailMakeCommand extends GeneratorCommand
      */
     protected function writeMarkdownTemplate()
     {
-        $separator = '/';
-
-        if (windows_os()) {
-            $separator = '\\';
-        }
-
         $path = $this->viewPath(
-            str_replace('.', $separator, $this->getView()).'.blade.php'
+            str_replace('.', '/', $this->getView()).'.blade.php'
         );
 
         if ($this->files->exists($path)) {
@@ -95,14 +89,8 @@ class MailMakeCommand extends GeneratorCommand
      */
     protected function writeView()
     {
-        $separator = '/';
-
-        if (windows_os()) {
-            $separator = '\\';
-        }
-
         $path = $this->viewPath(
-            str_replace('.', $separator, $this->getView()).'.blade.php'
+            str_replace('.', '/', $this->getView()).'.blade.php'
         );
 
         if ($this->files->exists($path)) {

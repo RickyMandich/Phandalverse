@@ -17,6 +17,7 @@ class PublishingStubs
      * Create a new event instance.
      *
      * @param  array  $stubs
+     * @return void
      */
     public function __construct(array $stubs)
     {

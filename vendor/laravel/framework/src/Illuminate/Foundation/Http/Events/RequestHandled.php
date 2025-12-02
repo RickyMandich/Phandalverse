@@ -23,6 +23,7 @@ class RequestHandled
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \Illuminate\Http\Response  $response
+     * @return void
      */
     public function __construct($request, $response)
     {

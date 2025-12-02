@@ -12,6 +12,7 @@ class ScheduledTaskFailed
      *
      * @param  \Illuminate\Console\Scheduling\Event  $task  The scheduled event that failed.
      * @param  \Throwable  $exception  The exception that was thrown.
+     * @return void
      */
     public function __construct(
         public Event $task,

@@ -35,6 +35,7 @@ class ThrottleRequestsWithRedis extends ThrottleRequests
      *
      * @param  \Illuminate\Cache\RateLimiter  $limiter
      * @param  \Illuminate\Contracts\Redis\Factory  $redis
+     * @return void
      */
     public function __construct(RateLimiter $limiter, Redis $redis)
     {

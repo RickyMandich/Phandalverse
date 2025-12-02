@@ -11,9 +11,6 @@
 
 namespace Symfony\Component\HttpFoundation\Session\Storage\Handler;
 
-use Doctrine\DBAL\Schema\Name\Identifier;
-use Doctrine\DBAL\Schema\Name\UnqualifiedName;
-use Doctrine\DBAL\Schema\PrimaryKeyConstraint;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Types\Types;
 
@@ -219,7 +216,7 @@ class PdoSessionHandler extends AbstractSessionHandler
                 $table->addColumn($this->timeCol, Types::INTEGER)->setNotnull(true);
                 break;
             case 'sqlsrv':
-                $table->addColumn($this->idCol, Types::STRING)->setLength(128)->setNotnull(true);
+                $table->addColumn($this->idCol, Types::TEXT)->setLength(128)->setNotnull(true);
                 $table->addColumn($this->dataCol, Types::BLOB)->setNotnull(true);
                 $table->addColumn($this->lifetimeCol, Types::INTEGER)->setUnsigned(true)->setNotnull(true);
                 $table->addColumn($this->timeCol, Types::INTEGER)->setUnsigned(true)->setNotnull(true);
@@ -227,13 +224,7 @@ class PdoSessionHandler extends AbstractSessionHandler
             default:
                 throw new \DomainException(\sprintf('Creating the session table is currently not implemented for PDO driver "%s".', $this->driver));
         }
-
-        if (class_exists(PrimaryKeyConstraint::class)) {
-            $table->addPrimaryKeyConstraint(new PrimaryKeyConstraint(null, [new UnqualifiedName(Identifier::unquoted($this->idCol))], true));
-        } else {
-            $table->setPrimaryKey([$this->idCol]);
-        }
-
+        $table->setPrimaryKey([$this->idCol]);
         $table->addIndex([$this->lifetimeCol], $this->lifetimeCol.'_idx');
     }
 

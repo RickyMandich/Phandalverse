@@ -34,7 +34,7 @@ class CachingIterator extends \CachingIterator implements \Countable
 	public function __construct(iterable|\stdClass $iterable)
 	{
 		$iterable = $iterable instanceof \stdClass
-			? new \ArrayIterator((array) $iterable)
+			? new \ArrayIterator($iterable)
 			: Nette\Utils\Iterables::toIterator($iterable);
 		parent::__construct($iterable, 0);
 	}

@@ -21,6 +21,7 @@ class SymfonySessionDecorator implements SessionInterface
      * Create a new session decorator.
      *
      * @param  \Illuminate\Contracts\Session\Session  $store
+     * @return void
      */
     public function __construct(Session $store)
     {
@@ -161,8 +162,6 @@ class SymfonySessionDecorator implements SessionInterface
 
     /**
      * {@inheritdoc}
-     *
-     * @throws \BadMethodCallException
      */
     public function registerBag(SessionBagInterface $bag): void
     {
@@ -171,8 +170,6 @@ class SymfonySessionDecorator implements SessionInterface
 
     /**
      * {@inheritdoc}
-     *
-     * @throws \BadMethodCallException
      */
     public function getBag(string $name): SessionBagInterface
     {
@@ -181,8 +178,6 @@ class SymfonySessionDecorator implements SessionInterface
 
     /**
      * {@inheritdoc}
-     *
-     * @throws \BadMethodCallException
      */
     public function getMetadataBag(): MetadataBag
     {

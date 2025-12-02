@@ -24,9 +24,6 @@ abstract class AbstractCloner implements ClonerInterface
     public static array $defaultCasters = [
         '__PHP_Incomplete_Class' => ['Symfony\Component\VarDumper\Caster\Caster', 'castPhpIncompleteClass'],
 
-        'AddressInfo' => ['Symfony\Component\VarDumper\Caster\AddressInfoCaster', 'castAddressInfo'],
-        'Socket' => ['Symfony\Component\VarDumper\Caster\SocketCaster', 'castSocket'],
-
         'Symfony\Component\VarDumper\Caster\CutStub' => ['Symfony\Component\VarDumper\Caster\StubCaster', 'castStub'],
         'Symfony\Component\VarDumper\Caster\CutArrayStub' => ['Symfony\Component\VarDumper\Caster\StubCaster', 'castCutArray'],
         'Symfony\Component\VarDumper\Caster\ConstStub' => ['Symfony\Component\VarDumper\Caster\StubCaster', 'castStub'],
@@ -58,25 +55,38 @@ abstract class AbstractCloner implements ClonerInterface
 
         'DOMException' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castException'],
         'Dom\Exception' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castException'],
-        'DOMStringList' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDom'],
-        'DOMNameList' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDom'],
+        'DOMStringList' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castLength'],
+        'DOMNameList' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castLength'],
         'DOMImplementation' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castImplementation'],
         'Dom\Implementation' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castImplementation'],
-        'DOMImplementationList' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDom'],
-        'DOMNode' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDom'],
-        'Dom\Node' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDom'],
-        'DOMNameSpaceNode' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDom'],
+        'DOMImplementationList' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castLength'],
+        'DOMNode' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castNode'],
+        'Dom\Node' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castNode'],
+        'DOMNameSpaceNode' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castNameSpaceNode'],
         'DOMDocument' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDocument'],
         'Dom\XMLDocument' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castXMLDocument'],
         'Dom\HTMLDocument' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castHTMLDocument'],
-        'DOMNodeList' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDom'],
-        'Dom\NodeList' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDom'],
-        'DOMNamedNodeMap' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDom'],
-        'Dom\DTDNamedNodeMap' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDom'],
-        'DOMXPath' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDom'],
-        'Dom\XPath' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDom'],
-        'Dom\HTMLCollection' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDom'],
-        'Dom\TokenList' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDom'],
+        'DOMNodeList' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castLength'],
+        'Dom\NodeList' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castLength'],
+        'DOMNamedNodeMap' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castLength'],
+        'Dom\DTDNamedNodeMap' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castLength'],
+        'DOMCharacterData' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castCharacterData'],
+        'Dom\CharacterData' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castCharacterData'],
+        'DOMAttr' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castAttr'],
+        'Dom\Attr' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castAttr'],
+        'DOMElement' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castElement'],
+        'Dom\Element' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castElement'],
+        'DOMText' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castText'],
+        'Dom\Text' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castText'],
+        'DOMDocumentType' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDocumentType'],
+        'Dom\DocumentType' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castDocumentType'],
+        'DOMNotation' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castNotation'],
+        'Dom\Notation' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castNotation'],
+        'DOMEntity' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castEntity'],
+        'Dom\Entity' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castEntity'],
+        'DOMProcessingInstruction' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castProcessingInstruction'],
+        'Dom\ProcessingInstruction' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castProcessingInstruction'],
+        'DOMXPath' => ['Symfony\Component\VarDumper\Caster\DOMCaster', 'castXPath'],
 
         'XMLReader' => ['Symfony\Component\VarDumper\Caster\XmlReaderCaster', 'castXmlReader'],
 
@@ -164,31 +174,29 @@ abstract class AbstractCloner implements ClonerInterface
 
         'mysqli_driver' => ['Symfony\Component\VarDumper\Caster\MysqliCaster', 'castMysqliDriver'],
 
-        'CurlHandle' => ['Symfony\Component\VarDumper\Caster\CurlCaster', 'castCurl'],
+        'CurlHandle' => ['Symfony\Component\VarDumper\Caster\ResourceCaster', 'castCurl'],
 
-        'Dba\Connection' => ['Symfony\Component\VarDumper\Caster\ResourceCaster', 'castDba'],
         ':dba' => ['Symfony\Component\VarDumper\Caster\ResourceCaster', 'castDba'],
         ':dba persistent' => ['Symfony\Component\VarDumper\Caster\ResourceCaster', 'castDba'],
 
-        'GdImage' => ['Symfony\Component\VarDumper\Caster\GdCaster', 'castGd'],
+        'GdImage' => ['Symfony\Component\VarDumper\Caster\ResourceCaster', 'castGd'],
+        ':gd' => ['Symfony\Component\VarDumper\Caster\ResourceCaster', 'castGd'],
 
-        'SQLite3Result' => ['Symfony\Component\VarDumper\Caster\SqliteCaster', 'castSqlite3Result'],
-
-        'PgSql\Lob' => ['Symfony\Component\VarDumper\Caster\PgSqlCaster', 'castLargeObject'],
-        'PgSql\Connection' => ['Symfony\Component\VarDumper\Caster\PgSqlCaster', 'castLink'],
-        'PgSql\Result' => ['Symfony\Component\VarDumper\Caster\PgSqlCaster', 'castResult'],
-
+        ':pgsql large object' => ['Symfony\Component\VarDumper\Caster\PgSqlCaster', 'castLargeObject'],
+        ':pgsql link' => ['Symfony\Component\VarDumper\Caster\PgSqlCaster', 'castLink'],
+        ':pgsql link persistent' => ['Symfony\Component\VarDumper\Caster\PgSqlCaster', 'castLink'],
+        ':pgsql result' => ['Symfony\Component\VarDumper\Caster\PgSqlCaster', 'castResult'],
         ':process' => ['Symfony\Component\VarDumper\Caster\ResourceCaster', 'castProcess'],
         ':stream' => ['Symfony\Component\VarDumper\Caster\ResourceCaster', 'castStream'],
 
-        'OpenSSLAsymmetricKey' => ['Symfony\Component\VarDumper\Caster\OpenSSLCaster', 'castOpensslAsymmetricKey'],
-        'OpenSSLCertificateSigningRequest' => ['Symfony\Component\VarDumper\Caster\OpenSSLCaster', 'castOpensslCsr'],
-        'OpenSSLCertificate' => ['Symfony\Component\VarDumper\Caster\OpenSSLCaster', 'castOpensslX509'],
+        'OpenSSLCertificate' => ['Symfony\Component\VarDumper\Caster\ResourceCaster', 'castOpensslX509'],
+        ':OpenSSL X.509' => ['Symfony\Component\VarDumper\Caster\ResourceCaster', 'castOpensslX509'],
 
         ':persistent stream' => ['Symfony\Component\VarDumper\Caster\ResourceCaster', 'castStream'],
         ':stream-context' => ['Symfony\Component\VarDumper\Caster\ResourceCaster', 'castStreamContext'],
 
         'XmlParser' => ['Symfony\Component\VarDumper\Caster\XmlResourceCaster', 'castXml'],
+        ':xml' => ['Symfony\Component\VarDumper\Caster\XmlResourceCaster', 'castXml'],
 
         'RdKafka' => ['Symfony\Component\VarDumper\Caster\RdKafkaCaster', 'castRdKafka'],
         'RdKafka\Conf' => ['Symfony\Component\VarDumper\Caster\RdKafkaCaster', 'castConf'],
@@ -236,33 +244,18 @@ abstract class AbstractCloner implements ClonerInterface
     /**
      * Adds casters for resources and objects.
      *
-     * Maps resources or object types to a callback.
-     * Use types as keys and callable casters as values.
-     * Prefix types with `::`,
-     * see e.g. self::$defaultCasters.
+     * Maps resources or objects types to a callback.
+     * Types are in the key, with a callable caster for value.
+     * Resource types are to be prefixed with a `:`,
+     * see e.g. static::$defaultCasters.
      *
-     * @param array<string, callable> $casters A map of casters
+     * @param callable[] $casters A map of casters
      */
     public function addCasters(array $casters): void
     {
         foreach ($casters as $type => $callback) {
             $this->casters[$type][] = $callback;
         }
-    }
-
-    /**
-     * Adds default casters for resources and objects.
-     *
-     * Maps resources or object types to a callback.
-     * Use types as keys and callable casters as values.
-     * Prefix types with `::`,
-     * see e.g. self::$defaultCasters.
-     *
-     * @param array<string, callable> $casters A map of casters
-     */
-    public static function addDefaultCasters(array $casters): void
-    {
-        self::$defaultCasters = [...self::$defaultCasters, ...$casters];
     }
 
     /**

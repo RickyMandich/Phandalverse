@@ -9,6 +9,7 @@ class GlobalLimit extends Limit
      *
      * @param  int  $maxAttempts
      * @param  int  $decaySeconds
+     * @return void
      */
     public function __construct(int $maxAttempts, int $decaySeconds = 60)
     {

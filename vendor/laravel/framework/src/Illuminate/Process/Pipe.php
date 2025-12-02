@@ -37,6 +37,7 @@ class Pipe
      *
      * @param  \Illuminate\Process\Factory  $factory
      * @param  callable  $callback
+     * @return void
      */
     public function __construct(Factory $factory, callable $callback)
     {

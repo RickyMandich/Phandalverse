@@ -12,7 +12,7 @@ class Choice extends Component
      * @param  string  $question
      * @param  array<array-key, string>  $choices
      * @param  mixed  $default
-     * @param  int|null  $attempts
+     * @param  int  $attempts
      * @param  bool  $multiple
      * @return mixed
      */

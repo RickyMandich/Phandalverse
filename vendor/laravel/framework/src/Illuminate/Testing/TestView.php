@@ -34,6 +34,7 @@ class TestView implements Stringable
      * Create a new test view instance.
      *
      * @param  \Illuminate\View\View  $view
+     * @return void
      */
     public function __construct(View $view)
     {

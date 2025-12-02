@@ -41,6 +41,7 @@ class CallQueuedHandler
      *
      * @param  \Illuminate\Contracts\Bus\Dispatcher  $dispatcher
      * @param  \Illuminate\Contracts\Container\Container  $container
+     * @return void
      */
     public function __construct(Dispatcher $dispatcher, Container $container)
     {
@@ -115,20 +116,11 @@ class CallQueuedHandler
             throw new Exception('Job is incomplete class: '.json_encode($command));
         }
 
-        $lockReleased = false;
-
         return (new Pipeline($this->container))->send($command)
             ->through(array_merge(method_exists($command, 'middleware') ? $command->middleware() : [], $command->middleware ?? []))
-            ->finally(function ($command) use (&$lockReleased) {
-                if (! $lockReleased && $command instanceof ShouldBeUniqueUntilProcessing && ! $command->job->isReleased()) {
-                    $this->ensureUniqueJobLockIsReleased($command);
-                }
-            })
-            ->then(function ($command) use ($job, &$lockReleased) {
+            ->then(function ($command) use ($job) {
                 if ($command instanceof ShouldBeUniqueUntilProcessing) {
                     $this->ensureUniqueJobLockIsReleased($command);
-
-                    $lockReleased = true;
                 }
 
                 return $this->dispatcher->dispatchNow(
@@ -283,16 +275,11 @@ class CallQueuedHandler
      * @param  array  $data
      * @param  \Throwable|null  $e
      * @param  string  $uuid
-     * @param  \Illuminate\Contracts\Queue\Job|null  $job
      * @return void
      */
-    public function failed(array $data, $e, string $uuid, ?Job $job = null)
+    public function failed(array $data, $e, string $uuid)
     {
         $command = $this->getCommand($data);
-
-        if (! is_null($job)) {
-            $command = $this->setJobInstanceIfNecessary($job, $command);
-        }
 
         if (! $command instanceof ShouldBeUniqueUntilProcessing) {
             $this->ensureUniqueJobLockIsReleased($command);

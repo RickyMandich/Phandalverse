@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2025 Justin Hileman
+ * (c) 2012-2023 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -27,16 +27,17 @@ use Psy\CodeCleaner;
  * namespace is replaced by another namespace. To reset to the top level
  * namespace, enter `namespace {}`. This is a bit ugly, but it does the trick :)
  */
-class NamespacePass extends NamespaceAwarePass
+class NamespacePass extends CodeCleanerPass
 {
+    private ?Name $namespace = null;
+    private CodeCleaner $cleaner;
+
     /**
-     * @param ?CodeCleaner $cleaner deprecated parameter, use setCleaner() instead
-     *
-     * @phpstan-ignore-next-line method.unused
+     * @param CodeCleaner $cleaner
      */
-    public function __construct(?CodeCleaner $cleaner = null)
+    public function __construct(CodeCleaner $cleaner)
     {
-        // No-op, since cleaner is provided by NamespaceAwarePass
+        $this->cleaner = $cleaner;
     }
 
     /**
@@ -60,7 +61,9 @@ class NamespacePass extends NamespaceAwarePass
         if ($last instanceof Namespace_) {
             $kind = $last->getAttribute('kind');
 
-            if ($kind === Namespace_::KIND_SEMICOLON) {
+            // Treat all namespace statements pre-PHP-Parser v3.1.2 as "open",
+            // even though we really have no way of knowing.
+            if ($kind === null || $kind === Namespace_::KIND_SEMICOLON) {
                 // Save the current namespace for open namespaces
                 $this->setNamespace($last->name);
             } else {
@@ -71,46 +74,25 @@ class NamespacePass extends NamespaceAwarePass
             return $nodes;
         }
 
-        // Wrap in current namespace if one is set
-        $currentNamespace = $this->getCurrentNamespace();
-
-        if (!$currentNamespace) {
-            return $nodes;
-        }
-
-        // Mark as re-injected so UseStatementPass knows it can re-inject use statements
-        return [new Namespace_($currentNamespace, $nodes, ['psyshReinjected' => true])];
+        return $this->namespace ? [new Namespace_($this->namespace, $nodes)] : $nodes;
     }
 
     /**
-     * Get the current namespace as a Name node.
-     *
-     * This is more complicated than it needs to be, because we're not storing namespace as a Name.
-     *
-     * @return Name|null
-     */
-    private function getCurrentNamespace(): ?Name
-    {
-        $namespace = $this->cleaner->getNamespace();
-
-        return $namespace ? new Name($namespace) : null;
-    }
-
-    /**
-     * Update the namespace in CodeCleaner and clear aliases.
+     * Remember the namespace and (re)set the namespace on the CodeCleaner as
+     * well.
      *
      * @param Name|null $namespace
      */
     private function setNamespace(?Name $namespace)
     {
-        $this->cleaner->setNamespace($namespace);
-
-        // Always clear aliases when changing namespace
-        $this->cleaner->setAliasesForNamespace($namespace, []);
+        $this->namespace = $namespace;
+        $this->cleaner->setNamespace($namespace === null ? null : $this->getParts($namespace));
     }
 
     /**
-     * @deprecated unused and will be removed in a future version
+     * Backwards compatibility shim for PHP-Parser 4.x.
+     *
+     * At some point we might want to make the namespace a plain string, to match how Name works?
      */
     protected function getParts(Name $name): array
     {

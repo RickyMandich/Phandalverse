@@ -5,6 +5,12 @@ use DOMDocument;
 
 class XMLSerializer {
 
+    /** @var \XMLWriter */
+    private $writer;
+
+    /** @var Token */
+    private $previousToken;
+
     /** @var NamespaceUri */
     private $xmlns;
 
@@ -29,46 +35,45 @@ class XMLSerializer {
     }
 
     public function toXML(TokenCollection $tokens): string {
-        $writer = new \XMLWriter();
-        $writer->openMemory();
-        $writer->setIndent(true);
-        $writer->startDocument();
-        $writer->startElement('source');
-        $writer->writeAttribute('xmlns', $this->xmlns->asString());
+        $this->writer = new \XMLWriter();
+        $this->writer->openMemory();
+        $this->writer->setIndent(true);
+        $this->writer->startDocument();
+        $this->writer->startElement('source');
+        $this->writer->writeAttribute('xmlns', $this->xmlns->asString());
 
         if (\count($tokens) > 0) {
-            $writer->startElement('line');
-            $writer->writeAttribute('no', '1');
+            $this->writer->startElement('line');
+            $this->writer->writeAttribute('no', '1');
 
-            $iterator = $tokens->getIterator();
-            $previousToken = $iterator->current();
-            $previousLine = $previousToken->getLine();
+            $this->previousToken = $tokens[0];
 
-            foreach ($iterator as $token) {
-                $line = $token->getLine();
-                if ($previousLine < $line) {
-                    $writer->endElement();
-
-                    $writer->startElement('line');
-                    $writer->writeAttribute('no', (string)$line);
-                    $previousLine = $line;
-                }
-
-                $value = $token->getValue();
-                if ($value !== '') {
-                    $writer->startElement('token');
-                    $writer->writeAttribute('name', $token->getName());
-                    $writer->writeRaw(\htmlspecialchars($value, \ENT_NOQUOTES | \ENT_DISALLOWED | \ENT_XML1));
-                    $writer->endElement();
-                }
+            foreach ($tokens as $token) {
+                $this->addToken($token);
             }
-
-            $writer->endElement();
         }
 
-        $writer->endElement();
-        $writer->endDocument();
+        $this->writer->endElement();
+        $this->writer->endElement();
+        $this->writer->endDocument();
 
-        return $writer->outputMemory();
+        return $this->writer->outputMemory();
+    }
+
+    private function addToken(Token $token): void {
+        if ($this->previousToken->getLine() < $token->getLine()) {
+            $this->writer->endElement();
+
+            $this->writer->startElement('line');
+            $this->writer->writeAttribute('no', (string)$token->getLine());
+            $this->previousToken = $token;
+        }
+
+        if ($token->getValue() !== '') {
+            $this->writer->startElement('token');
+            $this->writer->writeAttribute('name', $token->getName());
+            $this->writer->writeRaw(\htmlspecialchars($token->getValue(), \ENT_NOQUOTES | \ENT_DISALLOWED | \ENT_XML1));
+            $this->writer->endElement();
+        }
     }
 }

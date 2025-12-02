@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2025 Justin Hileman
+ * (c) 2012-2023 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,7 +11,6 @@
 
 namespace Psy\Readline;
 
-use Psy\ConfigPaths;
 use Psy\Util\Str;
 
 /**
@@ -87,7 +86,7 @@ class Libedit extends GNUReadline
         if ($res === false && !$this->hasWarnedOwnership) {
             if (\is_file($this->historyFile) && \is_writable($this->historyFile)) {
                 $this->hasWarnedOwnership = true;
-                $msg = \sprintf('Error writing history file, check file ownership: %s', ConfigPaths::prettyPath($this->historyFile));
+                $msg = \sprintf('Error writing history file, check file ownership: %s', $this->historyFile);
                 \trigger_error($msg, \E_USER_NOTICE);
             }
         }
@@ -109,7 +108,7 @@ class Libedit extends GNUReadline
     {
         // empty line, comment or timestamp
         if (!$line || $line[0] === "\0") {
-            return null;
+            return;
         }
         // if "\0" is found in an entry, then
         // everything from it until the end of line is a comment.

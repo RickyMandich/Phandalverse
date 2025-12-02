@@ -319,7 +319,7 @@ class SQLiteGrammar extends Grammar
      *
      * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
-     * @return list<string>|string
+     * @return array|string
      */
     public function compileAlter(Blueprint $blueprint, Fluent $command)
     {
@@ -370,7 +370,13 @@ class SQLiteGrammar extends Grammar
         ], $indexes, [$foreignKeyConstraintsEnabled ? $this->compileEnableForeignKeyConstraints() : null]));
     }
 
-    /** @inheritDoc */
+    /**
+     * Compile a change column command into a series of SQL statements.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return array|string
+     */
     public function compileChange(Blueprint $blueprint, Fluent $command)
     {
         // Handled on table alteration...
@@ -520,7 +526,7 @@ class SQLiteGrammar extends Grammar
      *
      * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
-     * @return list<string>|null
+     * @return array|null
      */
     public function compileDropColumn(Blueprint $blueprint, Fluent $command)
     {
@@ -885,7 +891,7 @@ class SQLiteGrammar extends Grammar
      */
     protected function typeJson(Fluent $column)
     {
-        return $this->connection->getConfig('use_native_json') ? 'json' : 'text';
+        return 'text';
     }
 
     /**
@@ -896,7 +902,7 @@ class SQLiteGrammar extends Grammar
      */
     protected function typeJsonb(Fluent $column)
     {
-        return $this->connection->getConfig('use_native_jsonb') ? 'jsonb' : 'text';
+        return 'text';
     }
 
     /**
@@ -907,10 +913,6 @@ class SQLiteGrammar extends Grammar
      */
     protected function typeDate(Fluent $column)
     {
-        if ($column->useCurrent) {
-            $column->default(new Expression('CURRENT_DATE'));
-        }
-
         return 'date';
     }
 
@@ -996,10 +998,6 @@ class SQLiteGrammar extends Grammar
      */
     protected function typeYear(Fluent $column)
     {
-        if ($column->useCurrent) {
-            $column->default(new Expression("(CAST(strftime('%Y', 'now') AS INTEGER))"));
-        }
-
         return $this->typeInteger($column);
     }
 

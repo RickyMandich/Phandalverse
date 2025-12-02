@@ -11,7 +11,6 @@
 
 namespace Symfony\Component\Console\Command;
 
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Exception\LogicException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
@@ -49,20 +48,10 @@ trait LockableTrait
                 $store = new FlockStore();
             }
 
-            $this->lockFactory = new LockFactory($store);
+            $this->lockFactory = (new LockFactory($store));
         }
 
-        if (!$name) {
-            if ($this instanceof Command) {
-                $name = $this->getName();
-            } elseif ($attribute = (new \ReflectionClass($this::class))->getAttributes(AsCommand::class)) {
-                $name = $attribute[0]->newInstance()->name;
-            } else {
-                throw new LogicException(\sprintf('Lock name missing: provide it via "%s()", #[AsCommand] attribute, or by extending Command class.', __METHOD__));
-            }
-        }
-
-        $this->lock = $this->lockFactory->createLock($name);
+        $this->lock = $this->lockFactory->createLock($name ?: $this->getName());
         if (!$this->lock->acquire($blocking)) {
             $this->lock = null;
 

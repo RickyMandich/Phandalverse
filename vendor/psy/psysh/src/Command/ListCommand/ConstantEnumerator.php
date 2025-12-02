@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2025 Justin Hileman
+ * (c) 2012-2023 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -118,7 +118,7 @@ class ConstantEnumerator extends Enumerator
      * Optionally restrict constants to a given category, e.g. "date". If the
      * category is "internal", include all non-user-defined constants.
      *
-     * @param string|null $category
+     * @param string $category
      *
      * @return array
      */
@@ -132,9 +132,8 @@ class ConstantEnumerator extends Enumerator
 
         if ($category === 'internal') {
             unset($consts['user']);
-            $values = \array_values($consts);
 
-            return $values ? \array_merge(...$values) : [];
+            return \array_merge(...\array_values($consts));
         }
 
         foreach ($consts as $key => $value) {

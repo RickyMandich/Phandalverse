@@ -40,6 +40,7 @@ class CompilerEngine extends PhpEngine
      *
      * @param  \Illuminate\View\Compilers\CompilerInterface  $compiler
      * @param  \Illuminate\Filesystem\Filesystem|null  $files
+     * @return void
      */
     public function __construct(CompilerInterface $compiler, ?Filesystem $files = null)
     {
@@ -54,8 +55,6 @@ class CompilerEngine extends PhpEngine
      * @param  string  $path
      * @param  array  $data
      * @return string
-     *
-     * @throws \Illuminate\View\ViewException
      */
     public function get($path, array $data = [])
     {

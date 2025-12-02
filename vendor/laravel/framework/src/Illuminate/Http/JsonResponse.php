@@ -23,6 +23,7 @@ class JsonResponse extends BaseJsonResponse
      * @param  array  $headers
      * @param  int  $options
      * @param  bool  $json
+     * @return void
      */
     public function __construct($data = null, $status = 200, $headers = [], $options = 0, $json = false)
     {

@@ -45,16 +45,16 @@ class Command extends SymfonyCommand
     /**
      * The console command description.
      *
-     * @var string
+     * @var string|null
      */
-    protected $description = '';
+    protected $description;
 
     /**
      * The console command help text.
      *
      * @var string
      */
-    protected $help = '';
+    protected $help;
 
     /**
      * Indicates whether the command should be shown in the Artisan command list.
@@ -86,6 +86,8 @@ class Command extends SymfonyCommand
 
     /**
      * Create a new console command instance.
+     *
+     * @return void
      */
     public function __construct()
     {
@@ -101,13 +103,13 @@ class Command extends SymfonyCommand
         // Once we have constructed the command, we'll set the description and other
         // related properties of the command. If a signature wasn't used to build
         // the command we'll set the arguments and the options on this command.
-        if (! empty($this->description)) {
-            $this->setDescription($this->description);
+        if (! isset($this->description)) {
+            $this->setDescription((string) static::getDefaultDescription());
+        } else {
+            $this->setDescription((string) $this->description);
         }
 
-        if (! empty($this->help)) {
-            $this->setHelp($this->help);
-        }
+        $this->setHelp((string) $this->help);
 
         $this->setHidden($this->isHidden());
 
@@ -201,8 +203,8 @@ class Command extends SymfonyCommand
             ));
 
             return (int) (is_numeric($this->option('isolated'))
-                ? $this->option('isolated')
-                : $this->isolatedExitCode);
+                        ? $this->option('isolated')
+                        : $this->isolatedExitCode);
         }
 
         $method = method_exists($this, 'handle') ? 'handle' : '__invoke';
@@ -263,7 +265,7 @@ class Command extends SymfonyCommand
      * Fail the command manually.
      *
      * @param  \Throwable|string|null  $exception
-     * @return never
+     * @return void
      *
      * @throws \Illuminate\Console\ManuallyFailedException|\Throwable
      */

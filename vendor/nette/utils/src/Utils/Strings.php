@@ -11,8 +11,7 @@ namespace Nette\Utils;
 
 use JetBrains\PhpStorm\Language;
 use Nette;
-use function array_keys, array_map, array_shift, array_values, bin2hex, class_exists, defined, extension_loaded, function_exists, htmlspecialchars, htmlspecialchars_decode, iconv, iconv_strlen, iconv_substr, implode, in_array, is_array, is_callable, is_int, is_object, is_string, key, max, mb_convert_case, mb_strlen, mb_strtolower, mb_strtoupper, mb_substr, pack, preg_last_error, preg_last_error_msg, preg_quote, preg_replace, str_contains, str_ends_with, str_repeat, str_replace, str_starts_with, strlen, strpos, strrev, strrpos, strtolower, strtoupper, strtr, substr, trim, unpack, utf8_decode;
-use const ENT_IGNORE, ENT_NOQUOTES, ICONV_IMPL, MB_CASE_TITLE, PHP_EOL, PREG_OFFSET_CAPTURE, PREG_PATTERN_ORDER, PREG_SET_ORDER, PREG_SPLIT_DELIM_CAPTURE, PREG_SPLIT_NO_EMPTY, PREG_SPLIT_OFFSET_CAPTURE, PREG_UNMATCHED_AS_NULL;
+use function is_array, is_object, strlen;
 
 
 /**
@@ -22,14 +21,14 @@ class Strings
 {
 	use Nette\StaticClass;
 
-	public const TrimCharacters = " \t\n\r\0\x0B\u{A0}\u{2000}\u{2001}\u{2002}\u{2003}\u{2004}\u{2005}\u{2006}\u{2007}\u{2008}\u{2009}\u{200A}\u{200B}\u{2028}\u{3000}";
+	public const TrimCharacters = " \t\n\r\0\x0B\u{A0}\u{2000}\u{2001}\u{2002}\u{2003}\u{2004}\u{2005}\u{2006}\u{2007}\u{2008}\u{2009}\u{200A}\u{200B}";
 
 	/** @deprecated use Strings::TrimCharacters */
 	public const TRIM_CHARACTERS = self::TrimCharacters;
 
 
 	/**
-	 * @deprecated use Nette\Utils\Validators::isUnicode()
+	 * @deprecated use Nette\Utils\Validator::isUnicode()
 	 */
 	public static function checkEncoding(string $s): bool
 	{
@@ -548,6 +547,7 @@ class Strings
 		return $utf8 && $captureOffset
 			? self::bytesToChars($subject, [$m])[0]
 			: $m;
+
 	}
 
 

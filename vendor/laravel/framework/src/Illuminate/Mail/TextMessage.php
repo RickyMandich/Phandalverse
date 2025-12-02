@@ -22,6 +22,7 @@ class TextMessage
      * Create a new text message instance.
      *
      * @param  \Illuminate\Mail\Message  $message
+     * @return void
      */
     public function __construct($message)
     {

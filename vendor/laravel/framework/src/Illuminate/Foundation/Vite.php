@@ -693,7 +693,6 @@ class Vite implements Htmlable
             'crossorigin' => $this->resolveStylesheetTagAttributes($src, $url, $chunk, $manifest)['crossorigin'] ?? false,
         ] : [
             'rel' => 'modulepreload',
-            'as' => 'script',
             'href' => $url,
             'nonce' => $this->nonce ?? false,
             'crossorigin' => $this->resolveScriptTagAttributes($src, $url, $chunk, $manifest)['crossorigin'] ?? false,
@@ -897,7 +896,7 @@ class Vite implements Htmlable
 
         $chunk = $this->chunk($this->manifest($buildDirectory), $asset);
 
-        $path = $this->publicPath($buildDirectory.'/'.$chunk['file']);
+        $path = public_path($buildDirectory.'/'.$chunk['file']);
 
         if (! is_file($path) || ! file_exists($path)) {
             throw new ViteException("Unable to locate file from Vite manifest: {$path}.");
@@ -916,17 +915,6 @@ class Vite implements Htmlable
     protected function assetPath($path, $secure = null)
     {
         return ($this->assetPathResolver ?? asset(...))($path, $secure);
-    }
-
-    /**
-     * Generate a public path for an asset.
-     *
-     * @param  string  $path
-     * @return string
-     */
-    protected function publicPath($path)
-    {
-        return public_path($path);
     }
 
     /**
@@ -1034,15 +1022,5 @@ class Vite implements Htmlable
     public function toHtml()
     {
         return $this->__invoke($this->entryPoints)->toHtml();
-    }
-
-    /**
-     * Flush state.
-     *
-     * @return void
-     */
-    public function flush()
-    {
-        $this->preloadedAssets = [];
     }
 }

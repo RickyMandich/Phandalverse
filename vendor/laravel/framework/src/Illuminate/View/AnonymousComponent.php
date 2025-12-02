@@ -23,6 +23,7 @@ class AnonymousComponent extends Component
      *
      * @param  string  $view
      * @param  array  $data
+     * @return void
      */
     public function __construct($view, $data)
     {

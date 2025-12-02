@@ -11,7 +11,7 @@ class AskWithCompletion extends Component
      *
      * @param  string  $question
      * @param  array|callable  $choices
-     * @param  string|null  $default
+     * @param  string  $default
      * @return mixed
      */
     public function render($question, $choices, $default = null)

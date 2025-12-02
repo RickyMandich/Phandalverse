@@ -83,8 +83,6 @@ class PhpExecutableFinder
 
     /**
      * Finds the PHP executable arguments.
-     *
-     * @return list<non-empty-string>
      */
     public function findArguments(): array
     {

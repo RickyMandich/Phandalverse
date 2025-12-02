@@ -62,6 +62,7 @@ class ResourceRegistrar
      * Create a new resource registrar instance.
      *
      * @param  \Illuminate\Routing\Router  $router
+     * @return void
      */
     public function __construct(Router $router)
     {
@@ -546,8 +547,8 @@ class ResourceRegistrar
     protected function getShallowName($name, $options)
     {
         return isset($options['shallow']) && $options['shallow']
-            ? last(explode('.', $name))
-            : $name;
+                    ? last(explode('.', $name))
+                    : $name;
     }
 
     /**

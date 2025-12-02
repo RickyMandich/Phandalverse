@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2025 Justin Hileman
+ * (c) 2012-2023 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,7 +11,6 @@
 
 namespace Psy\Command;
 
-use Psy\ConfigPaths;
 use Psy\Input\FilterOptions;
 use Psy\Output\ShellOutput;
 use Psy\Readline\Readline;
@@ -99,14 +98,11 @@ HELP
         $this->validateOnlyOne($input, ['show', 'head', 'tail']);
         $this->validateOnlyOne($input, ['save', 'replay', 'clear']);
 
-        // For --show, slice first (uses original line numbers), then filter
-        $show = $input->getOption('show');
-
-        // For --head/--tail, filter first, then slice (uses result count)
-        $head = $input->getOption('head');
-        $tail = $input->getOption('tail');
-
-        $history = $this->getHistorySlice($show);
+        $history = $this->getHistorySlice(
+            $input->getOption('show'),
+            $input->getOption('head'),
+            $input->getOption('tail')
+        );
         $highlighted = false;
 
         $this->filter->bind($input);
@@ -124,18 +120,12 @@ HELP
                     }
                 } else {
                     unset($history[$i]);
-                    unset($highlighted[$i]);
                 }
             }
         }
 
-        $history = $this->applyHeadOrTail($history, $head, $tail);
-        if ($highlighted) {
-            $highlighted = $this->applyHeadOrTail($highlighted, $head, $tail);
-        }
-
         if ($save = $input->getOption('save')) {
-            $output->writeln(\sprintf('Saving history in %s...', ConfigPaths::prettyPath($save)));
+            $output->writeln(\sprintf('Saving history in %s...', $save));
             \file_put_contents($save, \implode(\PHP_EOL, $history).\PHP_EOL);
             $output->writeln('<info>History saved.</info>');
         } elseif ($input->getOption('replay')) {
@@ -187,39 +177,31 @@ HELP
     }
 
     /**
-     * Retrieve a slice of the readline history by range.
+     * Retrieve a slice of the readline history.
      *
-     * @param string|null $show Range specification (e.g., "5..10")
+     * @param string|null $show
+     * @param string|null $head
+     * @param string|null $tail
      *
      * @return array A slice of history
      */
-    private function getHistorySlice(?string $show): array
+    private function getHistorySlice($show, $head, $tail): array
     {
         $history = $this->readline->listHistory();
+
         // don't show the current `history` invocation
         \array_pop($history);
 
-        if ($show === null) {
-            return $history;
-        }
-
-        list($start, $end) = $this->extractRange($show);
-        $length = $end - $start;
-
-        return \array_slice($history, $start, $length, true);
-    }
-
-    /**
-     * Apply --head or --tail to a history array.
-     */
-    private function applyHeadOrTail(array $history, ?string $head, ?string $tail): array
-    {
-        if ($head) {
+        if ($show) {
+            list($start, $end) = $this->extractRange($show);
+            $length = $end - $start;
+        } elseif ($head) {
             if (!\preg_match('/^\d+$/', $head)) {
                 throw new \InvalidArgumentException('Please specify an integer argument for --head');
             }
 
-            return \array_slice($history, 0, (int) $head, true);
+            $start = 0;
+            $length = (int) $head;
         } elseif ($tail) {
             if (!\preg_match('/^\d+$/', $tail)) {
                 throw new \InvalidArgumentException('Please specify an integer argument for --tail');
@@ -227,11 +209,11 @@ HELP
 
             $start = \count($history) - (int) $tail;
             $length = (int) $tail + 1;
-
-            return \array_slice($history, $start, $length, true);
+        } else {
+            return $history;
         }
 
-        return $history;
+        return \array_slice($history, $start, $length, true);
     }
 
     /**

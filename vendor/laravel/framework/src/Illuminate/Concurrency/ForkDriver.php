@@ -25,8 +25,6 @@ class ForkDriver implements Driver
         /** @phpstan-ignore class.notFound */
         $results = Fork::new()->run(...$values);
 
-        ksort($results);
-
         return array_combine($keys, $results);
     }
 

@@ -26,13 +26,8 @@ class TranslatableMessage implements TranslatableInterface
     ) {
     }
 
-    /**
-     * @deprecated since Symfony 7.4
-     */
     public function __toString(): string
     {
-        trigger_deprecation('symfony/translation', '7.4', 'Method "%s()" is deprecated.', __METHOD__);
-
         return $this->getMessage();
     }
 
@@ -53,13 +48,9 @@ class TranslatableMessage implements TranslatableInterface
 
     public function trans(TranslatorInterface $translator, ?string $locale = null): string
     {
-        $parameters = $this->getParameters();
-        foreach ($parameters as $k => $v) {
-            if ($v instanceof TranslatableInterface) {
-                $parameters[$k] = $v->trans($translator, $locale);
-            }
-        }
-
-        return $translator->trans($this->getMessage(), $parameters, $this->getDomain(), $locale);
+        return $translator->trans($this->getMessage(), array_map(
+            static fn ($parameter) => $parameter instanceof TranslatableInterface ? $parameter->trans($translator, $locale) : $parameter,
+            $this->getParameters()
+        ), $this->getDomain(), $locale);
     }
 }

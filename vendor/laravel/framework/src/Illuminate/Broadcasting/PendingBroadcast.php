@@ -4,8 +4,6 @@ namespace Illuminate\Broadcasting;
 
 use Illuminate\Contracts\Events\Dispatcher;
 
-use function Illuminate\Support\enum_value;
-
 class PendingBroadcast
 {
     /**
@@ -27,6 +25,7 @@ class PendingBroadcast
      *
      * @param  \Illuminate\Contracts\Events\Dispatcher  $events
      * @param  mixed  $event
+     * @return void
      */
     public function __construct(Dispatcher $events, $event)
     {
@@ -37,13 +36,13 @@ class PendingBroadcast
     /**
      * Broadcast the event using a specific broadcaster.
      *
-     * @param  \UnitEnum|string|null  $connection
+     * @param  string|null  $connection
      * @return $this
      */
     public function via($connection = null)
     {
         if (method_exists($this->event, 'broadcastVia')) {
-            $this->event->broadcastVia(enum_value($connection));
+            $this->event->broadcastVia($connection);
         }
 
         return $this;

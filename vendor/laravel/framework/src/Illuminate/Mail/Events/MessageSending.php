@@ -11,6 +11,7 @@ class MessageSending
      *
      * @param  \Symfony\Component\Mime\Email  $message  The Symfony Email instance.
      * @param  array  $data  The message data.
+     * @return void
      */
     public function __construct(
         public Email $message,

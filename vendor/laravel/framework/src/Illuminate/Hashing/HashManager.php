@@ -119,10 +119,6 @@ class HashManager extends Manager implements Hasher
      */
     public function verifyConfiguration($value)
     {
-        if (method_exists($driver = $this->driver(), 'verifyConfiguration')) {
-            return $driver->verifyConfiguration($value);
-        }
-
-        return true;
+        return $this->driver()->verifyConfiguration($value);
     }
 }

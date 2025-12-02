@@ -37,6 +37,7 @@ class QueueManager implements FactoryContract, MonitorContract
      * Create a new queue manager instance.
      *
      * @param  \Illuminate\Contracts\Foundation\Application  $app
+     * @return void
      */
     public function __construct($app)
     {
@@ -99,17 +100,6 @@ class QueueManager implements FactoryContract, MonitorContract
     }
 
     /**
-     * Register an event listener for the daemon queue starting.
-     *
-     * @param  mixed  $callback
-     * @return void
-     */
-    public function starting($callback)
-    {
-        $this->app['events']->listen(Events\WorkerStarting::class, $callback);
-    }
-
-    /**
      * Register an event listener for the daemon queue stopping.
      *
      * @param  mixed  $callback
@@ -169,15 +159,9 @@ class QueueManager implements FactoryContract, MonitorContract
             throw new InvalidArgumentException("The [{$name}] queue connection has not been configured.");
         }
 
-        $queue = $this->getConnector($config['driver'])
+        return $this->getConnector($config['driver'])
             ->connect($config)
             ->setConnectionName($name);
-
-        if (method_exists($queue, 'setConfig')) {
-            $queue->setConfig($config);
-        }
-
-        return $queue;
     }
 
     /**
@@ -195,63 +179,6 @@ class QueueManager implements FactoryContract, MonitorContract
         }
 
         return call_user_func($this->connectors[$driver]);
-    }
-
-    /**
-     * Pause a queue by its connection and name.
-     *
-     * @param  string  $connection
-     * @param  string  $queue
-     * @return void
-     */
-    public function pause($connection, $queue)
-    {
-        $this->app['cache']
-            ->store()
-            ->forever("illuminate:queue:paused:{$connection}:{$queue}", true);
-    }
-
-    /**
-     * Pause a queue by its connection and name for a given amount of time.
-     *
-     * @param  string  $connection
-     * @param  string  $queue
-     * @param  \DateTimeInterface|\DateInterval|int  $ttl
-     * @return void
-     */
-    public function pauseFor($connection, $queue, $ttl)
-    {
-        $this->app['cache']
-            ->store()
-            ->put("illuminate:queue:paused:{$connection}:{$queue}", true, $ttl);
-    }
-
-    /**
-     * Resume a paused queue by its connection and name.
-     *
-     * @param  string  $connection
-     * @param  string  $queue
-     * @return void
-     */
-    public function resume($connection, $queue)
-    {
-        $this->app['cache']
-            ->store()
-            ->forget("illuminate:queue:paused:{$connection}:{$queue}");
-    }
-
-    /**
-     * Determine if a queue is paused.
-     *
-     * @param  string  $connection
-     * @param  string  $queue
-     * @return bool
-     */
-    public function isPaused($connection, $queue)
-    {
-        return (bool) $this->app['cache']
-            ->store()
-            ->get("illuminate:queue:paused:{$connection}:{$queue}", false);
     }
 
     /**

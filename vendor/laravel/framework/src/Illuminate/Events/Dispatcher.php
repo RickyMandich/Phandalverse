@@ -21,8 +21,6 @@ use Illuminate\Support\Traits\Macroable;
 use Illuminate\Support\Traits\ReflectsClosures;
 use ReflectionClass;
 
-use function Illuminate\Support\enum_value;
-
 class Dispatcher implements DispatcherContract
 {
     use Macroable, ReflectsClosures;
@@ -70,30 +68,10 @@ class Dispatcher implements DispatcherContract
     protected $transactionManagerResolver;
 
     /**
-     * The currently deferred events.
-     *
-     * @var array
-     */
-    protected $deferredEvents = [];
-
-    /**
-     * Indicates if events should be deferred.
-     *
-     * @var bool
-     */
-    protected $deferringEvents = false;
-
-    /**
-     * The specific events to defer (null means defer all events).
-     *
-     * @var array|null
-     */
-    protected $eventsToDefer = null;
-
-    /**
      * Create a new event dispatcher instance.
      *
      * @param  \Illuminate\Contracts\Container\Container|null  $container
+     * @return void
      */
     public function __construct(?ContainerContract $container = null)
     {
@@ -268,31 +246,25 @@ class Dispatcher implements DispatcherContract
         // When the given "event" is actually an object we will assume it is an event
         // object and use the class as the event name and this event itself as the
         // payload to the handler, which makes object based events quite simple.
-        [$isEventObject, $parsedEvent, $parsedPayload] = [
+        [$isEventObject, $event, $payload] = [
             is_object($event),
             ...$this->parseEventAndPayload($event, $payload),
         ];
-
-        if ($this->shouldDeferEvent($parsedEvent)) {
-            $this->deferredEvents[] = func_get_args();
-
-            return null;
-        }
 
         // If the event is not intended to be dispatched unless the current database
         // transaction is successful, we'll register a callback which will handle
         // dispatching this event on the next successful DB transaction commit.
         if ($isEventObject &&
-            $parsedPayload[0] instanceof ShouldDispatchAfterCommit &&
+            $payload[0] instanceof ShouldDispatchAfterCommit &&
             ! is_null($transactions = $this->resolveTransactionManager())) {
             $transactions->addCallback(
-                fn () => $this->invokeListeners($parsedEvent, $parsedPayload, $halt)
+                fn () => $this->invokeListeners($event, $payload, $halt)
             );
 
             return null;
         }
 
-        return $this->invokeListeners($parsedEvent, $parsedPayload, $halt);
+        return $this->invokeListeners($event, $payload, $halt);
     }
 
     /**
@@ -372,8 +344,7 @@ class Dispatcher implements DispatcherContract
     protected function broadcastWhen($event)
     {
         return method_exists($event, 'broadcastWhen')
-            ? $event->broadcastWhen()
-            : true;
+                ? $event->broadcastWhen() : true;
     }
 
     /**
@@ -401,8 +372,8 @@ class Dispatcher implements DispatcherContract
         );
 
         return class_exists($eventName, false)
-            ? $this->addInterfaceListeners($eventName, $listeners)
-            : $listeners;
+                    ? $this->addInterfaceListeners($eventName, $listeners)
+                    : $listeners;
     }
 
     /**
@@ -518,8 +489,8 @@ class Dispatcher implements DispatcherContract
     protected function createClassCallable($listener)
     {
         [$class, $method] = is_array($listener)
-            ? $listener
-            : $this->parseClassCallable($listener);
+                            ? $listener
+                            : $this->parseClassCallable($listener);
 
         if (! method_exists($class, $method)) {
             $method = '__invoke';
@@ -532,8 +503,8 @@ class Dispatcher implements DispatcherContract
         $listener = $this->container->make($class);
 
         return $this->handlerShouldBeDispatchedAfterDatabaseTransactions($listener)
-            ? $this->createCallbackForListenerRunningAfterCommits($listener, $method)
-            : [$listener, $method];
+                    ? $this->createCallbackForListenerRunningAfterCommits($listener, $method)
+                    : [$listener, $method];
     }
 
     /**
@@ -587,7 +558,7 @@ class Dispatcher implements DispatcherContract
     /**
      * Determine if the given event handler should be dispatched after all database transactions have committed.
      *
-     * @param  mixed  $listener
+     * @param  object|mixed  $listener
      * @return bool
      */
     protected function handlerShouldBeDispatchedAfterDatabaseTransactions($listener)
@@ -660,8 +631,8 @@ class Dispatcher implements DispatcherContract
             : $listener->delay ?? null;
 
         is_null($delay)
-            ? $connection->pushOn(enum_value($queue), $job)
-            : $connection->laterOn(enum_value($queue), $delay, $job);
+            ? $connection->pushOn($queue, $job)
+            : $connection->laterOn($queue, $delay, $job);
     }
 
     /**
@@ -705,12 +676,7 @@ class Dispatcher implements DispatcherContract
             $job->shouldBeEncrypted = $listener instanceof ShouldBeEncrypted;
             $job->timeout = $listener->timeout ?? null;
             $job->failOnTimeout = $listener->failOnTimeout ?? false;
-            $job->tries = method_exists($listener, 'tries') ? $listener->tries(...$data) : ($listener->tries ?? null);
-            $job->messageGroup = method_exists($listener, 'messageGroup') ? $listener->messageGroup(...$data) : ($listener->messageGroup ?? null);
-            $job->withDeduplicator(method_exists($listener, 'deduplicator')
-                ? $listener->deduplicator(...$data)
-                : (method_exists($listener, 'deduplicationId') ? $listener->deduplicationId(...) : null)
-            );
+            $job->tries = $listener->tries ?? null;
 
             $job->through(array_merge(
                 method_exists($listener, 'middleware') ? $listener->middleware(...$data) : [],
@@ -798,51 +764,6 @@ class Dispatcher implements DispatcherContract
         $this->transactionManagerResolver = $resolver;
 
         return $this;
-    }
-
-    /**
-     * Execute the given callback while deferring events, then dispatch all deferred events.
-     *
-     * @param  callable  $callback
-     * @param  array|null  $events
-     * @return mixed
-     */
-    public function defer(callable $callback, ?array $events = null)
-    {
-        $wasDeferring = $this->deferringEvents;
-        $previousDeferredEvents = $this->deferredEvents;
-        $previousEventsToDefer = $this->eventsToDefer;
-
-        $this->deferringEvents = true;
-        $this->deferredEvents = [];
-        $this->eventsToDefer = $events;
-
-        try {
-            $result = $callback();
-
-            $this->deferringEvents = false;
-
-            foreach ($this->deferredEvents as $args) {
-                $this->dispatch(...$args);
-            }
-
-            return $result;
-        } finally {
-            $this->deferringEvents = $wasDeferring;
-            $this->deferredEvents = $previousDeferredEvents;
-            $this->eventsToDefer = $previousEventsToDefer;
-        }
-    }
-
-    /**
-     * Determine if the given event should be deferred.
-     *
-     * @param  string  $event
-     * @return bool
-     */
-    protected function shouldDeferEvent(string $event)
-    {
-        return $this->deferringEvents && ($this->eventsToDefer === null || in_array($event, $this->eventsToDefer));
     }
 
     /**

@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2025 Justin Hileman
+ * (c) 2012-2023 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,15 +11,10 @@
 
 namespace Psy;
 
-use Psy\Exception\BreakException;
-use Psy\Exception\InvalidManualException;
 use Psy\ExecutionLoop\ProcessForker;
-use Psy\ManualUpdater\ManualUpdate;
-use Psy\Util\DependencyChecker;
 use Psy\VersionUpdater\GitHubChecker;
 use Psy\VersionUpdater\Installer;
 use Psy\VersionUpdater\SelfUpdate;
-use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -33,7 +28,7 @@ if (!\function_exists('Psy\\sh')) {
      */
     function sh(): string
     {
-        if (\PHP_VERSION_ID < 80000) {
+        if (\version_compare(\PHP_VERSION, '8.0', '<')) {
             return '\extract(\Psy\debug(\get_defined_vars(), isset($this) ? $this : @\get_called_class()));';
         }
 
@@ -139,7 +134,23 @@ if (!\function_exists('Psy\\info')) {
         if ($config !== null) {
             $lastConfig = $config;
 
-            return null;
+            return;
+        }
+
+        $prettyPath = function ($path) {
+            return $path;
+        };
+
+        $homeDir = (new ConfigPaths())->homeDir();
+        if ($homeDir && $homeDir = \rtrim($homeDir, '/')) {
+            $homePattern = '#^'.\preg_quote($homeDir, '#').'/#';
+            $prettyPath = function ($path) use ($homePattern) {
+                if (\is_string($path)) {
+                    return \preg_replace($homePattern, '~/', $path);
+                } else {
+                    return $path;
+                }
+            };
         }
 
         $config = $lastConfig ?: new Configuration();
@@ -160,9 +171,9 @@ if (!\function_exists('Psy\\info')) {
             'strict types'        => $config->strictTypes(),
             'error logging level' => $config->errorLoggingLevel(),
             'config file'         => [
-                'default config file' => ConfigPaths::prettyPath($config->getConfigFile()),
-                'local config file'   => ConfigPaths::prettyPath($config->getLocalConfigFile()),
-                'PSYSH_CONFIG env'    => ConfigPaths::prettyPath($configEnv),
+                'default config file' => $prettyPath($config->getConfigFile()),
+                'local config file'   => $prettyPath($config->getLocalConfigFile()),
+                'PSYSH_CONFIG env'    => $prettyPath($configEnv),
             ],
             // 'config dir'  => $config->getConfigDir(),
             // 'data dir'    => $config->getDataDir(),
@@ -183,7 +194,7 @@ if (!\function_exists('Psy\\info')) {
             'update available'       => $updateAvailable,
             'latest release version' => $latest,
             'update check interval'  => $config->getUpdateCheck(),
-            'update cache file'      => ConfigPaths::prettyPath($config->getUpdateCheckCacheFile()),
+            'update cache file'      => $prettyPath($config->getUpdateCheckCacheFile()),
         ];
 
         $input = [
@@ -232,61 +243,56 @@ if (!\function_exists('Psy\\info')) {
         ];
 
         $pcntl = [
-            'pcntl available' => DependencyChecker::functionsAvailable(ProcessForker::PCNTL_FUNCTIONS),
-            'posix available' => DependencyChecker::functionsAvailable(ProcessForker::POSIX_FUNCTIONS),
+            'pcntl available' => ProcessForker::isPcntlSupported(),
+            'posix available' => ProcessForker::isPosixSupported(),
         ];
 
-        if ($disabledPcntl = DependencyChecker::functionsDisabled(ProcessForker::PCNTL_FUNCTIONS)) {
+        if ($disabledPcntl = ProcessForker::disabledPcntlFunctions()) {
             $pcntl['disabled pcntl functions'] = $disabledPcntl;
         }
 
-        if ($disabledPosix = DependencyChecker::functionsDisabled(ProcessForker::POSIX_FUNCTIONS)) {
+        if ($disabledPosix = ProcessForker::disabledPosixFunctions()) {
             $pcntl['disabled posix functions'] = $disabledPosix;
         }
 
         $pcntl['use pcntl'] = $config->usePcntl();
 
         $history = [
-            'history file'     => ConfigPaths::prettyPath($config->getHistoryFile()),
+            'history file'     => $prettyPath($config->getHistoryFile()),
             'history size'     => $config->getHistorySize(),
             'erase duplicates' => $config->getEraseDuplicates(),
         ];
 
-        $manualDbFile = $config->getManualDbFile();
-        $manual = null;
-        $manualError = null;
+        $docs = [
+            'manual db file'   => $prettyPath($config->getManualDbFile()),
+            'sqlite available' => true,
+        ];
 
         try {
-            $manual = $config->getManual();
-        } catch (InvalidManualException $e) {
-            $manualError = $e->getMessage();
-        }
+            if ($db = $config->getManualDb()) {
+                if ($q = $db->query('SELECT * FROM meta;')) {
+                    $q->setFetchMode(\PDO::FETCH_KEY_PAIR);
+                    $meta = $q->fetchAll();
 
-        // If we have a manual but no db file path, it's bundled in the PHAR
-        if ($manual && !$manualDbFile && \Phar::running(false)) {
-            $docs = [
-                'manual db file' => '<bundled>',
-            ];
-        } else {
-            $docs = [
-                'manual db file' => ConfigPaths::prettyPath($manualDbFile),
-            ];
-        }
-
-        if ($manualError) {
-            $docs['manual error'] = $manualError;
-        } elseif ($manual) {
-            $meta = $manual->getMeta();
-
-            foreach ($meta as $key => $val) {
-                switch ($key) {
-                    case 'built_at':
-                        $d = new \DateTime('@'.$val);
-                        $val = $d->format(\DateTime::RFC2822);
-                        break;
+                    foreach ($meta as $key => $val) {
+                        switch ($key) {
+                            case 'built_at':
+                                $d = new \DateTime('@'.$val);
+                                $val = $d->format(\DateTime::RFC2822);
+                                break;
+                        }
+                        $key = 'db '.\str_replace('_', ' ', $key);
+                        $docs[$key] = $val;
+                    }
+                } else {
+                    $docs['db schema'] = '0.1.0';
                 }
-                $key = 'manual '.\str_replace('_', ' ', $key);
-                $docs[$key] = $val;
+            }
+        } catch (Exception\RuntimeException $e) {
+            if ($e->getMessage() === 'SQLite PDO driver not found') {
+                $docs['sqlite available'] = false;
+            } else {
+                throw $e;
             }
         }
 
@@ -294,65 +300,6 @@ if (!\function_exists('Psy\\info')) {
             'tab completion enabled' => $config->useTabCompletion(),
             'bracketed paste'        => $config->useBracketedPaste(),
         ];
-
-        $warmers = $config->getAutoloadWarmers();
-        $autoload = [
-            'autoload warming enabled' => !empty($warmers),
-            'warmers configured'       => \count($warmers),
-        ];
-
-        if (!empty($warmers)) {
-            $autoload['warmer types'] = \array_map('get_class', $warmers);
-
-            // Add extended info for ComposerAutoloadWarmer
-            foreach ($warmers as $warmer) {
-                if ($warmer instanceof TabCompletion\AutoloadWarmer\ComposerAutoloadWarmer) {
-                    try {
-                        $autoload['composer warmer config'] = [
-                            'include vendor' => Sudo::fetchProperty($warmer, 'includeVendor'),
-                            'include tests'  => Sudo::fetchProperty($warmer, 'includeTests'),
-                            'vendor dir'     => Sudo::fetchProperty($warmer, 'vendorDir'),
-                            'phar prefix'    => Sudo::fetchProperty($warmer, 'pharPrefix'),
-                        ];
-
-                        $includeNamespaces = Sudo::fetchProperty($warmer, 'includeNamespaces');
-                        $excludeNamespaces = Sudo::fetchProperty($warmer, 'excludeNamespaces');
-                        $includeVendorNamespaces = Sudo::fetchProperty($warmer, 'includeVendorNamespaces');
-                        $excludeVendorNamespaces = Sudo::fetchProperty($warmer, 'excludeVendorNamespaces');
-
-                        if (!empty($includeNamespaces)) {
-                            $autoload['composer warmer config']['include namespaces'] = $includeNamespaces;
-                        }
-                        if (!empty($excludeNamespaces)) {
-                            $autoload['composer warmer config']['exclude namespaces'] = $excludeNamespaces;
-                        }
-                        if (!empty($includeVendorNamespaces)) {
-                            $autoload['composer warmer config']['include vendor namespaces'] = $includeVendorNamespaces;
-                        }
-                        if (!empty($excludeVendorNamespaces)) {
-                            $autoload['composer warmer config']['exclude vendor namespaces'] = $excludeVendorNamespaces;
-                        }
-                    } catch (\ReflectionException $e) {
-                        // shrug
-                    }
-                    break; // Only show info for the first ComposerAutoloadWarmer
-                }
-            }
-        }
-
-        $implicitUse = [];
-        $implicitUseConfig = $config->getImplicitUse();
-        if (\is_array($implicitUseConfig)) {
-            if (!empty($implicitUseConfig['includeNamespaces'])) {
-                $implicitUse['include namespaces'] = $implicitUseConfig['includeNamespaces'];
-            }
-            if (!empty($implicitUseConfig['excludeNamespaces'])) {
-                $implicitUse['exclude namespaces'] = $implicitUseConfig['excludeNamespaces'];
-            }
-        }
-        if (empty($implicitUse)) {
-            $implicitUse = false;
-        }
 
         // Shenanigans, but totally justified.
         try {
@@ -385,24 +332,7 @@ if (!\function_exists('Psy\\info')) {
 
         // @todo Show Presenter / custom casters.
 
-        return \array_merge(
-            $shellInfo,
-            $core,
-            \compact(
-                'updates',
-                'pcntl',
-                'input',
-                'readline',
-                'output',
-                'history',
-                'docs',
-                'autocomplete',
-                'autoload'
-            ),
-            [
-                'implicit use' => $implicitUse,
-            ],
-        );
+        return \array_merge($shellInfo, $core, \compact('updates', 'pcntl', 'input', 'readline', 'output', 'history', 'docs', 'autocomplete'));
     }
 }
 
@@ -451,8 +381,6 @@ if (!\function_exists('Psy\\bin')) {
                     new InputOption('help', 'h', InputOption::VALUE_NONE),
                     new InputOption('version', 'V', InputOption::VALUE_NONE),
                     new InputOption('self-update', 'u', InputOption::VALUE_NONE),
-                    new InputOption('update-manual', null, InputOption::VALUE_OPTIONAL, '', false),
-                    new InputOption('info', null, InputOption::VALUE_NONE),
 
                     new InputArgument('include', InputArgument::IS_ARRAY),
                 ])));
@@ -468,17 +396,6 @@ if (!\function_exists('Psy\\bin')) {
 
             // Handle --help
             if (!isset($config) || $usageException !== null || $input->getOption('help')) {
-                // Determine if we should use colors
-                $useColors = true;
-                if ($input->hasParameterOption(['--no-color'])) {
-                    $useColors = false;
-                } elseif (!$input->hasParameterOption(['--color']) && !\stream_isatty(\STDOUT)) {
-                    $useColors = false;
-                }
-
-                // Create output formatter for proper tag rendering
-                $formatter = new OutputFormatter($useColors);
-
                 if ($usageException !== null) {
                     echo $usageException->getMessage().\PHP_EOL.\PHP_EOL;
                 }
@@ -487,56 +404,37 @@ if (!\function_exists('Psy\\bin')) {
                 $argv = isset($_SERVER['argv']) ? $_SERVER['argv'] : [];
                 $name = $argv ? \basename(\reset($argv)) : 'psysh';
 
-                $selfUpdateOption = $shellIsPhar ? "\n  <info>-u, --self-update</info>       Install a newer version if available" : '';
-
-                $helpText = <<<EOL
+                echo <<<EOL
 $version
 
-<comment>Description:</>
-  A runtime developer console, interactive debugger and REPL for PHP
+Usage:
+  $name [--version] [--help] [files...]
 
-<comment>Usage:</>
-  $name [options] [--] [<files>...]
-
-<comment>Arguments:</>
-  <info>files</info>                   PHP file(s) to load before starting the shell
-
-<comment>Options:</>
-  <info>-h, --help</info>              Display this help message
-      <info>--info</info>              Display PsySH environment and configuration info
-  <info>-V, --version</info>           Display the PsySH version{$selfUpdateOption}
-      <info>--update-manual[=LANG]</info> Download and install the latest PHP manual (optional language code)
-
-      <info>--warm-autoload</info>     Enable autoload warming for better tab completion
-      <info>--yolo</info>              Run PsySH without input validation (you don't want this)
-
-  <info>-c, --config=FILE</info>       Use an alternate PsySH config file location
-      <info>--cwd=PATH</info>          Use an alternate working directory
-      <info>--color|--no-color</info>  Force (or disable with --no-color) colors in output
-  <info>-i, --interactive</info>       Force PsySH to run in interactive mode
-  <info>-n, --no-interactive</info>    Run PsySH without interactive input (requires input from stdin)
-  <info>-r, --raw-output</info>        Print var_export-style return values (for non-interactive input)
-      <info>--compact</info>           Run PsySH with compact output
-  <info>-q, --quiet</info>             Shhhhhh
-  <info>-v|vv|vvv, --verbose</info>    Increase the verbosity of messages
-
-<comment>Help:</>
-  PsySH is an interactive runtime developer console for PHP. Use it as a REPL
-  for quick experiments, or drop into your code with <info>eval(\Psy\sh());</info> or
-  <info>\Psy\debug();</info> to inspect application state and debug interactively.
-
-  For more information, see <info>https://psysh.org</info>
-
-  <comment>Examples:</>
-
-  $name                            <comment># Start interactive shell</comment>
-  $name -c ~/.config/psysh.php     <comment># Use custom config</comment>
-  $name --warm-autoload            <comment># Enable autoload warming</comment>
-  $name index.php                  <comment># Load file before starting</comment>
+Options:
+  -h, --help            Display this help message.
+  -c, --config FILE     Use an alternate PsySH config file location.
+      --cwd PATH        Use an alternate working directory.
+  -V, --version         Display the PsySH version.
 
 EOL;
+                if ($shellIsPhar) {
+                    echo <<<EOL
+  -u, --self-update     Install a newer version if available.
 
-                echo $formatter->format($helpText);
+EOL;
+                }
+                echo <<<EOL
+      --color           Force colors in output.
+      --no-color        Disable colors in output.
+  -i, --interactive     Force PsySH to run in interactive mode.
+  -n, --no-interactive  Run PsySH without interactive input. Requires input from stdin.
+  -r, --raw-output      Print var_export-style return values (for non-interactive input)
+      --compact         Run PsySH with compact output.
+  -q, --quiet           Shhhhhh.
+  -v|vv|vvv, --verbose  Increase the verbosity of messages.
+      --yolo            Run PsySH without input validation. You don't want this.
+
+EOL;
 
                 exit($usageException === null ? 0 : 1);
             }
@@ -544,23 +442,6 @@ EOL;
             // Handle --version
             if ($input->getOption('version')) {
                 echo Shell::getVersionHeader($config->useUnicode()).\PHP_EOL;
-                exit(0);
-            }
-
-            // Handle --info
-            if ($input->getOption('info')) {
-                // Store config for info() function
-                info($config);
-                $infoData = info();
-
-                // Format and display the info
-                $output = $config->getOutput();
-                if ($config->rawOutput()) {
-                    $output->writeln(\var_export($infoData, true));
-                } else {
-                    $presenter = $config->getPresenter();
-                    $output->writeln($presenter->present($infoData));
-                }
                 exit(0);
             }
 
@@ -575,18 +456,6 @@ EOL;
                 exit($result);
             }
 
-            // Handle --update-manual
-            if ($input->getOption('update-manual') !== false) {
-                try {
-                    $manualUpdate = ManualUpdate::fromConfig($config, $input, $config->getOutput());
-                    $result = $manualUpdate->run($input, $config->getOutput());
-                    exit($result);
-                } catch (\RuntimeException $e) {
-                    \fwrite(\STDERR, $e->getMessage().\PHP_EOL);
-                    exit(1);
-                }
-            }
-
             $shell = new Shell($config);
 
             // Pass additional arguments to Shell as 'includes'
@@ -594,17 +463,15 @@ EOL;
 
             try {
                 // And go!
-                $exitCode = $shell->run();
-                if ($exitCode !== 0) {
-                    exit($exitCode);
-                }
-            } catch (BreakException $e) {
-                // BreakException can escape if thrown before the execution loop starts
-                // (though it shouldn't in normal operation)
-                exit($e->getCode());
+                $shell->run();
             } catch (\Throwable $e) {
                 \fwrite(\STDERR, $e->getMessage().\PHP_EOL);
-                exit(1);
+
+                // @todo this triggers the "exited unexpectedly" logic in the
+                // ForkingLoop, so we can't exit(1) after starting the shell...
+                // fix this :)
+
+                // exit(1);
             }
         };
     }

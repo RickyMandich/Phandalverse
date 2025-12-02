@@ -94,15 +94,15 @@ class HttpKernelBrowser extends AbstractBrowser
         }
 
         $code = <<<EOF
-            <?php
+<?php
 
-            error_reporting($errorReporting);
+error_reporting($errorReporting);
 
-            $requires
+$requires
 
-            \$kernel = unserialize($kernel);
-            \$request = unserialize($request);
-            EOF;
+\$kernel = unserialize($kernel);
+\$request = unserialize($request);
+EOF;
 
         return $code.$this->getHandleScript();
     }
@@ -110,14 +110,14 @@ class HttpKernelBrowser extends AbstractBrowser
     protected function getHandleScript(): string
     {
         return <<<'EOF'
-            $response = $kernel->handle($request);
+$response = $kernel->handle($request);
 
-            if ($kernel instanceof Symfony\Component\HttpKernel\TerminableInterface) {
-                $kernel->terminate($request, $response);
-            }
+if ($kernel instanceof Symfony\Component\HttpKernel\TerminableInterface) {
+    $kernel->terminate($request, $response);
+}
 
-            echo serialize($response);
-            EOF;
+echo serialize($response);
+EOF;
     }
 
     protected function filterRequest(DomRequest $request): Request
@@ -180,18 +180,10 @@ class HttpKernelBrowser extends AbstractBrowser
      */
     protected function filterResponse(object $response): DomResponse
     {
-        $content = '';
-        ob_start(static function ($chunk) use (&$content) {
-            $content .= $chunk;
-
-             return '';
-        });
-
-        try {
-            $response->sendContent();
-        } finally {
-            ob_end_clean();
-        }
+        // this is needed to support StreamedResponse
+        ob_start();
+        $response->sendContent();
+        $content = ob_get_clean();
 
         return new DomResponse($content, $response->getStatusCode(), $response->headers->all());
     }

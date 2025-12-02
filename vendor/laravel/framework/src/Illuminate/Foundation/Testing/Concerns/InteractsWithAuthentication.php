@@ -19,21 +19,6 @@ trait InteractsWithAuthentication
     }
 
     /**
-     * Clear the currently logged in user for the application.
-     *
-     * @param  string|null  $guard
-     * @return $this
-     */
-    public function actingAsGuest($guard = null)
-    {
-        $this->app['auth']->guard($guard)->forgetUser();
-
-        $this->app['auth']->shouldUse($guard);
-
-        return $this;
-    }
-
-    /**
      * Set the currently logged in user for the application.
      *
      * @param  \Illuminate\Contracts\Auth\Authenticatable  $user

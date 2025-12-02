@@ -26,7 +26,7 @@ class Pool
     /**
      * The pool of requests.
      *
-     * @var array<array-key, \Illuminate\Http\Client\PendingRequest>
+     * @var array
      */
     protected $pool = [];
 
@@ -34,6 +34,7 @@ class Pool
      * Create a new requests pool.
      *
      * @param  \Illuminate\Http\Client\Factory|null  $factory
+     * @return void
      */
     public function __construct(?Factory $factory = null)
     {
@@ -65,7 +66,7 @@ class Pool
     /**
      * Retrieve the requests in the pool.
      *
-     * @return array<array-key, \Illuminate\Http\Client\PendingRequest>
+     * @return array
      */
     public function getRequests()
     {

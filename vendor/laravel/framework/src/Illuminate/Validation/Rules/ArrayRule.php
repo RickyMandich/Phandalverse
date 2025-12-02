@@ -19,7 +19,8 @@ class ArrayRule implements Stringable
     /**
      * Create a new array rule instance.
      *
-     * @param  \Illuminate\Contracts\Support\Arrayable|array|null  $keys
+     * @param  array|null  $keys
+     * @return void
      */
     public function __construct($keys = null)
     {

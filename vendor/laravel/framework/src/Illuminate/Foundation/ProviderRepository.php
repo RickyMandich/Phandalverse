@@ -35,6 +35,7 @@ class ProviderRepository
      * @param  \Illuminate\Contracts\Foundation\Application  $app
      * @param  \Illuminate\Filesystem\Filesystem  $files
      * @param  string  $manifestPath
+     * @return void
      */
     public function __construct(ApplicationContract $app, Filesystem $files, $manifestPath)
     {

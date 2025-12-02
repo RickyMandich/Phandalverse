@@ -39,6 +39,7 @@ class File extends UploadedFile
      *
      * @param  string  $name
      * @param  resource  $tempFile
+     * @return void
      */
     public function __construct($name, $tempFile)
     {

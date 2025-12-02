@@ -30,6 +30,7 @@ class Request implements ArrayAccess
      * Create a new request instance.
      *
      * @param  \Psr\Http\Message\RequestInterface  $request
+     * @return void
      */
     public function __construct($request)
     {

@@ -138,17 +138,6 @@ trait CompilesConditionals
     }
 
     /**
-     * Compile the has-stack statements into valid PHP.
-     *
-     * @param  string  $expression
-     * @return string
-     */
-    protected function compileHasStack($expression)
-    {
-        return "<?php if (! \$__env->isStackEmpty{$expression}): ?>";
-    }
-
-    /**
      * Compile the section-missing statements into valid PHP.
      *
      * @param  string  $expression
@@ -390,16 +379,7 @@ trait CompilesConditionals
      */
     protected function compilePushIf($expression)
     {
-        $parts = explode(',', $this->stripParentheses($expression));
-
-        if (count($parts) > 2) {
-            $last = array_pop($parts);
-
-            $parts = [
-                implode(',', $parts),
-                trim($last),
-            ];
-        }
+        $parts = explode(',', $this->stripParentheses($expression), 2);
 
         return "<?php if({$parts[0]}): \$__env->startPush({$parts[1]}); ?>";
     }

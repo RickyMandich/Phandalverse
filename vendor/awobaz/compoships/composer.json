@@ -1,0 +1,42 @@
+{
+  "name": "awobaz/compoships",
+  "description": "Laravel relationships with support for composite/multiple keys",
+  "license": "MIT",
+  "keywords": [
+    "laravel",
+    "laravel composite keys",
+    "laravel relationships"
+  ],
+  "authors": [
+    {
+      "name": "Claudin J. Daniel",
+      "email": "cdaniel@awobaz.com"
+    }
+  ],
+  "require": {
+    "illuminate/database": ">=5.6 <13.0"
+  },
+  "require-dev": {
+    "ext-sqlite3": "*",
+    "fakerphp/faker": "^1.18",
+    "phpunit/phpunit": "^6.0|^8.0|^9.0|^10.0|^11.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Awobaz\\Compoships\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Awobaz\\Compoships\\Tests\\": "tests"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "suggest": {
+    "awobaz/eloquent-mutators": "Reusable mutators (getters/setters) for Laravel 5's Eloquent",
+    "awobaz/eloquent-auto-append": "Automatically append accessors to model serialization",
+    "awobaz/blade-active": "Blade directives for the Laravel 'Active' package",
+    "awobaz/syntactic": "Syntactic sugar for named and indexed parameters call."
+  }
+}

@@ -42,8 +42,7 @@ final class SummaryPrinter
             return;
         }
 
-        if ($result->wasSuccessful() &&
-            !$result->hasIssues() &&
+        if ($result->wasSuccessfulAndNoTestHasIssues() &&
             !$result->hasTestSuiteSkippedEvents() &&
             !$result->hasTestSkippedEvents()) {
             $this->printWithColor(
@@ -62,34 +61,49 @@ final class SummaryPrinter
             return;
         }
 
+        $color = 'fg-black, bg-yellow';
+
         if ($result->wasSuccessful()) {
-            if ($result->hasIssues()) {
-                $color = 'fg-black, bg-yellow';
-
-                $this->printWithColor(
-                    $color,
-                    'OK, but there were issues!',
-                );
-            } else {
-                $color = 'fg-black, bg-green';
-
+            if (!$result->hasTestsWithIssues()) {
                 $this->printWithColor(
                     $color,
                     'OK, but some tests were skipped!',
                 );
-            }
-        } else {
-            $color = 'fg-white, bg-red';
-
-            if ($result->hasTestErroredEvents() || $result->hasTestTriggeredPhpunitErrorEvents()) {
-                $this->printWithColor(
-                    'fg-white, bg-red',
-                    'ERRORS!',
-                );
             } else {
                 $this->printWithColor(
-                    'fg-white, bg-red',
+                    $color,
+                    'OK, but there were issues!',
+                );
+            }
+        } else {
+            if ($result->hasTestErroredEvents() || $result->hasTestTriggeredPhpunitErrorEvents()) {
+                $color = 'fg-white, bg-red';
+
+                $this->printWithColor(
+                    $color,
+                    'ERRORS!',
+                );
+            } elseif ($result->hasTestFailedEvents()) {
+                $color = 'fg-white, bg-red';
+
+                $this->printWithColor(
+                    $color,
                     'FAILURES!',
+                );
+            } elseif ($result->hasWarnings()) {
+                $this->printWithColor(
+                    $color,
+                    'WARNINGS!',
+                );
+            } elseif ($result->hasDeprecations()) {
+                $this->printWithColor(
+                    $color,
+                    'DEPRECATIONS!',
+                );
+            } elseif ($result->hasNotices()) {
+                $this->printWithColor(
+                    $color,
+                    'NOTICES!',
                 );
             }
         }
@@ -98,11 +112,9 @@ final class SummaryPrinter
         $this->printCountString($result->numberOfAssertions(), 'Assertions', $color, true);
         $this->printCountString($result->numberOfErrors(), 'Errors', $color);
         $this->printCountString($result->numberOfTestFailedEvents(), 'Failures', $color);
-        $this->printCountString($result->numberOfPhpunitWarnings(), 'PHPUnit Warnings', $color);
         $this->printCountString($result->numberOfWarnings(), 'Warnings', $color);
         $this->printCountString($result->numberOfPhpOrUserDeprecations(), 'Deprecations', $color);
         $this->printCountString($result->numberOfPhpunitDeprecations(), 'PHPUnit Deprecations', $color);
-        $this->printCountString($result->numberOfPhpunitNotices(), 'PHPUnit Notices', $color);
         $this->printCountString($result->numberOfNotices(), 'Notices', $color);
         $this->printCountString($result->numberOfTestSuiteSkippedEvents() + $result->numberOfTestSkippedEvents(), 'Skipped', $color);
         $this->printCountString($result->numberOfTestMarkedIncompleteEvents(), 'Incomplete', $color);

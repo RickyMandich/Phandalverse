@@ -7,11 +7,7 @@ use PhpParser\Node\InterpolatedStringPart;
 require __DIR__ . '/../InterpolatedStringPart.php';
 
 if (false) {
-    /**
-     * For classmap-authoritative support.
-     *
-     * @deprecated use \PhpParser\Node\InterpolatedStringPart instead.
-     */
+    // For classmap-authoritative support.
     class EncapsedStringPart extends InterpolatedStringPart {
     }
 }

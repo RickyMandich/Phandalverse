@@ -8,6 +8,8 @@ class MalformedUrlException extends HttpException
 {
     /**
      * Create a new exception instance.
+     *
+     * @return void
      */
     public function __construct()
     {

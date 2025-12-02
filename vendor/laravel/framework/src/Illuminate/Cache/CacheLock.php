@@ -18,6 +18,7 @@ class CacheLock extends Lock
      * @param  string  $name
      * @param  int  $seconds
      * @param  string|null  $owner
+     * @return void
      */
     public function __construct($store, $name, $seconds, $owner = null)
     {
@@ -44,8 +45,8 @@ class CacheLock extends Lock
         }
 
         return ($this->seconds > 0)
-            ? $this->store->put($this->name, $this->owner, $this->seconds)
-            : $this->store->forever($this->name, $this->owner);
+                ? $this->store->put($this->name, $this->owner, $this->seconds)
+                : $this->store->forever($this->name, $this->owner);
     }
 
     /**

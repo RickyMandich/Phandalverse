@@ -35,6 +35,7 @@ class DatabaseUuidFailedJobProvider implements CountableFailedJobProvider, Faile
      * @param  \Illuminate\Database\ConnectionResolverInterface  $resolver
      * @param  string  $database
      * @param  string  $table
+     * @return void
      */
     public function __construct(ConnectionResolverInterface $resolver, $database, $table)
     {
@@ -149,7 +150,7 @@ class DatabaseUuidFailedJobProvider implements CountableFailedJobProvider, Faile
         $totalDeleted = 0;
 
         do {
-            $deleted = $query->limit(1000)->delete();
+            $deleted = $query->take(1000)->delete();
 
             $totalDeleted += $deleted;
         } while ($deleted !== 0);
@@ -177,7 +178,7 @@ class DatabaseUuidFailedJobProvider implements CountableFailedJobProvider, Faile
      *
      * @return \Illuminate\Database\Query\Builder
      */
-    public function getTable()
+    protected function getTable()
     {
         return $this->resolver->connection($this->database)->table($this->table);
     }

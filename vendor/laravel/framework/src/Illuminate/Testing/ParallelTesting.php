@@ -67,6 +67,7 @@ class ParallelTesting
      * Create a new parallel testing instance.
      *
      * @param  \Illuminate\Contracts\Container\Container  $container
+     * @return void
      */
     public function __construct(Container $container)
     {

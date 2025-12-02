@@ -95,6 +95,7 @@ class WorkerOptions
      * @param  int  $maxJobs
      * @param  int  $maxTime
      * @param  int  $rest
+     * @return void
      */
     public function __construct(
         $name = 'default',

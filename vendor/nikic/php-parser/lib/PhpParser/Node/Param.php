@@ -71,17 +71,13 @@ class Param extends NodeAbstract {
         return $this->flags !== 0 || $this->hooks !== [];
     }
 
-    public function isFinal(): bool {
-        return (bool) ($this->flags & Modifiers::FINAL);
-    }
-
     public function isPublic(): bool {
         $public = (bool) ($this->flags & Modifiers::PUBLIC);
         if ($public) {
             return true;
         }
 
-        if (!$this->isPromoted()) {
+        if ($this->hooks === []) {
             return false;
         }
 

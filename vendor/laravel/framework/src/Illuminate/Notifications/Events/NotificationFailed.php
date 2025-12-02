@@ -16,6 +16,7 @@ class NotificationFailed
      * @param  \Illuminate\Notifications\Notification  $notification  The notification instance.
      * @param  string  $channel  The channel name.
      * @param  array  $data  The data needed to process this failure.
+     * @return void
      */
     public function __construct(
         public $notifiable,

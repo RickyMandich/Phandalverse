@@ -36,11 +36,9 @@ trait InteractsWithContainer
     /**
      * Register an instance of an object in the container.
      *
-     * @template TSwap of object
-     *
      * @param  string  $abstract
-     * @param  TSwap  $instance
-     * @return TSwap
+     * @param  object  $instance
+     * @return object
      */
     protected function swap($abstract, $instance)
     {
@@ -50,11 +48,9 @@ trait InteractsWithContainer
     /**
      * Register an instance of an object in the container.
      *
-     * @template TInstance of object
-     *
      * @param  string  $abstract
-     * @param  TInstance  $instance
-     * @return TInstance
+     * @param  object  $instance
+     * @return object
      */
     protected function instance($abstract, $instance)
     {

@@ -41,6 +41,7 @@ class Logger implements LoggerInterface
      *
      * @param  \Psr\Log\LoggerInterface  $logger
      * @param  \Illuminate\Contracts\Events\Dispatcher|null  $dispatcher
+     * @return void
      */
     public function __construct(LoggerInterface $logger, ?Dispatcher $dispatcher = null)
     {
@@ -202,18 +203,13 @@ class Logger implements LoggerInterface
     }
 
     /**
-     * Flush the log context on all currently resolved channels.
+     * Flush the existing context array.
      *
-     * @param  string[]|null  $keys
      * @return $this
      */
-    public function withoutContext(?array $keys = null)
+    public function withoutContext()
     {
-        if (is_array($keys)) {
-            $this->context = array_diff_key($this->context, array_flip($keys));
-        } else {
-            $this->context = [];
-        }
+        $this->context = [];
 
         return $this;
     }
@@ -245,12 +241,6 @@ class Logger implements LoggerInterface
      */
     protected function fireLogEvent($level, $message, array $context = [])
     {
-        // Avoid dispatching the event multiple times if our logger instance is the LogManager...
-        if ($this->logger instanceof LogManager &&
-            $this->logger->getEventDispatcher() !== null) {
-            return;
-        }
-
         // If the event dispatcher is set, we will pass along the parameters to the
         // log listeners. These are useful for building profilers or other tools
         // that aggregate all of the log messages for a given "request" cycle.

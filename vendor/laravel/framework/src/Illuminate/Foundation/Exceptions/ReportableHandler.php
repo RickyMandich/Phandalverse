@@ -27,6 +27,7 @@ class ReportableHandler
      * Create a new reportable handler instance.
      *
      * @param  callable  $callback
+     * @return void
      */
     public function __construct(callable $callback)
     {

@@ -1,9 +1,5 @@
 # CHANGELOG
 
-## v2.18.0
-
-* Line numbers are now clickable.
-
 ## v2.17.0
 
 * Support cursor IDE.

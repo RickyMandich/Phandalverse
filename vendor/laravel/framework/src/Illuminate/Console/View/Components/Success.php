@@ -15,6 +15,6 @@ class Success extends Component
      */
     public function render($string, $verbosity = OutputInterface::VERBOSITY_NORMAL)
     {
-        (new Line($this->output))->render('success', $string, $verbosity);
+        with(new Line($this->output))->render('success', $string, $verbosity);
     }
 }

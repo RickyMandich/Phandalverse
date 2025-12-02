@@ -210,13 +210,7 @@ class HttpCache implements HttpKernelInterface, TerminableInterface
             $this->record($request, 'reload');
             $response = $this->fetch($request, $catch);
         } else {
-            $response = null;
-            do {
-                try {
-                    $response = $this->lookup($request, $catch);
-                } catch (CacheWasLockedException) {
-                }
-            } while (null === $response);
+            $response = $this->lookup($request, $catch);
         }
 
         $this->restoreResponseBody($request, $response);
@@ -482,7 +476,7 @@ class HttpCache implements HttpKernelInterface, TerminableInterface
          * stale-if-error case even if they have a `s-maxage` Cache-Control directive.
          */
         if (null !== $entry
-            && \in_array($response->getStatusCode(), [500, 502, 503, 504], true)
+            && \in_array($response->getStatusCode(), [500, 502, 503, 504])
             && !$entry->headers->hasCacheControlDirective('no-cache')
             && !$entry->mustRevalidate()
         ) {
@@ -564,11 +558,17 @@ class HttpCache implements HttpKernelInterface, TerminableInterface
             return true;
         }
 
-        $this->record($request, 'waiting');
-
         // wait for the lock to be released
         if ($this->waitForLock($request)) {
-            throw new CacheWasLockedException(); // unwind back to handle(), try again
+            // replace the current entry with the fresh one
+            $new = $this->lookup($request);
+            $entry->headers = $new->headers;
+            $entry->setContent($new->getContent());
+            $entry->setStatusCode($new->getStatusCode());
+            $entry->setProtocolVersion($new->getProtocolVersion());
+            foreach ($new->headers->getCookies() as $cookie) {
+                $entry->headers->setCookie($cookie);
+            }
         } else {
             // backend is slow as hell, send a 503 response (to avoid the dog pile effect)
             $entry->setStatusCode(503);

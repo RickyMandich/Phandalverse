@@ -24,17 +24,19 @@ use function str_starts_with;
 /**
  * A value object representing a decimal
  *
- * This class exists for type-safety purposes, to ensure that decimals returned from ramsey/uuid methods as strings are
- * truly decimals and not some other kind of string.
+ * This class exists for type-safety purposes, to ensure that decimals
+ * returned from ramsey/uuid methods as strings are truly decimals and not some
+ * other kind of string.
  *
- * To support values as true decimals and not as floats or doubles, we store the decimals as strings.
+ * To support values as true decimals and not as floats or doubles, we store the
+ * decimals as strings.
  *
- * @immutable
+ * @psalm-immutable
  */
 final class Decimal implements NumberInterface
 {
     private string $value;
-    private bool $isNegative;
+    private bool $isNegative = false;
 
     public function __construct(float | int | string | self $value)
     {
@@ -59,8 +61,6 @@ final class Decimal implements NumberInterface
 
         if (str_starts_with($value, '-')) {
             $this->isNegative = true;
-        } else {
-            $this->isNegative = false;
         }
 
         $this->value = $value;
@@ -103,6 +103,8 @@ final class Decimal implements NumberInterface
      * Constructs the object from a serialized string representation
      *
      * @param string $data The serialized string representation of the object
+     *
+     * @psalm-suppress UnusedMethodCall
      */
     public function unserialize(string $data): void
     {
@@ -111,6 +113,8 @@ final class Decimal implements NumberInterface
 
     /**
      * @param array{string?: string} $data
+     *
+     * @psalm-suppress UnusedMethodCall
      */
     public function __unserialize(array $data): void
     {

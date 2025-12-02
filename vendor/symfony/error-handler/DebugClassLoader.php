@@ -18,10 +18,8 @@ use Mockery\MockInterface;
 use Phake\IMock;
 use PHPUnit\Framework\MockObject\Matcher\StatelessInvocation;
 use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\MockObject\Stub;
 use Prophecy\Prophecy\ProphecySubjectInterface;
 use ProxyManager\Proxy\ProxyInterface;
-use Psr\Log\LogLevel;
 use Symfony\Component\DependencyInjection\Argument\LazyClosure;
 use Symfony\Component\ErrorHandler\Internal\TentativeTypes;
 use Symfony\Component\VarExporter\LazyObjectInterface;
@@ -71,14 +69,12 @@ class DebugClassLoader
         'iterable' => 'iterable',
         'object' => 'object',
         'string' => 'string',
-        'non-empty-string' => 'string',
         'self' => 'self',
         'parent' => 'parent',
         'mixed' => 'mixed',
         'static' => 'static',
         '$this' => 'static',
         'list' => 'array',
-        'non-empty-list' => 'array',
         'class-string' => 'string',
         'never' => 'never',
     ];
@@ -190,7 +186,7 @@ class DebugClassLoader
     {
         // Ensures we don't hit https://bugs.php.net/42098
         class_exists(ErrorHandler::class);
-        class_exists(LogLevel::class);
+        class_exists(\Psr\Log\LogLevel::class);
 
         if (!\is_array($functions = spl_autoload_functions())) {
             return;
@@ -261,7 +257,6 @@ class DebugClassLoader
 
             for (; $i < \count($symbols); ++$i) {
                 if (!is_subclass_of($symbols[$i], MockObject::class)
-                    && !is_subclass_of($symbols[$i], Stub::class)
                     && !is_subclass_of($symbols[$i], ProphecySubjectInterface::class)
                     && !is_subclass_of($symbols[$i], Proxy::class)
                     && !is_subclass_of($symbols[$i], ProxyInterface::class)
@@ -380,7 +375,7 @@ class DebugClassLoader
 
         // Don't trigger deprecations for classes in the same vendor
         if ($class !== $className) {
-            $vendor = $refl->getFileName() && preg_match('/^namespace ([^;\\\\\s]++)[;\\\\]/m', @file_get_contents($refl->getFileName()) ?: '', $vendor) ? $vendor[1].'\\' : '';
+            $vendor = preg_match('/^namespace ([^;\\\\\s]++)[;\\\\]/m', @file_get_contents($refl->getFileName()), $vendor) ? $vendor[1].'\\' : '';
             $vendorLen = \strlen($vendor);
         } elseif (2 > $vendorLen = 1 + (strpos($class, '\\') ?: strpos($class, '_'))) {
             $vendorLen = 0;
@@ -847,8 +842,8 @@ class DebugClassLoader
         $iterable = $object = true;
         foreach ($typesMap as $n => $t) {
             if ('null' !== $n) {
-                $iterable = $iterable && (\in_array($n, ['array', 'iterable'], true) || str_contains($n, 'Iterator'));
-                $object = $object && (\in_array($n, ['callable', 'object', '$this', 'static'], true) || !isset(self::SPECIAL_RETURN_TYPES[$n]));
+                $iterable = $iterable && (\in_array($n, ['array', 'iterable']) || str_contains($n, 'Iterator'));
+                $object = $object && (\in_array($n, ['callable', 'object', '$this', 'static']) || !isset(self::SPECIAL_RETURN_TYPES[$n]));
             }
         }
 
@@ -1071,11 +1066,11 @@ class DebugClassLoader
                 $code[$startLine] = "     * @return $returnType\n".$code[$startLine];
             } else {
                 $code[$startLine] .= <<<EOTXT
-                        /**
-                         * @return $returnType
-                         */
+    /**
+     * @return $returnType
+     */
 
-                    EOTXT;
+EOTXT;
             }
 
             $fileOffset += substr_count($code[$startLine], "\n") - 1;

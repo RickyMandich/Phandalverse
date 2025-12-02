@@ -46,6 +46,7 @@ class CallbackEvent extends Event
      * @param  string|callable  $callback
      * @param  array  $parameters
      * @param  \DateTimeZone|string|null  $timezone
+     * @return void
      *
      * @throws \InvalidArgumentException
      */

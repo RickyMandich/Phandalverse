@@ -45,6 +45,7 @@ class RedisJob extends Job implements JobContract
      * @param  string  $reserved
      * @param  string  $connectionName
      * @param  string  $queue
+     * @return void
      */
     public function __construct(Container $container, RedisQueue $redis, $job, $reserved, $connectionName, $queue)
     {

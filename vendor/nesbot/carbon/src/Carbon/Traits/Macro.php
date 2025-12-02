@@ -40,8 +40,6 @@ trait Macro
      * });
      * echo Carbon::yesterday()->hours(11)->userFormat();
      * ```
-     *
-     * @param-closure-this static $macro
      */
     public static function macro(string $name, ?callable $macro): void
     {

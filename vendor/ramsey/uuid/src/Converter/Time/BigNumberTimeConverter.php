@@ -20,12 +20,12 @@ use Ramsey\Uuid\Type\Hexadecimal;
 use Ramsey\Uuid\Type\Time;
 
 /**
- * Previously used to integrate moontoast/math as a bignum arithmetic library, BigNumberTimeConverter is deprecated in
- * favor of GenericTimeConverter
+ * Previously used to integrate moontoast/math as a bignum arithmetic library,
+ * BigNumberTimeConverter is deprecated in favor of GenericTimeConverter
  *
- * @deprecated Please transition to {@see GenericTimeConverter}.
+ * @deprecated Transition to {@see GenericTimeConverter}.
  *
- * @immutable
+ * @psalm-immutable
  */
 class BigNumberTimeConverter implements TimeConverterInterface
 {

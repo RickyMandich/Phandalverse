@@ -28,6 +28,7 @@ class SyncJob extends Job implements JobContract
      * @param  string  $payload
      * @param  string  $connectionName
      * @param  string  $queue
+     * @return void
      */
     public function __construct(Container $container, $payload, $connectionName, $queue)
     {

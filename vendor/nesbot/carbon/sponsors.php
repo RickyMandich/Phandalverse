@@ -52,20 +52,8 @@ function getOpenCollectiveSponsors(): string
             'website' => 'https://lgcnews.com/',
         ],
         663069 => [
-            // alt attribute
-            'name' => 'Ставки на спорт Favbet',
             // href attribute
             'website' => 'https://www.favbet.ua/uk/',
-        ],
-        676798 => [
-            // alt attribute
-            'name' => 'Top Casinos Canada',
-            // title attribute
-            'description' => 'Top Casinos Canada',
-            // src attribute
-            'image' => 'https://topcasino.net/img/topcasino-logo-cover.png',
-            // href attribute
-            'website' => 'https://topcasino.net/',
         ],
     ];
 
@@ -158,10 +146,7 @@ function getOpenCollectiveSponsors(): string
         $status = null;
         $rank = 0;
 
-        if ($monthlyContribution > 50 || $yearlyContribution > 900) {
-            $status = 'sponsor';
-            $rank = 5;
-        } elseif ($monthlyContribution > 29 || $yearlyContribution > 700) {
+        if ($monthlyContribution > 29 || $yearlyContribution > 700) {
             $status = 'sponsor';
             $rank = 4;
         } elseif ($monthlyContribution > 14.5 || $yearlyContribution > 500) {
@@ -193,7 +178,6 @@ function getOpenCollectiveSponsors(): string
 
     $membersByUrl = [];
     $output = '';
-    $extra = '';
 
     foreach ($list as $member) {
         $url = $member['website'] ?? $member['profile'];
@@ -233,30 +217,12 @@ function getOpenCollectiveSponsors(): string
             $height *= 1.5;
         }
 
-        $link = "\n".'<a title="'.$title.'" href="'.$href.'" target="_blank"'.$rel.'>'.
+        $output .= "\n".'<a title="'.$title.'" href="'.$href.'" target="_blank"'.$rel.'>'.
             '<img alt="'.$alt.'" src="'.$src.'" width="'.$width.'" height="'.$height.'">'.
             '</a>';
-
-        if ($member['rank'] >= 5) {
-            $output .= $link;
-
-            continue;
-        }
-
-        $extra .= $link;
     }
 
-    $github = [
-        8343178 => 'ssddanbrown',
-    ];
-
-    foreach ($github as $avatar => $user) {
-        $extra .= "\n".'<a title="'.$user.'" href="https://github.com/'.$user.'" target="_blank">'.
-            '<img alt="'.$user.'" src="https://avatars.githubusercontent.com/u/'.$avatar.'?s=128&v=4" width="42" height="42">'.
-            '</a>';
-    }
-
-    return $output.'<details><summary>See more</summary>'.$extra.'</details>';
+    return $output;
 }
 
 file_put_contents('readme.md', preg_replace_callback(

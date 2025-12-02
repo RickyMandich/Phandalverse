@@ -170,7 +170,7 @@ abstract class Connection
     }
 
     /**
-     * Set the connection's name.
+     * Set the connections name.
      *
      * @param  string  $name
      * @return $this

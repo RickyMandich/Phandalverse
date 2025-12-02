@@ -3,7 +3,6 @@
 namespace Illuminate\Support;
 
 use Closure;
-use Illuminate\Contracts\Support\HasOnceHash;
 use Laravel\SerializableClosure\Support\ReflectionClosure;
 
 class Onceable
@@ -14,6 +13,7 @@ class Onceable
      * @param  string  $hash
      * @param  object|null  $object
      * @param  callable  $callable
+     * @return void
      */
     public function __construct(
         public string $hash,
@@ -62,17 +62,7 @@ class Onceable
         }
 
         $uses = array_map(
-            static function (mixed $argument) {
-                if ($argument instanceof HasOnceHash) {
-                    return $argument->onceHash();
-                }
-
-                if (is_object($argument)) {
-                    return spl_object_hash($argument);
-                }
-
-                return $argument;
-            },
+            fn (mixed $argument) => is_object($argument) ? spl_object_hash($argument) : $argument,
             $callable instanceof Closure ? (new ReflectionClosure($callable))->getClosureUsedVariables() : [],
         );
 

@@ -46,6 +46,7 @@ class EnvironmentDecryptCommand extends Command
      * Create a new command instance.
      *
      * @param  \Illuminate\Filesystem\Filesystem  $files
+     * @return void
      */
     public function __construct(Filesystem $files)
     {
@@ -76,8 +77,8 @@ class EnvironmentDecryptCommand extends Command
         $key = $this->parseKey($key);
 
         $encryptedFile = ($this->option('env')
-            ? Str::finish(dirname($this->laravel->environmentFilePath()), DIRECTORY_SEPARATOR).'.env.'.$this->option('env')
-            : $this->laravel->environmentFilePath()).'.encrypted';
+                    ? Str::finish(dirname($this->laravel->environmentFilePath()), DIRECTORY_SEPARATOR).'.env.'.$this->option('env')
+                    : $this->laravel->environmentFilePath()).'.encrypted';
 
         $outputFile = $this->outputFilePath();
 

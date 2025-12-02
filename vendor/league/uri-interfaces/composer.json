@@ -1,7 +1,7 @@
 {
     "name": "league/uri-interfaces",
     "type": "library",
-    "description" : "Common tools for parsing and resolving RFC3987/RFC3986 URI",
+    "description" : "Common interfaces and classes for URI representation and interaction",
     "keywords": [
         "url",
         "uri",
@@ -39,7 +39,8 @@
     "require": {
         "php" : "^8.1",
         "ext-filter": "*",
-        "psr/http-message": "^1.1 || ^2.0"
+        "psr/http-message": "^1.1 || ^2.0",
+        "psr/http-factory": "^1"
     },
     "autoload": {
         "psr-4": {
@@ -51,8 +52,7 @@
         "ext-gmp": "to improve IPV4 host parsing",
         "ext-intl": "to handle IDN host with the best performance",
         "php-64bit": "to improve IPV4 host parsing",
-        "symfony/polyfill-intl-idn": "to handle IDN host via the Symfony polyfill if ext-intl is not present",
-        "rowbot/url": "to handle WHATWG URL"
+        "symfony/polyfill-intl-idn": "to handle IDN host via the Symfony polyfill if ext-intl is not present"
     },
     "extra": {
         "branch-alias": {

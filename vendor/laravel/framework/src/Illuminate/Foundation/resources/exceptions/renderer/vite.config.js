@@ -1,14 +1,14 @@
-import { defineConfig } from 'vite';
-import tailwindcss from '@tailwindcss/vite';
-export default defineConfig({
-    plugins: [tailwindcss()],
+/** @type {import('vite').UserConfig} */
+export default {
+    plugins: [],
     build: {
+        assetsDir: '',
         rollupOptions: {
-            input: ['styles.css', 'scripts.js'],
+            input: ['scripts.js', 'styles.css', 'dark-mode.css', 'light-mode.css'],
             output: {
                 assetFileNames: '[name][extname]',
                 entryFileNames: '[name].js',
             },
         },
     },
-});
+};

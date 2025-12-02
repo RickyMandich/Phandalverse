@@ -54,6 +54,7 @@ class ComponentTagCompiler
      * @param  array  $aliases
      * @param  array  $namespaces
      * @param  \Illuminate\View\Compilers\BladeCompiler|null  $blade
+     * @return void
      */
     public function __construct(array $aliases = [], array $namespaces = [], ?BladeCompiler $blade = null)
     {
@@ -336,8 +337,8 @@ class ComponentTagCompiler
                 }
 
                 $formattedComponent = str_starts_with($component, $path['prefix'].$delimiter)
-                    ? Str::after($component, $delimiter)
-                    : $component;
+                        ? Str::after($component, $delimiter)
+                        : $component;
 
                 if (! is_null($guess = match (true) {
                     $viewFactory->exists($guess = $path['prefixHash'].$delimiter.$formattedComponent) => $guess,
@@ -407,10 +408,6 @@ class ComponentTagCompiler
         }
 
         if (class_exists($class = $this->namespaces[$prefix].'\\'.$this->formatClassName($segments[1]))) {
-            return $class;
-        }
-
-        if (class_exists($class = $class.'\\'.Str::afterLast($class, '\\'))) {
             return $class;
         }
     }
@@ -488,8 +485,8 @@ class ComponentTagCompiler
         $constructor = (new ReflectionClass($class))->getConstructor();
 
         $parameterNames = $constructor
-            ? (new Collection($constructor->getParameters()))->map->getName()->all()
-            : [];
+                    ? (new Collection($constructor->getParameters()))->map->getName()->all()
+                    : [];
 
         return (new Collection($attributes))
             ->partition(fn ($value, $key) => in_array(Str::camel($key), $parameterNames))
@@ -560,7 +557,7 @@ class ComponentTagCompiler
         /x";
 
         $value = preg_replace_callback($pattern, function ($matches) {
-            $name = $this->stripQuotes($matches['inlineName'] ?: $matches['name'] ?: $matches['boundName']) ?: "'slot'";
+            $name = $this->stripQuotes($matches['inlineName'] ?: $matches['name'] ?: $matches['boundName']);
 
             if (Str::contains($name, '-') && ! empty($matches['inlineName'])) {
                 $name = Str::camel($name);
@@ -775,8 +772,8 @@ class ComponentTagCompiler
             }
 
             return $token[0] === T_INLINE_HTML
-                ? str_replace("'", "\\'", $token[1])
-                : $token[1];
+                        ? str_replace("'", "\\'", $token[1])
+                        : $token[1];
         })->implode('');
     }
 
@@ -792,8 +789,8 @@ class ComponentTagCompiler
         return (new Collection($attributes))
             ->map(function (string $value, string $attribute) use ($escapeBound) {
                 return $escapeBound && isset($this->boundAttributes[$attribute]) && $value !== 'true' && ! is_numeric($value)
-                    ? "'{$attribute}' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute({$value})"
-                    : "'{$attribute}' => {$value}";
+                            ? "'{$attribute}' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute({$value})"
+                            : "'{$attribute}' => {$value}";
             })
             ->implode(',');
     }
@@ -807,7 +804,7 @@ class ComponentTagCompiler
     public function stripQuotes(string $value)
     {
         return Str::startsWith($value, ['"', '\''])
-            ? substr($value, 1, -1)
-            : $value;
+                    ? substr($value, 1, -1)
+                    : $value;
     }
 }

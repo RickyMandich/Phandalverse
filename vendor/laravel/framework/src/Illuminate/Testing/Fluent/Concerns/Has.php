@@ -15,7 +15,7 @@ trait Has
      * @param  int|null  $length
      * @return $this
      */
-    public function count($key, ?int $length = null): static
+    public function count($key, ?int $length = null): self
     {
         if (is_null($length)) {
             $path = $this->dotPath();
@@ -47,7 +47,7 @@ trait Has
      * @param  int|string  $max
      * @return $this
      */
-    public function countBetween(int|string $min, int|string $max): static
+    public function countBetween(int|string $min, int|string $max): self
     {
         $path = $this->dotPath();
 
@@ -80,7 +80,7 @@ trait Has
      * @param  \Closure|null  $callback
      * @return $this
      */
-    public function has($key, $length = null, ?Closure $callback = null): static
+    public function has($key, $length = null, ?Closure $callback = null): self
     {
         $prop = $this->prop();
 
@@ -125,7 +125,7 @@ trait Has
      * @param  array|string  $key
      * @return $this
      */
-    public function hasAll($key): static
+    public function hasAll($key): self
     {
         $keys = is_array($key) ? $key : func_get_args();
 
@@ -146,7 +146,7 @@ trait Has
      * @param  array|string  $key
      * @return $this
      */
-    public function hasAny($key): static
+    public function hasAny($key): self
     {
         $keys = is_array($key) ? $key : func_get_args();
 
@@ -168,7 +168,7 @@ trait Has
      * @param  array|string  $key
      * @return $this
      */
-    public function missingAll($key): static
+    public function missingAll($key): self
     {
         $keys = is_array($key) ? $key : func_get_args();
 
@@ -185,7 +185,7 @@ trait Has
      * @param  string  $key
      * @return $this
      */
-    public function missing(string $key): static
+    public function missing(string $key): self
     {
         PHPUnit::assertNotTrue(
             Arr::has($this->prop(), $key),

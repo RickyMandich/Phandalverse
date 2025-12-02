@@ -48,6 +48,7 @@ class Encrypter implements EncrypterContract, StringEncrypter
      *
      * @param  string  $key
      * @param  string  $cipher
+     * @return void
      *
      * @throws \RuntimeException
      */
@@ -302,8 +303,6 @@ class Encrypter implements EncrypterContract, StringEncrypter
      *
      * @param  string  $tag
      * @return void
-     *
-     * @throws \Illuminate\Contracts\Encryption\DecryptException
      */
     protected function ensureTagIsValid($tag)
     {
@@ -361,8 +360,6 @@ class Encrypter implements EncrypterContract, StringEncrypter
      *
      * @param  array  $keys
      * @return $this
-     *
-     * @throws \RuntimeException
      */
     public function previousKeys(array $keys)
     {

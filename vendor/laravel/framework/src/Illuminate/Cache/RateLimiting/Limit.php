@@ -26,13 +26,6 @@ class Limit
     public $decaySeconds;
 
     /**
-     * The after callback used to determine if the limiter should be hit.
-     *
-     * @var ?callable
-     */
-    public $afterCallback = null;
-
-    /**
      * The response generator callback.
      *
      * @var callable
@@ -45,6 +38,7 @@ class Limit
      * @param  mixed  $key
      * @param  int  $maxAttempts
      * @param  int  $decaySeconds
+     * @return void
      */
     public function __construct($key = '', int $maxAttempts = 60, int $decaySeconds = 60)
     {
@@ -132,19 +126,6 @@ class Limit
     public function by($key)
     {
         $this->key = $key;
-
-        return $this;
-    }
-
-    /**
-     * Set the callback to determine if the limiter should be hit.
-     *
-     * @param  callable  $callback
-     * @return $this
-     */
-    public function after($callback)
-    {
-        $this->afterCallback = $callback;
 
         return $this;
     }

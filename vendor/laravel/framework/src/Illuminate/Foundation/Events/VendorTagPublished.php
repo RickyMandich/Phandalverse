@@ -23,6 +23,7 @@ class VendorTagPublished
      *
      * @param  string  $tag
      * @param  array  $paths
+     * @return void
      */
     public function __construct($tag, $paths)
     {

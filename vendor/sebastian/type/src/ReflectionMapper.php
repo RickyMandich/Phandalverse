@@ -9,7 +9,6 @@
  */
 namespace SebastianBergmann\Type;
 
-use function array_filter;
 use function assert;
 use ReflectionFunction;
 use ReflectionIntersectionType;
@@ -33,6 +32,8 @@ final class ReflectionMapper
 
         foreach ($reflector->getParameters() as $parameter) {
             $name = $parameter->getName();
+
+            assert($name !== '');
 
             if (!$parameter->hasType()) {
                 $parameters[] = new Parameter($name, new UnknownType);
@@ -89,7 +90,9 @@ final class ReflectionMapper
             return $this->mapUnionType($returnType, $reflector);
         }
 
-        return $this->mapIntersectionType($returnType, $reflector);
+        if ($returnType instanceof ReflectionIntersectionType) {
+            return $this->mapIntersectionType($returnType, $reflector);
+        }
     }
 
     public function fromPropertyType(ReflectionProperty $reflector): Type
@@ -110,87 +113,58 @@ final class ReflectionMapper
             return $this->mapUnionType($propertyType, $reflector);
         }
 
-        return $this->mapIntersectionType($propertyType, $reflector);
+        if ($propertyType instanceof ReflectionIntersectionType) {
+            return $this->mapIntersectionType($propertyType, $reflector);
+        }
     }
 
     private function mapNamedType(ReflectionNamedType $type, ReflectionFunction|ReflectionMethod|ReflectionProperty $reflector): Type
     {
         $classScope = !$reflector instanceof ReflectionFunction;
-        $typeName   = $type->getName();
 
-        assert($typeName !== '');
-
-        if ($classScope && $typeName === 'self') {
+        if ($classScope && $type->getName() === 'self') {
             return ObjectType::fromName(
                 $reflector->getDeclaringClass()->getName(),
                 $type->allowsNull(),
             );
         }
 
-        if ($classScope && $typeName === 'static') {
+        if ($classScope && $type->getName() === 'static') {
             return new StaticType(
                 TypeName::fromReflection($reflector->getDeclaringClass()),
                 $type->allowsNull(),
             );
         }
 
-        if ($typeName === 'mixed') {
+        if ($type->getName() === 'mixed') {
             return new MixedType;
         }
 
-        if ($classScope && $typeName === 'parent') {
-            $parentClass = $reflector->getDeclaringClass()->getParentClass();
-
-            assert($parentClass !== false);
-
+        if ($classScope && $type->getName() === 'parent') {
             return ObjectType::fromName(
-                $parentClass->getName(),
+                $reflector->getDeclaringClass()->getParentClass()->getName(),
                 $type->allowsNull(),
             );
         }
 
         return Type::fromName(
-            $typeName,
+            $type->getName(),
             $type->allowsNull(),
         );
     }
 
     private function mapUnionType(ReflectionUnionType $type, ReflectionFunction|ReflectionMethod|ReflectionProperty $reflector): Type
     {
-        $types             = [];
-        $objectType        = false;
-        $genericObjectType = false;
+        $types = [];
 
         foreach ($type->getTypes() as $_type) {
             if ($_type instanceof ReflectionNamedType) {
-                $namedType = $this->mapNamedType($_type, $reflector);
-
-                if ($namedType instanceof GenericObjectType) {
-                    $genericObjectType = true;
-                } elseif ($namedType instanceof ObjectType) {
-                    $objectType = true;
-                }
-
-                $types[] = $namedType;
+                $types[] = $this->mapNamedType($_type, $reflector);
 
                 continue;
             }
 
             $types[] = $this->mapIntersectionType($_type, $reflector);
-        }
-
-        if ($objectType && $genericObjectType) {
-            $types = array_filter(
-                $types,
-                static function (Type $type): bool
-                {
-                    if ($type instanceof ObjectType) {
-                        return false;
-                    }
-
-                    return true;
-                },
-            );
         }
 
         return new UnionType(...$types);

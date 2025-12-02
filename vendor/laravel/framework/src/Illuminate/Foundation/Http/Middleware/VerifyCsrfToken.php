@@ -60,6 +60,7 @@ class VerifyCsrfToken
      *
      * @param  \Illuminate\Contracts\Foundation\Application  $app
      * @param  \Illuminate\Contracts\Encryption\Encrypter  $encrypter
+     * @return void
      */
     public function __construct(Application $app, Encrypter $encrypter)
     {

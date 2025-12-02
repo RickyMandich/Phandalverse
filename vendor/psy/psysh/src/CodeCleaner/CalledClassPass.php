@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2025 Justin Hileman
+ * (c) 2012-2023 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -36,8 +36,6 @@ class CalledClassPass extends CodeCleanerPass
     public function beforeTraverse(array $nodes)
     {
         $this->inClass = false;
-
-        return null;
     }
 
     /**
@@ -57,12 +55,12 @@ class CalledClassPass extends CodeCleanerPass
             //
             // @todo switch this to actually validate args when we get context-aware code cleaner passes.
             if (!empty($node->args) && !$this->isNull($node->args[0])) {
-                return null;
+                return;
             }
 
             // We'll ignore name expressions as well (things like `$foo()`)
             if (!($node->name instanceof Name)) {
-                return null;
+                return;
             }
 
             $name = \strtolower($node->name);
@@ -71,8 +69,6 @@ class CalledClassPass extends CodeCleanerPass
                 throw new ErrorException($msg, 0, \E_USER_WARNING, null, $node->getStartLine());
             }
         }
-
-        return null;
     }
 
     /**
@@ -85,17 +81,11 @@ class CalledClassPass extends CodeCleanerPass
         if ($node instanceof Class_) {
             $this->inClass = false;
         }
-
-        return null;
     }
 
     private function isNull(Node $node): bool
     {
         if ($node instanceof VariadicPlaceholder) {
-            return false;
-        }
-
-        if (!\property_exists($node, 'value')) {
             return false;
         }
 

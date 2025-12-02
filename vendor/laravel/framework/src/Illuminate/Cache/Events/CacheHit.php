@@ -18,6 +18,7 @@ class CacheHit extends CacheEvent
      * @param  string  $key
      * @param  mixed  $value
      * @param  array  $tags
+     * @return void
      */
     public function __construct($storeName, $key, $value, array $tags = [])
     {

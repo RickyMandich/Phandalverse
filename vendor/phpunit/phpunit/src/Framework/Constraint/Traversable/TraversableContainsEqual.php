@@ -23,11 +23,11 @@ final class TraversableContainsEqual extends TraversableContains
     protected function matches(mixed $other): bool
     {
         if ($other instanceof SplObjectStorage) {
-            return $other->offsetExists($this->value());
+            return $other->contains($this->value());
         }
 
         foreach ($other as $element) {
-            /** @phpstan-ignore equal.notAllowed */
+            /* @noinspection TypeUnsafeComparisonInspection */
             if ($this->value() == $element) {
                 return true;
             }

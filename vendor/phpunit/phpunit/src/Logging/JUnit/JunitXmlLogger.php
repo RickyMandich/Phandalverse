@@ -20,6 +20,7 @@ use DOMDocument;
 use DOMElement;
 use PHPUnit\Event\Code\Test;
 use PHPUnit\Event\Code\TestMethod;
+use PHPUnit\Event\EventFacadeIsSealedException;
 use PHPUnit\Event\Facade;
 use PHPUnit\Event\InvalidArgumentException;
 use PHPUnit\Event\Telemetry\HRTime;
@@ -33,6 +34,7 @@ use PHPUnit\Event\Test\Prepared;
 use PHPUnit\Event\Test\PrintedUnexpectedOutput;
 use PHPUnit\Event\Test\Skipped;
 use PHPUnit\Event\TestSuite\Started;
+use PHPUnit\Event\UnknownSubscriberTypeException;
 use PHPUnit\TextUI\Output\Printer;
 use PHPUnit\Util\Xml;
 
@@ -88,6 +90,10 @@ final class JunitXmlLogger
     private bool $preparationFailed      = false;
     private ?string $unexpectedOutput    = null;
 
+    /**
+     * @throws EventFacadeIsSealedException
+     * @throws UnknownSubscriberTypeException
+     */
     public function __construct(Printer $printer, Facade $facade)
     {
         $this->printer = $printer;
@@ -98,13 +104,8 @@ final class JunitXmlLogger
 
     public function flush(): void
     {
-        $xml = $this->document->saveXML();
+        $this->printer->print($this->document->saveXML());
 
-        if ($xml === false) {
-            $xml = '';
-        }
-
-        $this->printer->print($xml);
         $this->printer->flush();
     }
 
@@ -183,13 +184,6 @@ final class JunitXmlLogger
     public function testPreparationStarted(PreparationStarted $event): void
     {
         $this->createTestCase($event);
-
-        $this->preparationFailed = false;
-    }
-
-    public function testPreparationErrored(): void
-    {
-        $this->preparationFailed = true;
     }
 
     public function testPreparationFailed(): void
@@ -293,20 +287,22 @@ final class JunitXmlLogger
         $this->testSuiteTests[$this->testSuiteLevel]++;
         $this->testSuiteTimes[$this->testSuiteLevel] += $time;
 
-        $this->currentTestCase   = null;
-        $this->time              = null;
-        $this->preparationFailed = false;
-        $this->prepared          = false;
-        $this->unexpectedOutput  = null;
+        $this->currentTestCase  = null;
+        $this->time             = null;
+        $this->prepared         = false;
+        $this->unexpectedOutput = null;
     }
 
+    /**
+     * @throws EventFacadeIsSealedException
+     * @throws UnknownSubscriberTypeException
+     */
     private function registerSubscribers(Facade $facade): void
     {
         $facade->registerSubscribers(
             new TestSuiteStartedSubscriber($this),
             new TestSuiteFinishedSubscriber($this),
             new TestPreparationStartedSubscriber($this),
-            new TestPreparationErroredSubscriber($this),
             new TestPreparationFailedSubscriber($this),
             new TestPreparedSubscriber($this),
             new TestPrintedUnexpectedOutputSubscriber($this),

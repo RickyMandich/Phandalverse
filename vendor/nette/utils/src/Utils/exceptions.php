@@ -11,7 +11,7 @@ namespace Nette\Utils;
 
 
 /**
- * An error occurred while working with the image.
+ * The exception that is thrown when an image error occurs.
  */
 class ImageException extends \Exception
 {
@@ -19,7 +19,7 @@ class ImageException extends \Exception
 
 
 /**
- * The image file is invalid or in an unsupported format.
+ * The exception that indicates invalid image file.
  */
 class UnknownImageFileException extends ImageException
 {
@@ -27,7 +27,7 @@ class UnknownImageFileException extends ImageException
 
 
 /**
- * JSON encoding or decoding failed.
+ * The exception that indicates error of JSON encoding/decoding.
  */
 class JsonException extends \JsonException
 {
@@ -35,7 +35,7 @@ class JsonException extends \JsonException
 
 
 /**
- * Regular expression pattern or execution failed.
+ * The exception that indicates error of the last Regexp execution.
  */
 class RegexpException extends \Exception
 {
@@ -43,7 +43,7 @@ class RegexpException extends \Exception
 
 
 /**
- * Type validation failed. The value doesn't match the expected type constraints.
+ * The exception that indicates assertion error.
  */
 class AssertionException extends \Exception
 {

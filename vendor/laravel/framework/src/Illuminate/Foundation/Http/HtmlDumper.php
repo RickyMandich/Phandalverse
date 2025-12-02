@@ -53,6 +53,7 @@ class HtmlDumper extends BaseHtmlDumper
      *
      * @param  string  $basePath
      * @param  string  $compiledViewPath
+     * @return void
      */
     public function __construct($basePath, $compiledViewPath)
     {

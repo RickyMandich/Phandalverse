@@ -10,7 +10,6 @@
 namespace PHPUnit\TextUI\XmlConfiguration;
 
 use const DIRECTORY_SEPARATOR;
-use const PHP_EOL;
 use const PHP_VERSION;
 use function assert;
 use function defined;
@@ -19,7 +18,6 @@ use function explode;
 use function is_numeric;
 use function preg_match;
 use function realpath;
-use function sprintf;
 use function str_contains;
 use function str_starts_with;
 use function strlen;
@@ -63,13 +61,11 @@ use PHPUnit\TextUI\XmlConfiguration\CodeCoverage\Report\Clover;
 use PHPUnit\TextUI\XmlConfiguration\CodeCoverage\Report\Cobertura;
 use PHPUnit\TextUI\XmlConfiguration\CodeCoverage\Report\Crap4j;
 use PHPUnit\TextUI\XmlConfiguration\CodeCoverage\Report\Html as CodeCoverageHtml;
-use PHPUnit\TextUI\XmlConfiguration\CodeCoverage\Report\OpenClover;
 use PHPUnit\TextUI\XmlConfiguration\CodeCoverage\Report\Php as CodeCoveragePhp;
 use PHPUnit\TextUI\XmlConfiguration\CodeCoverage\Report\Text as CodeCoverageText;
 use PHPUnit\TextUI\XmlConfiguration\CodeCoverage\Report\Xml as CodeCoverageXml;
 use PHPUnit\TextUI\XmlConfiguration\Logging\Junit;
 use PHPUnit\TextUI\XmlConfiguration\Logging\Logging;
-use PHPUnit\TextUI\XmlConfiguration\Logging\Otr;
 use PHPUnit\TextUI\XmlConfiguration\Logging\TeamCity;
 use PHPUnit\TextUI\XmlConfiguration\Logging\TestDox\Html as TestDoxHtml;
 use PHPUnit\TextUI\XmlConfiguration\Logging\TestDox\Text as TestDoxText;
@@ -78,7 +74,6 @@ use PHPUnit\Util\Xml\Loader as XmlLoader;
 use PHPUnit\Util\Xml\XmlException;
 use SebastianBergmann\CodeCoverage\Report\Html\Colors;
 use SebastianBergmann\CodeCoverage\Report\Thresholds;
-use Throwable;
 
 /**
  * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
@@ -118,33 +113,18 @@ final readonly class Loader
 
         assert($configurationFileRealpath !== false && $configurationFileRealpath !== '');
 
-        $validationResult = (new Validator)->validate($document, $xsdFilename);
-
-        try {
-            return new LoadedFromFileConfiguration(
-                $configurationFileRealpath,
-                $validationResult,
-                $this->extensions($xpath),
-                $this->source($configurationFileRealpath, $xpath),
-                $this->codeCoverage($configurationFileRealpath, $xpath),
-                $this->groups($xpath),
-                $this->logging($configurationFileRealpath, $xpath),
-                $this->php($configurationFileRealpath, $xpath),
-                $this->phpunit($configurationFileRealpath, $document, $xpath),
-                $this->testSuite($configurationFileRealpath, $xpath),
-            );
-        } catch (Throwable $t) {
-            $message = sprintf(
-                'Cannot load XML configuration file %s',
-                $configurationFileRealpath,
-            );
-
-            if ($validationResult->hasValidationErrors()) {
-                $message .= ' because it has validation errors:' . PHP_EOL . $validationResult->asString();
-            }
-
-            throw new Exception($message, previous: $t);
-        }
+        return new LoadedFromFileConfiguration(
+            $configurationFileRealpath,
+            (new Validator)->validate($document, $xsdFilename),
+            $this->extensions($xpath),
+            $this->source($configurationFileRealpath, $xpath),
+            $this->codeCoverage($configurationFileRealpath, $xpath),
+            $this->groups($xpath),
+            $this->logging($configurationFileRealpath, $xpath),
+            $this->php($configurationFileRealpath, $xpath),
+            $this->phpunit($configurationFileRealpath, $document),
+            $this->testSuite($configurationFileRealpath, $xpath),
+        );
     }
 
     private function logging(string $filename, DOMXPath $xpath): Logging
@@ -152,7 +132,7 @@ final readonly class Loader
         $junit   = null;
         $element = $this->element($xpath, 'logging/junit');
 
-        if ($element !== null) {
+        if ($element) {
             $junit = new Junit(
                 new File(
                     $this->toAbsolutePath(
@@ -163,25 +143,10 @@ final readonly class Loader
             );
         }
 
-        $otr     = null;
-        $element = $this->element($xpath, 'logging/otr');
-
-        if ($element !== null) {
-            $otr = new Otr(
-                new File(
-                    $this->toAbsolutePath(
-                        $filename,
-                        (string) $this->parseStringAttribute($element, 'outputFile'),
-                    ),
-                ),
-                $this->parseBooleanAttribute($element, 'includeGitInformation', false),
-            );
-        }
-
         $teamCity = null;
         $element  = $this->element($xpath, 'logging/teamcity');
 
-        if ($element !== null) {
+        if ($element) {
             $teamCity = new TeamCity(
                 new File(
                     $this->toAbsolutePath(
@@ -195,7 +160,7 @@ final readonly class Loader
         $testDoxHtml = null;
         $element     = $this->element($xpath, 'logging/testdoxHtml');
 
-        if ($element !== null) {
+        if ($element) {
             $testDoxHtml = new TestDoxHtml(
                 new File(
                     $this->toAbsolutePath(
@@ -209,7 +174,7 @@ final readonly class Loader
         $testDoxText = null;
         $element     = $this->element($xpath, 'logging/testdoxText');
 
-        if ($element !== null) {
+        if ($element) {
             $testDoxText = new TestDoxText(
                 new File(
                     $this->toAbsolutePath(
@@ -222,7 +187,6 @@ final readonly class Loader
 
         return new Logging(
             $junit,
-            $otr,
             $teamCity,
             $testDoxHtml,
             $testDoxText,
@@ -285,7 +249,7 @@ final readonly class Loader
         //  - C:/windows
         //  - c:/windows
         if (defined('PHP_WINDOWS_VERSION_BUILD') &&
-            $path !== '' &&
+            !empty($path) &&
             ($path[0] === '\\' || (strlen($path) >= 3 && preg_match('#^[A-Z]:[/\\\]#i', substr($path, 0, 3))))) {
             return $path;
         }
@@ -300,6 +264,7 @@ final readonly class Loader
     private function source(string $filename, DOMXPath $xpath): Source
     {
         $baseline                           = null;
+        $restrictDeprecations               = false;
         $restrictNotices                    = false;
         $restrictWarnings                   = false;
         $ignoreSuppressionOfDeprecations    = false;
@@ -315,13 +280,14 @@ final readonly class Loader
 
         $element = $this->element($xpath, 'source');
 
-        if ($element !== null) {
+        if ($element) {
             $baseline = $this->parseStringAttribute($element, 'baseline');
 
             if ($baseline !== null) {
                 $baseline = $this->toAbsolutePath($filename, $baseline);
             }
 
+            $restrictDeprecations               = $this->parseBooleanAttribute($element, 'restrictDeprecations', false);
             $restrictNotices                    = $this->parseBooleanAttribute($element, 'restrictNotices', false);
             $restrictWarnings                   = $this->parseBooleanAttribute($element, 'restrictWarnings', false);
             $ignoreSuppressionOfDeprecations    = $this->parseBooleanAttribute($element, 'ignoreSuppressionOfDeprecations', false);
@@ -368,6 +334,7 @@ final readonly class Loader
             $this->readFilterFiles($filename, $xpath, 'source/include/file'),
             $this->readFilterDirectories($filename, $xpath, 'source/exclude/directory'),
             $this->readFilterFiles($filename, $xpath, 'source/exclude/file'),
+            $restrictDeprecations,
             $restrictNotices,
             $restrictWarnings,
             $ignoreSuppressionOfDeprecations,
@@ -393,7 +360,7 @@ final readonly class Loader
 
         $element = $this->element($xpath, 'coverage');
 
-        if ($element !== null) {
+        if ($element) {
             $pathCoverage = $this->parseBooleanAttribute(
                 $element,
                 'pathCoverage',
@@ -422,7 +389,7 @@ final readonly class Loader
         $clover  = null;
         $element = $this->element($xpath, 'coverage/report/clover');
 
-        if ($element !== null) {
+        if ($element) {
             $clover = new Clover(
                 new File(
                     $this->toAbsolutePath(
@@ -436,7 +403,7 @@ final readonly class Loader
         $cobertura = null;
         $element   = $this->element($xpath, 'coverage/report/cobertura');
 
-        if ($element !== null) {
+        if ($element) {
             $cobertura = new Cobertura(
                 new File(
                     $this->toAbsolutePath(
@@ -450,7 +417,7 @@ final readonly class Loader
         $crap4j  = null;
         $element = $this->element($xpath, 'coverage/report/crap4j');
 
-        if ($element !== null) {
+        if ($element) {
             $crap4j = new Crap4j(
                 new File(
                     $this->toAbsolutePath(
@@ -465,7 +432,7 @@ final readonly class Loader
         $html    = null;
         $element = $this->element($xpath, 'coverage/report/html');
 
-        if ($element !== null) {
+        if ($element) {
             $defaultColors     = Colors::default();
             $defaultThresholds = Thresholds::default();
 
@@ -487,24 +454,10 @@ final readonly class Loader
             );
         }
 
-        $openClover = null;
-        $element    = $this->element($xpath, 'coverage/report/openclover');
-
-        if ($element !== null) {
-            $openClover = new OpenClover(
-                new File(
-                    $this->toAbsolutePath(
-                        $filename,
-                        (string) $this->parseStringAttribute($element, 'outputFile'),
-                    ),
-                ),
-            );
-        }
-
         $php     = null;
         $element = $this->element($xpath, 'coverage/report/php');
 
-        if ($element !== null) {
+        if ($element) {
             $php = new CodeCoveragePhp(
                 new File(
                     $this->toAbsolutePath(
@@ -518,7 +471,7 @@ final readonly class Loader
         $text    = null;
         $element = $this->element($xpath, 'coverage/report/text');
 
-        if ($element !== null) {
+        if ($element) {
             $text = new CodeCoverageText(
                 new File(
                     $this->toAbsolutePath(
@@ -534,7 +487,7 @@ final readonly class Loader
         $xml     = null;
         $element = $this->element($xpath, 'coverage/report/xml');
 
-        if ($element !== null) {
+        if ($element) {
             $xml = new CodeCoverageXml(
                 new Directory(
                     $this->toAbsolutePath(
@@ -554,7 +507,6 @@ final readonly class Loader
             $cobertura,
             $crap4j,
             $html,
-            $openClover,
             $php,
             $text,
             $xml,
@@ -600,7 +552,7 @@ final readonly class Loader
 
             $directoryPath = $directoryNode->textContent;
 
-            if ($directoryPath === '') {
+            if (!$directoryPath) {
                 continue;
             }
 
@@ -627,7 +579,7 @@ final readonly class Loader
 
             $filePath = $fileNode->textContent;
 
-            if ($filePath !== '') {
+            if ($filePath) {
                 $files[] = new File($this->toAbsolutePath($filename, $filePath));
             }
         }
@@ -730,7 +682,7 @@ final readonly class Loader
 
             $path = $includePath->textContent;
 
-            if ($path !== '') {
+            if ($path) {
                 $includePaths[] = new Directory($this->toAbsolutePath($filename, $path));
             }
         }
@@ -822,7 +774,7 @@ final readonly class Loader
         );
     }
 
-    private function phpunit(string $filename, DOMDocument $document, DOMXPath $xpath): PHPUnit
+    private function phpunit(string $filename, DOMDocument $document): PHPUnit
     {
         $executionOrder      = TestSuiteSorter::ORDER_DEFAULT;
         $defectsFirst        = false;
@@ -912,7 +864,7 @@ final readonly class Loader
             $beStrictAboutCoverageMetadata = $this->parseBooleanAttribute($document->documentElement, 'beStrictAboutCoverageMetadata', false);
         }
 
-        $shortenArraysForExportThreshold = $this->parseIntegerAttribute($document->documentElement, 'shortenArraysForExportThreshold', 10);
+        $shortenArraysForExportThreshold = $this->parseIntegerAttribute($document->documentElement, 'shortenArraysForExportThreshold', 0);
 
         if ($shortenArraysForExportThreshold < 0) {
             $shortenArraysForExportThreshold = 0;
@@ -924,25 +876,19 @@ final readonly class Loader
             $this->parseColumns($document),
             $this->parseColors($document),
             $this->parseBooleanAttribute($document->documentElement, 'stderr', false),
-            $this->parseBooleanAttribute($document->documentElement, 'displayDetailsOnAllIssues', false),
             $this->parseBooleanAttribute($document->documentElement, 'displayDetailsOnIncompleteTests', false),
             $this->parseBooleanAttribute($document->documentElement, 'displayDetailsOnSkippedTests', false),
             $this->parseBooleanAttribute($document->documentElement, 'displayDetailsOnTestsThatTriggerDeprecations', false),
             $this->parseBooleanAttribute($document->documentElement, 'displayDetailsOnPhpunitDeprecations', false),
-            $this->parseBooleanAttribute($document->documentElement, 'displayDetailsOnPhpunitNotices', false),
             $this->parseBooleanAttribute($document->documentElement, 'displayDetailsOnTestsThatTriggerErrors', false),
             $this->parseBooleanAttribute($document->documentElement, 'displayDetailsOnTestsThatTriggerNotices', false),
             $this->parseBooleanAttribute($document->documentElement, 'displayDetailsOnTestsThatTriggerWarnings', false),
             $this->parseBooleanAttribute($document->documentElement, 'reverseDefectList', false),
             $requireCoverageMetadata,
             $bootstrap,
-            $this->bootstrapForTestSuite($filename, $xpath),
             $this->parseBooleanAttribute($document->documentElement, 'processIsolation', false),
-            $this->parseBooleanAttribute($document->documentElement, 'failOnAllIssues', false),
             $this->parseBooleanAttribute($document->documentElement, 'failOnDeprecation', false),
             $this->parseBooleanAttribute($document->documentElement, 'failOnPhpunitDeprecation', false),
-            $this->parseBooleanAttribute($document->documentElement, 'failOnPhpunitNotice', false),
-            $this->parseBooleanAttribute($document->documentElement, 'failOnPhpunitWarning', true),
             $this->parseBooleanAttribute($document->documentElement, 'failOnEmptyTestSuite', false),
             $this->parseBooleanAttribute($document->documentElement, 'failOnIncomplete', false),
             $this->parseBooleanAttribute($document->documentElement, 'failOnNotice', false),
@@ -1014,30 +960,6 @@ final readonly class Loader
         return $columns;
     }
 
-    /**
-     * @return array<non-empty-string, non-empty-string>
-     */
-    private function bootstrapForTestSuite(string $filename, DOMXPath $xpath): array
-    {
-        $bootstrapForTestSuite = [];
-
-        foreach ($this->parseTestSuiteElements($xpath) as $element) {
-            if (!$element->hasAttribute('bootstrap')) {
-                continue;
-            }
-
-            $name      = $element->getAttribute('name');
-            $bootstrap = $element->getAttribute('bootstrap');
-
-            assert($name !== '');
-            assert($bootstrap !== '');
-
-            $bootstrapForTestSuite[$name] = $this->toAbsolutePath($filename, $bootstrap);
-        }
-
-        return $bootstrapForTestSuite;
-    }
-
     private function testSuite(string $filename, DOMXPath $xpath): TestSuiteCollection
     {
         $testSuites = [];
@@ -1048,7 +970,7 @@ final readonly class Loader
             foreach ($element->getElementsByTagName('exclude') as $excludeNode) {
                 $excludeFile = $excludeNode->textContent;
 
-                if ($excludeFile !== '') {
+                if ($excludeFile) {
                     $exclude[] = new File($this->toAbsolutePath($filename, $excludeFile));
                 }
             }
@@ -1060,7 +982,7 @@ final readonly class Loader
 
                 $directory = $directoryNode->textContent;
 
-                if ($directory === '') {
+                if (empty($directory)) {
                     continue;
                 }
 
@@ -1094,7 +1016,7 @@ final readonly class Loader
                     foreach (explode(',', $directoryNode->getAttribute('groups')) as $group) {
                         $group = trim($group);
 
-                        if ($group === '') {
+                        if (empty($group)) {
                             continue;
                         }
 
@@ -1119,7 +1041,7 @@ final readonly class Loader
 
                 $file = $fileNode->textContent;
 
-                if ($file === '') {
+                if (empty($file)) {
                     continue;
                 }
 
@@ -1141,7 +1063,7 @@ final readonly class Loader
                     foreach (explode(',', $fileNode->getAttribute('groups')) as $group) {
                         $group = trim($group);
 
-                        if ($group === '') {
+                        if (empty($group)) {
                             continue;
                         }
 
@@ -1159,7 +1081,7 @@ final readonly class Loader
 
             $name = $element->getAttribute('name');
 
-            assert($name !== '');
+            assert(!empty($name));
 
             $testSuites[] = new TestSuiteConfiguration(
                 $name,

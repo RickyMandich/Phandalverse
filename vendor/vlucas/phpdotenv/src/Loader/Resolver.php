@@ -55,8 +55,8 @@ final class Resolver
         return Regex::replaceCallback(
             '/\A\${([a-zA-Z0-9_.]+)}/',
             static function (array $matches) use ($repository) {
-                /** @var string */
-                return Option::fromValue($repository->get($matches[1]))->getOrElse($matches[0]);
+                return Option::fromValue($repository->get($matches[1]))
+                    ->getOrElse($matches[0]);
             },
             $str,
             1

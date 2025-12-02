@@ -43,6 +43,7 @@ class FakeProcessResult implements ProcessResultContract
      * @param  int  $exitCode
      * @param  array|string  $output
      * @param  array|string  $errorOutput
+     * @return void
      */
     public function __construct(string $command = '', int $exitCode = 0, array|string $output = '', array|string $errorOutput = '')
     {

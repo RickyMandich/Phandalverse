@@ -7,12 +7,10 @@ use Illuminate\Contracts\Routing\ResponseFactory as FactoryContract;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
-use Illuminate\Http\StreamedEvent;
 use Illuminate\Routing\Exceptions\StreamedResponseException;
 use Illuminate\Support\Js;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
-use ReflectionFunction;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -41,6 +39,7 @@ class ResponseFactory implements FactoryContract
      *
      * @param  \Illuminate\Contracts\View\Factory  $view
      * @param  \Illuminate\Routing\Redirector  $redirector
+     * @return void
      */
     public function __construct(ViewFactory $view, Redirector $redirector)
     {
@@ -125,10 +124,10 @@ class ResponseFactory implements FactoryContract
      *
      * @param  \Closure  $callback
      * @param  array  $headers
-     * @param  \Illuminate\Http\StreamedEvent|string|null  $endStreamWith
+     * @param  string  $endStreamWith
      * @return \Symfony\Component\HttpFoundation\StreamedResponse
      */
-    public function eventStream(Closure $callback, array $headers = [], StreamedEvent|string|null $endStreamWith = '</stream>')
+    public function eventStream(Closure $callback, array $headers = [], string $endStreamWith = '</stream>')
     {
         return $this->stream(function () use ($callback, $endStreamWith) {
             foreach ($callback() as $message) {
@@ -136,46 +135,24 @@ class ResponseFactory implements FactoryContract
                     break;
                 }
 
-                $event = 'update';
-
-                if ($message instanceof StreamedEvent) {
-                    $event = $message->event;
-                    $message = $message->data;
-                }
-
                 if (! is_string($message) && ! is_numeric($message)) {
                     $message = Js::encode($message);
                 }
 
-                echo "event: $event\n";
+                echo "event: update\n";
                 echo 'data: '.$message;
                 echo "\n\n";
 
-                if (ob_get_level() > 0) {
-                    ob_flush();
-                }
-
+                ob_flush();
                 flush();
             }
 
-            if (filled($endStreamWith)) {
-                $endEvent = 'update';
+            echo "event: update\n";
+            echo 'data: '.$endStreamWith;
+            echo "\n\n";
 
-                if ($endStreamWith instanceof StreamedEvent) {
-                    $endEvent = $endStreamWith->event;
-                    $endStreamWith = $endStreamWith->data;
-                }
-
-                echo "event: $endEvent\n";
-                echo 'data: '.$endStreamWith;
-                echo "\n\n";
-
-                if (ob_get_level() > 0) {
-                    ob_flush();
-                }
-
-                flush();
-            }
+            ob_flush();
+            flush();
         }, 200, array_merge($headers, [
             'Content-Type' => 'text/event-stream',
             'Cache-Control' => 'no-cache',
@@ -186,29 +163,13 @@ class ResponseFactory implements FactoryContract
     /**
      * Create a new streamed response instance.
      *
-     * @param  callable|null  $callback
+     * @param  callable  $callback
      * @param  int  $status
      * @param  array  $headers
      * @return \Symfony\Component\HttpFoundation\StreamedResponse
      */
     public function stream($callback, $status = 200, array $headers = [])
     {
-        if (! is_null($callback) && (new ReflectionFunction($callback))->isGenerator()) {
-            if (isset($_SERVER['LARAVEL_OCTANE'])) {
-                return (new StreamedResponse(
-                    null, $status, array_merge($headers, ['X-Accel-Buffering' => 'no'])
-                ))->setCallback($callback);
-            }
-
-            return new StreamedResponse(function () use ($callback) {
-                foreach ($callback() as $chunk) {
-                    echo $chunk;
-                    ob_flush();
-                    flush();
-                }
-            }, $status, array_merge($headers, ['X-Accel-Buffering' => 'no']));
-        }
-
         return new StreamedResponse($callback, $status, $headers);
     }
 

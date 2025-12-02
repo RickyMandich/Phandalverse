@@ -13,6 +13,7 @@ class OtherDeviceLogout
      *
      * @param  string  $guard  The authentication guard name.
      * @param  \Illuminate\Contracts\Auth\Authenticatable  $user  \Illuminate\Contracts\Auth\Authenticatable
+     * @return void
      */
     public function __construct(
         public $guard,

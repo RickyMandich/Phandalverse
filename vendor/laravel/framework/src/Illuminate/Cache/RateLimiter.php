@@ -32,6 +32,7 @@ class RateLimiter
      * Create a new rate limiter instance.
      *
      * @param  \Illuminate\Contracts\Cache\Repository  $cache
+     * @return void
      */
     public function __construct(Cache $cache)
     {
@@ -99,7 +100,7 @@ class RateLimiter
      * @param  string  $key
      * @param  int  $maxAttempts
      * @param  \Closure  $callback
-     * @param  \DateTimeInterface|\DateInterval|int  $decaySeconds
+     * @param  int  $decaySeconds
      * @return mixed
      */
     public function attempt($key, $maxAttempts, Closure $callback, $decaySeconds = 60)
@@ -141,7 +142,7 @@ class RateLimiter
      * Increment (by 1) the counter for a given key for a given decay time.
      *
      * @param  string  $key
-     * @param  \DateTimeInterface|\DateInterval|int  $decaySeconds
+     * @param  int  $decaySeconds
      * @return int
      */
     public function hit($key, $decaySeconds = 60)
@@ -153,7 +154,7 @@ class RateLimiter
      * Increment the counter for a given key for a given decay time by a given amount.
      *
      * @param  string  $key
-     * @param  \DateTimeInterface|\DateInterval|int  $decaySeconds
+     * @param  int  $decaySeconds
      * @param  int  $amount
      * @return int
      */
@@ -184,7 +185,7 @@ class RateLimiter
      * Decrement the counter for a given key for a given decay time by a given amount.
      *
      * @param  string  $key
-     * @param  \DateTimeInterface|\DateInterval|int  $decaySeconds
+     * @param  int  $decaySeconds
      * @param  int  $amount
      * @return int
      */
@@ -210,7 +211,7 @@ class RateLimiter
      * Reset the number of attempts for the given key.
      *
      * @param  string  $key
-     * @return bool
+     * @return mixed
      */
     public function resetAttempts($key)
     {
@@ -232,7 +233,7 @@ class RateLimiter
 
         $attempts = $this->attempts($key);
 
-        return max(0, $maxAttempts - $attempts);
+        return $maxAttempts - $attempts;
     }
 
     /**

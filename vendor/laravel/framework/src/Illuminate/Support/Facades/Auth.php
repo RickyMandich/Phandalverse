@@ -95,4 +95,13 @@ class Auth extends Facade
 
         static::$app->make('router')->auth($options);
     }
+
+    public static function admin()
+    {
+        if(auth()->check()){
+            return auth()->user()->admin == 1;
+        }else{
+            return false;
+        }
+    }
 }

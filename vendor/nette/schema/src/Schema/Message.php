@@ -10,7 +10,6 @@ declare(strict_types=1);
 namespace Nette\Schema;
 
 use Nette;
-use function implode, preg_last_error_msg, preg_replace_callback;
 
 
 final class Message

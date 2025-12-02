@@ -20,7 +20,7 @@ trait HandlesAuthorization
      * Throws an unauthorized exception.
      *
      * @param  string|null  $message
-     * @param  mixed  $code
+     * @param  mixed|null  $code
      * @return \Illuminate\Auth\Access\Response
      */
     protected function deny($message = null, $code = null)

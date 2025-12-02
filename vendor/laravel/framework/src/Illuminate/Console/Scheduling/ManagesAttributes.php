@@ -113,7 +113,7 @@ trait ManagesAttributes
     /**
      * Limit the environments the command should run in.
      *
-     * @param  mixed  $environments
+     * @param  array|mixed  $environments
      * @return $this
      */
     public function environments($environments)

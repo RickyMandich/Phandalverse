@@ -50,6 +50,7 @@ class PackageManifest
      * @param  \Illuminate\Filesystem\Filesystem  $files
      * @param  string  $basePath
      * @param  string  $manifestPath
+     * @return void
      */
     public function __construct(Filesystem $files, $basePath, $manifestPath)
     {
@@ -87,10 +88,9 @@ class PackageManifest
      */
     public function config($key)
     {
-        return (new Collection($this->getManifest()))
-            ->flatMap(fn ($configuration) => (array) ($configuration[$key] ?? []))
-            ->filter()
-            ->all();
+        return (new Collection($this->getManifest()))->flatMap(function ($configuration) use ($key) {
+            return (array) ($configuration[$key] ?? []);
+        })->filter()->all();
     }
 
     /**

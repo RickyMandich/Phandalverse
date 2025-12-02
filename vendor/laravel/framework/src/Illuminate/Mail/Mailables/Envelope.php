@@ -86,6 +86,7 @@ class Envelope
      * @param  array  $tags
      * @param  array  $metadata
      * @param  \Closure|array  $using
+     * @return void
      *
      * @named-arguments-supported
      */

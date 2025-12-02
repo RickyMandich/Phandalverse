@@ -141,7 +141,7 @@ class Content
      * Add a piece of view data to the message.
      *
      * @param  array|string  $key
-     * @param  mixed  $value
+     * @param  mixed|null  $value
      * @return $this
      */
     public function with($key, $value = null)

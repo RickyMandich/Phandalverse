@@ -310,10 +310,9 @@ class MySqlGrammar extends Grammar
      */
     public function compileAdd(Blueprint $blueprint, Fluent $command)
     {
-        return sprintf('alter table %s add %s%s',
+        return sprintf('alter table %s add %s',
             $this->wrapTable($blueprint),
-            $this->getColumn($blueprint, $command->column),
-            $command->column->instant ? ', algorithm=instant' : ''
+            $this->getColumn($blueprint, $command->column)
         );
     }
 
@@ -332,7 +331,13 @@ class MySqlGrammar extends Grammar
         }
     }
 
-    /** @inheritDoc */
+    /**
+     * Compile a rename column command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return array|string
+     */
     public function compileRenameColumn(Blueprint $blueprint, Fluent $command)
     {
         $isMaria = $this->connection->isMaria();
@@ -376,11 +381,9 @@ class MySqlGrammar extends Grammar
             'collation' => $column['collation'],
             'comment' => $column['comment'],
             'virtualAs' => ! is_null($column['generation']) && $column['generation']['type'] === 'virtual'
-                ? $column['generation']['expression']
-                : null,
+                ? $column['generation']['expression'] : null,
             'storedAs' => ! is_null($column['generation']) && $column['generation']['type'] === 'stored'
-                ? $column['generation']['expression']
-                : null,
+                ? $column['generation']['expression'] : null,
         ]));
 
         return sprintf('alter table %s change %s %s %s',
@@ -391,7 +394,13 @@ class MySqlGrammar extends Grammar
         );
     }
 
-    /** @inheritDoc */
+    /**
+     * Compile a change column command into a series of SQL statements.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return array|string
+     */
     public function compileChange(Blueprint $blueprint, Fluent $command)
     {
         $column = $command->column;
@@ -404,13 +413,7 @@ class MySqlGrammar extends Grammar
             $this->getType($column)
         );
 
-        $sql = $this->addModifiers($sql, $blueprint, $column);
-
-        if ($column->instant) {
-            $sql .= ', algorithm=instant';
-        }
-
-        return $sql;
+        return $this->addModifiers($sql, $blueprint, $column);
     }
 
     /**
@@ -531,7 +534,7 @@ class MySqlGrammar extends Grammar
     {
         $columns = $this->prefixArray('drop', $this->wrapArray($command->columns));
 
-        return 'alter table '.$this->wrapTable($blueprint).' '.implode(', ', $columns).($command->instant ? ', algorithm=instant' : '');
+        return 'alter table '.$this->wrapTable($blueprint).' '.implode(', ', $columns);
     }
 
     /**
@@ -645,23 +648,23 @@ class MySqlGrammar extends Grammar
     /**
      * Compile the SQL needed to drop all tables.
      *
-     * @param  array<string>  $tables
+     * @param  array  $tables
      * @return string
      */
     public function compileDropAllTables($tables)
     {
-        return 'drop table '.implode(', ', $this->escapeNames($tables));
+        return 'drop table '.implode(',', $this->wrapArray($tables));
     }
 
     /**
      * Compile the SQL needed to drop all views.
      *
-     * @param  array<string>  $views
+     * @param  array  $views
      * @return string
      */
     public function compileDropAllViews($views)
     {
-        return 'drop view '.implode(', ', $this->escapeNames($views));
+        return 'drop view '.implode(',', $this->wrapArray($views));
     }
 
     /**
@@ -696,20 +699,6 @@ class MySqlGrammar extends Grammar
         return sprintf('alter table %s comment = %s',
             $this->wrapTable($blueprint),
             "'".str_replace("'", "''", $command->comment)."'"
-        );
-    }
-
-    /**
-     * Quote-escape the given tables, views, or types.
-     *
-     * @param  array<string>  $names
-     * @return array<string>
-     */
-    public function escapeNames($names)
-    {
-        return array_map(
-            fn ($name) => (new Collection(explode('.', $name)))->map($this->wrapValue(...))->implode('.'),
-            $names
         );
     }
 
@@ -934,16 +923,6 @@ class MySqlGrammar extends Grammar
      */
     protected function typeDate(Fluent $column)
     {
-        $isMaria = $this->connection->isMaria();
-        $version = $this->connection->getServerVersion();
-
-        if ($isMaria ||
-            (! $isMaria && version_compare($version, '8.0.13', '>='))) {
-            if ($column->useCurrent) {
-                $column->default(new Expression('(CURDATE())'));
-            }
-        }
-
         return 'date';
     }
 
@@ -1041,16 +1020,6 @@ class MySqlGrammar extends Grammar
      */
     protected function typeYear(Fluent $column)
     {
-        $isMaria = $this->connection->isMaria();
-        $version = $this->connection->getServerVersion();
-
-        if ($isMaria ||
-            (! $isMaria && version_compare($version, '8.0.13', '>='))) {
-            if ($column->useCurrent) {
-                $column->default(new Expression('(YEAR(CURDATE()))'));
-            }
-        }
-
         return 'year';
     }
 

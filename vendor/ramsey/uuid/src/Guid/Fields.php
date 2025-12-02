@@ -37,11 +37,11 @@ use function unpack;
 use const STR_PAD_LEFT;
 
 /**
- * GUIDs consist of a set of named fields, according to RFC 9562 (formerly RFC 4122)
+ * GUIDs are comprised of a set of named fields, according to RFC 4122
  *
  * @see Guid
  *
- * @immutable
+ * @psalm-immutable
  */
 final class Fields implements FieldsInterface
 {
@@ -62,19 +62,22 @@ final class Fields implements FieldsInterface
     {
         if (strlen($this->bytes) !== 16) {
             throw new InvalidArgumentException(
-                'The byte string must be 16 bytes long; received ' . strlen($this->bytes) . ' bytes',
+                'The byte string must be 16 bytes long; '
+                . 'received ' . strlen($this->bytes) . ' bytes'
             );
         }
 
         if (!$this->isCorrectVariant()) {
             throw new InvalidArgumentException(
-                'The byte string received does not conform to the RFC 9562 (formerly RFC 4122) '
-                . 'or Microsoft Corporation variants',
+                'The byte string received does not conform to the RFC '
+                . '4122 or Microsoft Corporation variants'
             );
         }
 
         if (!$this->isCorrectVersion()) {
-            throw new InvalidArgumentException('The byte string received does not contain a valid version');
+            throw new InvalidArgumentException(
+                'The byte string received does not contain a valid version'
+            );
         }
     }
 
@@ -86,35 +89,47 @@ final class Fields implements FieldsInterface
     public function getTimeLow(): Hexadecimal
     {
         // Swap the bytes from little endian to network byte order.
-        /** @var string[] $hex */
+        /** @var array $hex */
         $hex = unpack(
             'H*',
             pack(
                 'v*',
                 hexdec(bin2hex(substr($this->bytes, 2, 2))),
-                hexdec(bin2hex(substr($this->bytes, 0, 2))),
-            ),
+                hexdec(bin2hex(substr($this->bytes, 0, 2)))
+            )
         );
 
-        return new Hexadecimal($hex[1] ?? '');
+        return new Hexadecimal((string) ($hex[1] ?? ''));
     }
 
     public function getTimeMid(): Hexadecimal
     {
         // Swap the bytes from little endian to network byte order.
-        /** @var string[] $hex */
-        $hex = unpack('H*', pack('v', hexdec(bin2hex(substr($this->bytes, 4, 2)))));
+        /** @var array $hex */
+        $hex = unpack(
+            'H*',
+            pack(
+                'v',
+                hexdec(bin2hex(substr($this->bytes, 4, 2)))
+            )
+        );
 
-        return new Hexadecimal($hex[1] ?? '');
+        return new Hexadecimal((string) ($hex[1] ?? ''));
     }
 
     public function getTimeHiAndVersion(): Hexadecimal
     {
         // Swap the bytes from little endian to network byte order.
-        /** @var string[] $hex */
-        $hex = unpack('H*', pack('v', hexdec(bin2hex(substr($this->bytes, 6, 2)))));
+        /** @var array $hex */
+        $hex = unpack(
+            'H*',
+            pack(
+                'v',
+                hexdec(bin2hex(substr($this->bytes, 6, 2)))
+            )
+        );
 
-        return new Hexadecimal($hex[1] ?? '');
+        return new Hexadecimal((string) ($hex[1] ?? ''));
     }
 
     public function getTimestamp(): Hexadecimal
@@ -161,10 +176,10 @@ final class Fields implements FieldsInterface
             return null;
         }
 
-        /** @var int[] $parts */
+        /** @var array $parts */
         $parts = unpack('n*', $this->bytes);
 
-        return ($parts[4] >> 4) & 0x00f;
+        return ((int) $parts[4] >> 4) & 0x00f;
     }
 
     private function isCorrectVariant(): bool

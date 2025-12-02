@@ -21,7 +21,7 @@ class VerifyEmail extends Notification
     /**
      * The callback that should be used to build the mail message.
      *
-     * @var (\Closure(mixed, string): \Illuminate\Notifications\Messages\MailMessage|\Illuminate\Contracts\Mail\Mailable)|null
+     * @var \Closure|null
      */
     public static $toMailCallback;
 
@@ -104,7 +104,7 @@ class VerifyEmail extends Notification
     /**
      * Set a callback that should be used when building the notification mail message.
      *
-     * @param  \Closure(mixed, string): (\Illuminate\Notifications\Messages\MailMessage|\Illuminate\Contracts\Mail\Mailable)  $callback
+     * @param  \Closure  $callback
      * @return void
      */
     public static function toMailUsing($callback)

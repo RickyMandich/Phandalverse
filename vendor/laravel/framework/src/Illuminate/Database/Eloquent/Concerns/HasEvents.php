@@ -38,7 +38,7 @@ trait HasEvents
      */
     public static function bootHasEvents()
     {
-        static::whenBooted(fn () => static::observe(static::resolveObserveAttributes()));
+        static::observe(static::resolveObserveAttributes());
     }
 
     /**
@@ -134,7 +134,7 @@ trait HasEvents
             [
                 'retrieved', 'creating', 'created', 'updating', 'updated',
                 'saving', 'saved', 'restoring', 'restored', 'replicating',
-                'trashed', 'deleting', 'deleted', 'forceDeleting', 'forceDeleted',
+                'deleting', 'deleted', 'forceDeleting', 'forceDeleted',
             ],
             $this->observables
         );
@@ -156,7 +156,7 @@ trait HasEvents
     /**
      * Add an observable event name.
      *
-     * @param  mixed  $observables
+     * @param  array|mixed  $observables
      * @return void
      */
     public function addObservableEvents($observables)
@@ -169,7 +169,7 @@ trait HasEvents
     /**
      * Remove an observable event name.
      *
-     * @param  mixed  $observables
+     * @param  array|mixed  $observables
      * @return void
      */
     public function removeObservableEvents($observables)
@@ -231,7 +231,7 @@ trait HasEvents
      *
      * @param  string  $event
      * @param  string  $method
-     * @return mixed
+     * @return mixed|null
      */
     protected function fireCustomModelEvent($event, $method)
     {

@@ -17,6 +17,7 @@ class Wormhole
      * Create a new wormhole instance.
      *
      * @param  int  $value
+     * @return void
      */
     public function __construct($value)
     {

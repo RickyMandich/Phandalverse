@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2025 Justin Hileman
+ * (c) 2012-2023 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -41,8 +41,6 @@ class ValidConstructorPass extends CodeCleanerPass
     public function beforeTraverse(array $nodes)
     {
         $this->namespace = [];
-
-        return null;
     }
 
     /**
@@ -64,14 +62,14 @@ class ValidConstructorPass extends CodeCleanerPass
             foreach ($node->stmts as $stmt) {
                 if ($stmt instanceof ClassMethod) {
                     // If we find a new-style constructor, no need to look for the old-style
-                    if (\property_exists($stmt, 'name') && \strtolower($stmt->name) === '__construct') {
+                    if ('__construct' === \strtolower($stmt->name)) {
                         $this->validateConstructor($stmt, $node);
 
-                        return null;
+                        return;
                     }
 
                     // We found a possible old-style constructor (unless there is also a __construct method)
-                    if (empty($this->namespace) && $node->name !== null && \property_exists($stmt, 'name') && \strtolower($node->name) === \strtolower($stmt->name)) {
+                    if (empty($this->namespace) && \strtolower($node->name) === \strtolower($stmt->name)) {
                         $constructor = $stmt;
                     }
                 }
@@ -81,8 +79,6 @@ class ValidConstructorPass extends CodeCleanerPass
                 $this->validateConstructor($constructor, $node);
             }
         }
-
-        return null;
     }
 
     /**
@@ -94,11 +90,11 @@ class ValidConstructorPass extends CodeCleanerPass
      */
     private function validateConstructor(Node $constructor, Node $classNode)
     {
-        if (\method_exists($constructor, 'isStatic') && $constructor->isStatic()) {
+        if ($constructor->isStatic()) {
             $msg = \sprintf(
                 'Constructor %s::%s() cannot be static',
                 \implode('\\', \array_merge($this->namespace, (array) $classNode->name->toString())),
-                \property_exists($constructor, 'name') ? $constructor->name : '__construct'
+                $constructor->name
             );
             throw new FatalErrorException($msg, 0, \E_ERROR, null, $classNode->getStartLine());
         }
@@ -107,7 +103,7 @@ class ValidConstructorPass extends CodeCleanerPass
             $msg = \sprintf(
                 'Constructor %s::%s() cannot declare a return type',
                 \implode('\\', \array_merge($this->namespace, (array) $classNode->name->toString())),
-                \property_exists($constructor, 'name') ? $constructor->name : '__construct'
+                $constructor->name
             );
             throw new FatalErrorException($msg, 0, \E_ERROR, null, $classNode->getStartLine());
         }

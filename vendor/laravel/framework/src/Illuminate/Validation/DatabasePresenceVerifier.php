@@ -25,6 +25,7 @@ class DatabasePresenceVerifier implements DatabasePresenceVerifierInterface
      * Create a new database presence verifier.
      *
      * @param  \Illuminate\Database\ConnectionResolverInterface  $db
+     * @return void
      */
     public function __construct(ConnectionResolverInterface $db)
     {

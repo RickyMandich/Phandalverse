@@ -28,7 +28,7 @@ class RetryBatchCommand extends Command implements Isolatable
     /**
      * Execute the console command.
      *
-     * @return void
+     * @return int|null
      */
     public function handle()
     {

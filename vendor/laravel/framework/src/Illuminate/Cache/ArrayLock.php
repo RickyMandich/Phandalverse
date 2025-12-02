@@ -20,6 +20,7 @@ class ArrayLock extends Lock
      * @param  string  $name
      * @param  int  $seconds
      * @param  string|null  $owner
+     * @return void
      */
     public function __construct($store, $name, $seconds, $owner = null)
     {
@@ -82,7 +83,7 @@ class ArrayLock extends Lock
     /**
      * Returns the owner value written into the driver for this lock.
      *
-     * @return string|null
+     * @return string
      */
     protected function getCurrentOwner()
     {
@@ -94,7 +95,7 @@ class ArrayLock extends Lock
     }
 
     /**
-     * Releases this lock regardless of ownership.
+     * Releases this lock in disregard of ownership.
      *
      * @return void
      */

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\Concerns\InteractsWithDictionary;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Query\Grammars\MySqlGrammar;
 use Illuminate\Database\UniqueConstraintViolationException;
 
@@ -76,6 +77,7 @@ abstract class HasOneOrManyThrough extends Relation
      * @param  string  $secondKey
      * @param  string  $localKey
      * @param  string  $secondLocalKey
+     * @return void
      */
     public function __construct(Builder $query, Model $farParent, Model $throughParent, $firstKey, $secondKey, $localKey, $secondLocalKey)
     {
@@ -96,14 +98,12 @@ abstract class HasOneOrManyThrough extends Relation
      */
     public function addConstraints()
     {
-        $query = $this->getRelationQuery();
-
         $localValue = $this->farParent[$this->localKey];
 
-        $this->performJoin($query);
+        $this->performJoin();
 
         if (static::$constraints) {
-            $query->where($this->getQualifiedFirstKeyName(), '=', $localValue);
+            $this->query->where($this->getQualifiedFirstKeyName(), '=', $localValue);
         }
     }
 
@@ -115,7 +115,7 @@ abstract class HasOneOrManyThrough extends Relation
      */
     protected function performJoin(?Builder $query = null)
     {
-        $query ??= $this->query;
+        $query = $query ?: $this->query;
 
         $farKey = $this->getQualifiedFarKeyName();
 
@@ -145,7 +145,7 @@ abstract class HasOneOrManyThrough extends Relation
      */
     public function throughParentSoftDeletes()
     {
-        return $this->throughParent::isSoftDeletable();
+        return in_array(SoftDeletes::class, class_uses_recursive($this->throughParent));
     }
 
     /**
@@ -168,8 +168,7 @@ abstract class HasOneOrManyThrough extends Relation
         $this->whereInEager(
             $whereIn,
             $this->getQualifiedFirstKeyName(),
-            $this->getKeys($models, $this->localKey),
-            $this->getRelationQuery(),
+            $this->getKeys($models, $this->localKey)
         );
     }
 
@@ -279,7 +278,7 @@ abstract class HasOneOrManyThrough extends Relation
      */
     public function first($columns = ['*'])
     {
-        $results = $this->limit(1)->get($columns);
+        $results = $this->take(1)->get($columns);
 
         return count($results) > 0 ? $results->first() : null;
     }
@@ -468,8 +467,8 @@ abstract class HasOneOrManyThrough extends Relation
      * @param  int|null  $perPage
      * @param  array  $columns
      * @param  string  $pageName
-     * @param  int|null  $page
-     * @return \Illuminate\Pagination\LengthAwarePaginator
+     * @param  int  $page
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
     public function paginate($perPage = null, $columns = ['*'], $pageName = 'page', $page = null)
     {
@@ -702,7 +701,7 @@ abstract class HasOneOrManyThrough extends Relation
      *
      * @param  \Illuminate\Database\Eloquent\Builder<TRelatedModel>  $query
      * @param  \Illuminate\Database\Eloquent\Builder<TDeclaringModel>  $parentQuery
-     * @param  mixed  $columns
+     * @param  array|mixed  $columns
      * @return \Illuminate\Database\Eloquent\Builder<TRelatedModel>
      */
     public function getRelationExistenceQueryForSelfRelation(Builder $query, Builder $parentQuery, $columns = ['*'])
@@ -727,7 +726,7 @@ abstract class HasOneOrManyThrough extends Relation
      *
      * @param  \Illuminate\Database\Eloquent\Builder<TRelatedModel>  $query
      * @param  \Illuminate\Database\Eloquent\Builder<TDeclaringModel>  $parentQuery
-     * @param  mixed  $columns
+     * @param  array|mixed  $columns
      * @return \Illuminate\Database\Eloquent\Builder<TRelatedModel>
      */
     public function getRelationExistenceQueryForThroughSelfRelation(Builder $query, Builder $parentQuery, $columns = ['*'])

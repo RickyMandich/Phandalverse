@@ -21,8 +21,6 @@ use League\Flysystem\ReadOnly\ReadOnlyFilesystemAdapter;
 use League\Flysystem\UnixVisibility\PortableVisibilityConverter;
 use League\Flysystem\Visibility;
 
-use function Illuminate\Support\enum_value;
-
 /**
  * @mixin \Illuminate\Contracts\Filesystem\Filesystem
  * @mixin \Illuminate\Filesystem\FilesystemAdapter
@@ -54,6 +52,7 @@ class FilesystemManager implements FactoryContract
      * Create a new filesystem manager instance.
      *
      * @param  \Illuminate\Contracts\Foundation\Application  $app
+     * @return void
      */
     public function __construct($app)
     {
@@ -74,12 +73,12 @@ class FilesystemManager implements FactoryContract
     /**
      * Get a filesystem instance.
      *
-     * @param  \UnitEnum|string|null  $name
+     * @param  string|null  $name
      * @return \Illuminate\Contracts\Filesystem\Filesystem
      */
     public function disk($name = null)
     {
-        $name = enum_value($name) ?: $this->getDefaultDriver();
+        $name = $name ?: $this->getDefaultDriver();
 
         return $this->disks[$name] = $this->get($name);
     }
@@ -313,10 +312,6 @@ class FilesystemManager implements FactoryContract
                 if (isset($config['visibility'])) {
                     $parent['visibility'] = $config['visibility'];
                 }
-
-                if (isset($config['throw'])) {
-                    $parent['throw'] = $config['throw'];
-                }
             }
         ));
     }
@@ -330,7 +325,7 @@ class FilesystemManager implements FactoryContract
      */
     protected function createFlysystem(FlysystemAdapter $adapter, array $config)
     {
-        if ($config['read-only'] ?? false) {
+        if ($config['read-only'] ?? false === true) {
             $adapter = new ReadOnlyFilesystemAdapter($adapter);
         }
 

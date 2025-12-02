@@ -20,7 +20,6 @@ class SQLiteConnector extends Connector implements ConnectorInterface
 
         $connection = $this->createConnection("sqlite:{$path}", $config, $options);
 
-        $this->configurePragmas($connection, $config);
         $this->configureForeignKeyConstraints($connection, $config);
         $this->configureBusyTimeout($connection, $config);
         $this->configureJournalMode($connection, $config);
@@ -61,24 +60,6 @@ class SQLiteConnector extends Connector implements ConnectorInterface
         }
 
         return $path;
-    }
-
-    /**
-     * Set miscellaneous user-configured pragmas.
-     *
-     * @param  \PDO  $connection
-     * @param  array  $config
-     * @return void
-     */
-    protected function configurePragmas($connection, array $config): void
-    {
-        if (! isset($config['pragmas'])) {
-            return;
-        }
-
-        foreach ($config['pragmas'] as $pragma => $value) {
-            $connection->prepare("pragma {$pragma} = {$value}")->execute();
-        }
     }
 
     /**

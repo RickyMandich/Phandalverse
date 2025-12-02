@@ -29,6 +29,7 @@ class Composer
      *
      * @param  \Illuminate\Filesystem\Filesystem  $files
      * @param  string|null  $workingPath
+     * @return void
      */
     public function __construct(Filesystem $files, $workingPath = null)
     {
@@ -42,7 +43,7 @@ class Composer
      * @param  string  $package
      * @return bool
      *
-     * @throws \RuntimeException
+     * @throw \RuntimeException
      */
     public function hasPackage($package)
     {
@@ -116,7 +117,7 @@ class Composer
      * @param  callable(array):array  $callback
      * @return void
      *
-     * @throws \RuntimeException
+     * @throw \RuntimeException
      */
     public function modify(callable $callback)
     {
@@ -182,7 +183,7 @@ class Composer
      *
      * @return string
      *
-     * @throws \RuntimeException
+     * @throw \RuntimeException
      */
     protected function findComposerFile()
     {

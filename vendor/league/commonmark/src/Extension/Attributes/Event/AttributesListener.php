@@ -29,19 +29,6 @@ final class AttributesListener
     private const DIRECTION_PREFIX = 'prefix';
     private const DIRECTION_SUFFIX = 'suffix';
 
-    /** @var list<string> */
-    private array $allowList;
-    private bool $allowUnsafeLinks;
-
-    /**
-     * @param list<string> $allowList
-     */
-    public function __construct(array $allowList = [], bool $allowUnsafeLinks = true)
-    {
-        $this->allowList        = $allowList;
-        $this->allowUnsafeLinks = $allowUnsafeLinks;
-    }
-
     public function processDocument(DocumentParsedEvent $event): void
     {
         foreach ($event->getDocument()->iterator() as $node) {
@@ -63,7 +50,7 @@ final class AttributesListener
                     $attributes = AttributesHelper::mergeAttributes($node->getAttributes(), $target);
                 }
 
-                $target->data->set('attributes', AttributesHelper::filterAttributes($attributes, $this->allowList, $this->allowUnsafeLinks));
+                $target->data->set('attributes', $attributes);
             }
 
             $node->detach();

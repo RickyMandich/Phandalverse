@@ -2,7 +2,6 @@
 
 namespace Illuminate\Console\View\Components;
 
-use Illuminate\Console\View\TaskResult;
 use Illuminate\Support\InteractsWithTime;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
@@ -35,10 +34,10 @@ class Task extends Component
 
         $startTime = microtime(true);
 
-        $result = TaskResult::Failure->value;
+        $result = false;
 
         try {
-            $result = ($task ?: fn () => TaskResult::Success->value)();
+            $result = ($task ?: fn () => true)();
         } catch (Throwable $e) {
             throw $e;
         } finally {
@@ -54,11 +53,7 @@ class Task extends Component
             $this->output->write("<fg=gray>$runTime</>", false, $verbosity);
 
             $this->output->writeln(
-                match ($result) {
-                    TaskResult::Failure->value => ' <fg=red;options=bold>FAIL</>',
-                    TaskResult::Skipped->value => ' <fg=yellow;options=bold>SKIPPED</>',
-                    default => ' <fg=green;options=bold>DONE</>'
-                },
+                $result !== false ? ' <fg=green;options=bold>DONE</>' : ' <fg=red;options=bold>FAIL</>',
                 $verbosity,
             );
         }

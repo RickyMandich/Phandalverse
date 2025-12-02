@@ -3,7 +3,7 @@
 /*
  * This file is part of Psy Shell.
  *
- * (c) 2012-2025 Justin Hileman
+ * (c) 2012-2023 Justin Hileman
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -13,9 +13,7 @@ namespace Psy\Command;
 
 use PhpParser\NodeTraverser;
 use PhpParser\PrettyPrinter\Standard as Printer;
-use Psy\CodeCleaner;
 use Psy\CodeCleaner\NoReturnValue;
-use Psy\CodeCleanerAware;
 use Psy\Context;
 use Psy\ContextAware;
 use Psy\Exception\ErrorException;
@@ -24,15 +22,11 @@ use Psy\Exception\UnexpectedTargetException;
 use Psy\Reflection\ReflectionConstant;
 use Psy\Sudo\SudoVisitor;
 use Psy\Util\Mirror;
-use Psy\Util\Str;
-use Symfony\Component\Console\Formatter\OutputFormatter;
-use Symfony\Component\Console\Output\ConsoleOutput;
-use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * An abstract command with helpers for inspecting the current context.
  */
-abstract class ReflectingCommand extends Command implements ContextAware, CodeCleanerAware
+abstract class ReflectingCommand extends Command implements ContextAware
 {
     const CLASS_OR_FUNC = '/^[\\\\\w]+$/';
     const CLASS_MEMBER = '/^([\\\\\w]+)::(\w+)$/';
@@ -40,7 +34,6 @@ abstract class ReflectingCommand extends Command implements ContextAware, CodeCl
     const INSTANCE_MEMBER = '/^(\$\w+)(::|->)(\w+)$/';
 
     protected Context $context;
-    protected CodeCleaner $cleaner;
     private CodeArgumentParser $parser;
     private NodeTraverser $traverser;
     private Printer $printer;
@@ -69,14 +62,6 @@ abstract class ReflectingCommand extends Command implements ContextAware, CodeCl
     public function setContext(Context $context)
     {
         $this->context = $context;
-    }
-
-    /**
-     * CodeCleanerAware interface.
-     */
-    public function setCodeCleaner(CodeCleaner $cleaner)
-    {
-        $this->cleaner = $cleaner;
     }
 
     /**
@@ -146,23 +131,12 @@ abstract class ReflectingCommand extends Command implements ContextAware, CodeCl
             return $name;
         }
 
-        // Use CodeCleaner to resolve the name through use statements and namespace
-        if (Str::isValidClassName($name)) {
-            $resolved = $this->cleaner->resolveClassName($name);
-
-            // If we got a different name back, use it
-            if ($resolved !== $name) {
-                return $resolved;
-            }
-
-            // Fall back to the old resolveCode approach for edge cases
+        // Check $name against the current namespace and use statements.
+        if (self::couldBeClassName($name)) {
             try {
-                $resolved = $this->resolveCode($name.'::class');
-                if ($resolved !== $name) {
-                    return $resolved;
-                }
+                $name = $this->resolveCode($name.'::class');
             } catch (RuntimeException $e) {
-                // Fall through to namespace check
+                // /shrug
             }
         }
 
@@ -178,21 +152,24 @@ abstract class ReflectingCommand extends Command implements ContextAware, CodeCl
     }
 
     /**
+     * Check whether a given name could be a class name.
+     */
+    protected function couldBeClassName(string $name): bool
+    {
+        // Regex based on https://www.php.net/manual/en/language.oop5.basic.php#language.oop5.basic.class
+        return \preg_match('/^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*(\\\\[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*)*$/', $name) === 1;
+    }
+
+    /**
      * Get a Reflector and documentation for a function, class or instance, constant, method or property.
      *
-     * @param string               $valueName Function, class, variable, constant, method or property name
-     * @param OutputInterface|null $output    Optional output for displaying cleaner messages
+     * @param string $valueName Function, class, variable, constant, method or property name
      *
      * @return array (value, Reflector)
      */
-    protected function getTargetAndReflector(string $valueName, ?OutputInterface $output = null): array
+    protected function getTargetAndReflector(string $valueName): array
     {
         list($value, $member, $kind) = $this->getTarget($valueName);
-
-        // Display any implicit use statements that were added during name resolution
-        if ($output !== null) {
-            $this->writeCleanerMessages($output);
-        }
 
         return [$value, Mirror::get($value, $member, $kind)];
     }
@@ -345,20 +322,5 @@ abstract class ReflectingCommand extends Command implements ContextAware, CodeCl
         }
 
         $this->context->setCommandScopeVariables($vars);
-    }
-
-    /**
-     * Write log messages (e.g. implicit use statements) from CodeCleaner passes.
-     */
-    protected function writeCleanerMessages(OutputInterface $output)
-    {
-        // Write to stderr if this is a ConsoleOutput
-        if ($output instanceof ConsoleOutput) {
-            $output = $output->getErrorOutput();
-        }
-
-        foreach ($this->cleaner->getMessages() as $message) {
-            $output->writeln(\sprintf('<whisper>%s</whisper>', OutputFormatter::escape($message)));
-        }
     }
 }

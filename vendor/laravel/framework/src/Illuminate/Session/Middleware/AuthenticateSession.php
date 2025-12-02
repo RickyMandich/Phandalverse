@@ -28,6 +28,7 @@ class AuthenticateSession implements AuthenticatesSessions
      * Create a new middleware instance.
      *
      * @param  \Illuminate\Contracts\Auth\Factory  $auth
+     * @return void
      */
     public function __construct(AuthFactory $auth)
     {

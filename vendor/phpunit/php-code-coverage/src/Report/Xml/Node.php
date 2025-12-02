@@ -9,7 +9,6 @@
  */
 namespace SebastianBergmann\CodeCoverage\Report\Xml;
 
-use function assert;
 use DOMDocument;
 use DOMElement;
 
@@ -18,37 +17,39 @@ use DOMElement;
  */
 abstract class Node
 {
-    protected readonly DOMDocument $dom;
-    private readonly DOMElement $contextNode;
+    private DOMDocument $dom;
+    private DOMElement $contextNode;
 
     public function __construct(DOMElement $context)
     {
-        $this->dom         = $context->ownerDocument;
-        $this->contextNode = $context;
+        $this->setContextNode($context);
+    }
+
+    public function dom(): DOMDocument
+    {
+        return $this->dom;
     }
 
     public function totals(): Totals
     {
         $totalsContainer = $this->contextNode()->firstChild;
 
-        if ($totalsContainer === null) {
+        if (!$totalsContainer) {
             $totalsContainer = $this->contextNode()->appendChild(
                 $this->dom->createElementNS(
-                    Facade::XML_NAMESPACE,
+                    'https://schema.phpunit.de/coverage/1.0',
                     'totals',
                 ),
             );
         }
-
-        assert($totalsContainer instanceof DOMElement);
 
         return new Totals($totalsContainer);
     }
 
     public function addDirectory(string $name): Directory
     {
-        $dirNode = $this->dom->createElementNS(
-            Facade::XML_NAMESPACE,
+        $dirNode = $this->dom()->createElementNS(
+            'https://schema.phpunit.de/coverage/1.0',
             'directory',
         );
 
@@ -58,19 +59,24 @@ abstract class Node
         return new Directory($dirNode);
     }
 
-    public function addFile(string $name, string $href, string $hash): File
+    public function addFile(string $name, string $href): File
     {
-        $fileNode = $this->dom->createElementNS(
-            Facade::XML_NAMESPACE,
+        $fileNode = $this->dom()->createElementNS(
+            'https://schema.phpunit.de/coverage/1.0',
             'file',
         );
 
         $fileNode->setAttribute('name', $name);
         $fileNode->setAttribute('href', $href);
-        $fileNode->setAttribute('hash', $hash);
         $this->contextNode()->appendChild($fileNode);
 
         return new File($fileNode);
+    }
+
+    protected function setContextNode(DOMElement $context): void
+    {
+        $this->dom         = $context->ownerDocument;
+        $this->contextNode = $context;
     }
 
     protected function contextNode(): DOMElement

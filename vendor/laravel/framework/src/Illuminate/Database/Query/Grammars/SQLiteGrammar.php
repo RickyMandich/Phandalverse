@@ -44,25 +44,6 @@ class SQLiteGrammar extends Grammar
     }
 
     /**
-     * Compile a basic where clause.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @param  array  $where
-     * @return string
-     */
-    protected function whereBasic(Builder $query, $where)
-    {
-        if ($where['operator'] === '<=>') {
-            $column = $this->wrap($where['column']);
-            $value = $this->parameter($where['value']);
-
-            return "{$column} IS {$value}";
-        }
-
-        return parent::whereBasic($query, $where);
-    }
-
-    /**
      * Compile a "where like" clause.
      *
      * @param  \Illuminate\Database\Query\Builder  $query
@@ -180,8 +161,8 @@ class SQLiteGrammar extends Grammar
     protected function compileIndexHint(Builder $query, $indexHint)
     {
         return $indexHint->type === 'force'
-            ? "indexed by {$indexHint->index}"
-            : '';
+                ? "indexed by {$indexHint->index}"
+                : '';
     }
 
     /**
@@ -247,7 +228,7 @@ class SQLiteGrammar extends Grammar
     {
         $version = $query->getConnection()->getServerVersion();
 
-        if (version_compare($version, '3.25.0', '>=')) {
+        if (version_compare($version, '3.25.0') >= 0) {
             return parent::compileGroupLimit($query);
         }
 
@@ -308,17 +289,15 @@ class SQLiteGrammar extends Grammar
     {
         $jsonGroups = $this->groupJsonColumnsForUpdate($values);
 
-        return (new Collection($values))
-            ->reject(fn ($value, $key) => $this->isJsonSelector($key))
-            ->merge($jsonGroups)
-            ->map(function ($value, $key) use ($jsonGroups) {
-                $column = last(explode('.', $key));
+        return (new Collection($values))->reject(function ($value, $key) {
+            return $this->isJsonSelector($key);
+        })->merge($jsonGroups)->map(function ($value, $key) use ($jsonGroups) {
+            $column = last(explode('.', $key));
 
-                $value = isset($jsonGroups[$key]) ? $this->compileJsonPatch($column, $value) : $this->parameter($value);
+            $value = isset($jsonGroups[$key]) ? $this->compileJsonPatch($column, $value) : $this->parameter($value);
 
-                return $this->wrap($column).' = '.$value;
-            })
-            ->implode(', ');
+            return $this->wrap($column).' = '.$value;
+        })->implode(', ');
     }
 
     /**
@@ -403,7 +382,6 @@ class SQLiteGrammar extends Grammar
      * @param  array  $values
      * @return array
      */
-    #[\Override]
     public function prepareBindingsForUpdate(array $bindings, array $values)
     {
         $groups = $this->groupJsonColumnsForUpdate($values);
@@ -415,8 +393,6 @@ class SQLiteGrammar extends Grammar
             ->all();
 
         $cleanBindings = Arr::except($bindings, 'select');
-
-        $values = Arr::flatten(array_map(fn ($value) => value($value), $values));
 
         return array_values(
             array_merge($values, Arr::flatten($cleanBindings))

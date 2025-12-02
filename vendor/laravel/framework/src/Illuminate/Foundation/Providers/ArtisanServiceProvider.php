@@ -39,7 +39,6 @@ use Illuminate\Foundation\Console\ClearCompiledCommand;
 use Illuminate\Foundation\Console\ComponentMakeCommand;
 use Illuminate\Foundation\Console\ConfigCacheCommand;
 use Illuminate\Foundation\Console\ConfigClearCommand;
-use Illuminate\Foundation\Console\ConfigMakeCommand;
 use Illuminate\Foundation\Console\ConfigPublishCommand;
 use Illuminate\Foundation\Console\ConfigShowCommand;
 use Illuminate\Foundation\Console\ConsoleMakeCommand;
@@ -97,11 +96,9 @@ use Illuminate\Queue\Console\ForgetFailedCommand as ForgetFailedQueueCommand;
 use Illuminate\Queue\Console\ListenCommand as QueueListenCommand;
 use Illuminate\Queue\Console\ListFailedCommand as ListFailedQueueCommand;
 use Illuminate\Queue\Console\MonitorCommand as QueueMonitorCommand;
-use Illuminate\Queue\Console\PauseCommand as QueuePauseCommand;
 use Illuminate\Queue\Console\PruneBatchesCommand as QueuePruneBatchesCommand;
 use Illuminate\Queue\Console\PruneFailedJobsCommand as QueuePruneFailedJobsCommand;
 use Illuminate\Queue\Console\RestartCommand as QueueRestartCommand;
-use Illuminate\Queue\Console\ResumeCommand as QueueResumeCommand;
 use Illuminate\Queue\Console\RetryBatchCommand as QueueRetryBatchCommand;
 use Illuminate\Queue\Console\RetryCommand as QueueRetryCommand;
 use Illuminate\Queue\Console\TableCommand;
@@ -152,11 +149,9 @@ class ArtisanServiceProvider extends ServiceProvider implements DeferrableProvid
         'QueueForget' => ForgetFailedQueueCommand::class,
         'QueueListen' => QueueListenCommand::class,
         'QueueMonitor' => QueueMonitorCommand::class,
-        'QueuePause' => QueuePauseCommand::class,
         'QueuePruneBatches' => QueuePruneBatchesCommand::class,
         'QueuePruneFailedJobs' => QueuePruneFailedJobsCommand::class,
         'QueueRestart' => QueueRestartCommand::class,
-        'QueueResume' => QueueResumeCommand::class,
         'QueueRetry' => QueueRetryCommand::class,
         'QueueRetryBatch' => QueueRetryBatchCommand::class,
         'QueueWork' => QueueWorkCommand::class,
@@ -194,7 +189,6 @@ class ArtisanServiceProvider extends ServiceProvider implements DeferrableProvid
         'ChannelMake' => ChannelMakeCommand::class,
         'ClassMake' => ClassMakeCommand::class,
         'ComponentMake' => ComponentMakeCommand::class,
-        'ConfigMake' => ConfigMakeCommand::class,
         'ConfigPublish' => ConfigPublishCommand::class,
         'ConsoleMake' => ConsoleMakeCommand::class,
         'ControllerMake' => ControllerMakeCommand::class,
@@ -256,6 +250,7 @@ class ArtisanServiceProvider extends ServiceProvider implements DeferrableProvid
     /**
      * Register the given commands.
      *
+     * @param  array  $commands
      * @return void
      */
     protected function registerCommands(array $commands)
@@ -398,21 +393,9 @@ class ArtisanServiceProvider extends ServiceProvider implements DeferrableProvid
      *
      * @return void
      */
-    protected function registerConfigMakeCommand()
-    {
-        $this->app->singleton(ConfigMakeCommand::class, function ($app) {
-            return new ConfigMakeCommand($app['files']);
-        });
-    }
-
-    /**
-     * Register the command.
-     *
-     * @return void
-     */
     protected function registerConfigPublishCommand()
     {
-        $this->app->singleton(ConfigPublishCommand::class, function () {
+        $this->app->singleton(ConfigPublishCommand::class, function ($app) {
             return new ConfigPublishCommand;
         });
     }

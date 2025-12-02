@@ -13,7 +13,6 @@ use Nette;
 use Nette\Schema\Elements\AnyOf;
 use Nette\Schema\Elements\Structure;
 use Nette\Schema\Elements\Type;
-use function is_object;
 
 
 /**

@@ -10,7 +10,6 @@ declare(strict_types=1);
 namespace Nette\Utils;
 
 use Nette;
-use function count, is_array, is_scalar, sprintf;
 
 
 /**
@@ -60,7 +59,7 @@ class ArrayHash extends \stdClass implements \ArrayAccess, \Countable, \Iterator
 
 
 	/**
-	 * Replaces or appends an item.
+	 * Replaces or appends a item.
 	 * @param  array-key  $key
 	 * @param  T  $value
 	 */
@@ -75,7 +74,7 @@ class ArrayHash extends \stdClass implements \ArrayAccess, \Countable, \Iterator
 
 
 	/**
-	 * Returns an item.
+	 * Returns a item.
 	 * @param  array-key  $key
 	 * @return T
 	 */
@@ -87,7 +86,7 @@ class ArrayHash extends \stdClass implements \ArrayAccess, \Countable, \Iterator
 
 
 	/**
-	 * Determines whether an item exists.
+	 * Determines whether a item exists.
 	 * @param  array-key  $key
 	 */
 	public function offsetExists($key): bool

@@ -20,6 +20,7 @@ class Dimensions implements Stringable
      * Create a new dimensions rule instance.
      *
      * @param  array  $constraints
+     * @return void
      */
     public function __construct(array $constraints = [])
     {

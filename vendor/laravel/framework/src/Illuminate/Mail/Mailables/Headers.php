@@ -37,6 +37,7 @@ class Headers
      * @param  string|null  $messageId
      * @param  array  $references
      * @param  array  $text
+     * @return void
      *
      * @named-arguments-supported
      */

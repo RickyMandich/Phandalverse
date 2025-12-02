@@ -51,6 +51,7 @@ class DatabaseQueue extends Queue implements QueueContract, ClearableQueue
      * @param  string  $default
      * @param  int  $retryAfter
      * @param  bool  $dispatchAfterCommit
+     * @return void
      */
     public function __construct(
         Connection $database,
@@ -77,66 +78,6 @@ class DatabaseQueue extends Queue implements QueueContract, ClearableQueue
         return $this->database->table($this->table)
             ->where('queue', $this->getQueue($queue))
             ->count();
-    }
-
-    /**
-     * Get the number of pending jobs.
-     *
-     * @param  string|null  $queue
-     * @return int
-     */
-    public function pendingSize($queue = null)
-    {
-        return $this->database->table($this->table)
-            ->where('queue', $this->getQueue($queue))
-            ->whereNull('reserved_at')
-            ->where('available_at', '<=', $this->currentTime())
-            ->count();
-    }
-
-    /**
-     * Get the number of delayed jobs.
-     *
-     * @param  string|null  $queue
-     * @return int
-     */
-    public function delayedSize($queue = null)
-    {
-        return $this->database->table($this->table)
-            ->where('queue', $this->getQueue($queue))
-            ->whereNull('reserved_at')
-            ->where('available_at', '>', $this->currentTime())
-            ->count();
-    }
-
-    /**
-     * Get the number of reserved jobs.
-     *
-     * @param  string|null  $queue
-     * @return int
-     */
-    public function reservedSize($queue = null)
-    {
-        return $this->database->table($this->table)
-            ->where('queue', $this->getQueue($queue))
-            ->whereNotNull('reserved_at')
-            ->count();
-    }
-
-    /**
-     * Get the creation timestamp of the oldest pending job, excluding delayed jobs.
-     *
-     * @param  string|null  $queue
-     * @return int|null
-     */
-    public function creationTimeOfOldestPendingJob($queue = null)
-    {
-        return $this->database->table($this->table)
-            ->where('queue', $this->getQueue($queue))
-            ->whereNull('reserved_at')
-            ->where('available_at', '<=', $this->currentTime())
-            ->oldest('available_at')
-            ->value('available_at');
     }
 
     /**
@@ -186,7 +127,7 @@ class DatabaseQueue extends Queue implements QueueContract, ClearableQueue
     {
         return $this->enqueueUsing(
             $job,
-            $this->createPayload($job, $this->getQueue($queue), $data, $delay),
+            $this->createPayload($job, $this->getQueue($queue), $data),
             $queue,
             $delay,
             function ($payload, $queue, $delay) {

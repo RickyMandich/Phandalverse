@@ -15,13 +15,13 @@
 		}
 	],
 	"require": {
-		"php": "8.0 - 8.5"
+		"php": "8.0 - 8.4"
 	},
 	"require-dev": {
 		"nette/tester": "^2.5",
 		"tracy/tracy": "^2.9",
-		"phpstan/phpstan-nette": "^2.0@stable",
-		"jetbrains/phpstorm-attributes": "^1.2"
+		"phpstan/phpstan": "^1.0",
+		"jetbrains/phpstorm-attributes": "dev-master"
 	},
 	"conflict": {
 		"nette/finder": "<3",
@@ -36,10 +36,7 @@
 		"ext-tokenizer": "to use Nette\\Utils\\Reflection::getUseStatements()"
 	},
 	"autoload": {
-		"classmap": ["src/"],
-		"psr-4": {
-			"Nette\\": "src"
-		}
+		"classmap": ["src/"]
 	},
 	"minimum-stability": "dev",
 	"scripts": {

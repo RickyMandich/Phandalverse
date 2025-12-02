@@ -3,6 +3,7 @@
 namespace Illuminate\Cache\Console;
 
 use Illuminate\Cache\CacheManager;
+use Illuminate\Cache\RedisStore;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
@@ -34,9 +35,13 @@ class PruneStaleTagsCommand extends Command
     {
         $cache = $cache->store($this->argument('store'));
 
-        if (method_exists($cache->getStore(), 'flushStaleTags')) {
-            $cache->flushStaleTags();
+        if (! $cache->getStore() instanceof RedisStore) {
+            $this->components->error('Pruning cache tags is only necessary when using Redis.');
+
+            return 1;
         }
+
+        $cache->flushStaleTags();
 
         $this->components->info('Stale cache tags pruned successfully.');
     }

@@ -23,7 +23,7 @@ class HoursField extends AbstractField
     protected $rangeEnd = 23;
 
     /**
-     * @var list<array<string, bool|int|string>>|null Transitions returned by DateTimeZone::getTransitions()
+     * @var array|null Transitions returned by DateTimeZone::getTransitions()
      */
     protected $transitions = [];
 
@@ -73,9 +73,6 @@ class HoursField extends AbstractField
         return $retval;
     }
 
-    /**
-     * @return non-empty-array<string, bool|int|string>|null
-     */
     public function getPastTransition(DateTimeInterface $date): ?array
     {
         $currentTimestamp = (int) $date->format('U');
@@ -163,7 +160,6 @@ class HoursField extends AbstractField
 
         $target = (int) $hours[$position];
         $originalHour = (int)$date->format('H');
-        $originalDst = (int)$date->format('I');
 
         $originalDay = (int)$date->format('d');
         $previousOffset = $date->getOffset();
@@ -202,11 +198,6 @@ class HoursField extends AbstractField
 
             $distance = $originalHour - $target;
             $date = $this->timezoneSafeModify($date, "-{$distance} hours");
-        }
-
-        $actualDst = (int)$date->format('I');
-        if ($originalDst < $actualDst) {
-            $date = $this->timezoneSafeModify($date, "-1 hours");
         }
 
         $date = $this->setTimeHour($date, $invert, $originalTimestamp);

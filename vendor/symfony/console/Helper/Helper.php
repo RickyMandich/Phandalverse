@@ -42,9 +42,7 @@ abstract class Helper implements HelperInterface
         $string ??= '';
 
         if (preg_match('//u', $string)) {
-            $string = preg_replace('/[\p{Cc}\x7F]++/u', '', $string, -1, $count);
-
-            return (new UnicodeString($string))->width(false) + $count;
+            return (new UnicodeString($string))->width(false);
         }
 
         if (false === $encoding = mb_detect_encoding($string, null, true)) {
@@ -80,10 +78,6 @@ abstract class Helper implements HelperInterface
     {
         $string ??= '';
 
-        if (preg_match('//u', $string)) {
-            return (new UnicodeString($string))->slice($from, $length);
-        }
-
         if (false === $encoding = mb_detect_encoding($string, null, true)) {
             return substr($string, $from, $length);
         }
@@ -93,41 +87,39 @@ abstract class Helper implements HelperInterface
 
     public static function formatTime(int|float $secs, int $precision = 1): string
     {
-        $ms = (int) ($secs * 1000);
         $secs = (int) floor($secs);
 
-        if (0 === $ms) {
-            return '< 1 ms';
+        if (0 === $secs) {
+            return '< 1 sec';
         }
 
         static $timeFormats = [
-            [1, 'ms'],
-            [1000, 's'],
-            [60000, 'min'],
-            [3600000, 'h'],
-            [86_400_000, 'd'],
+            [1, '1 sec', 'secs'],
+            [60, '1 min', 'mins'],
+            [3600, '1 hr', 'hrs'],
+            [86400, '1 day', 'days'],
         ];
 
         $times = [];
         foreach ($timeFormats as $index => $format) {
-            $milliSeconds = isset($timeFormats[$index + 1]) ? $ms % $timeFormats[$index + 1][0] : $ms;
+            $seconds = isset($timeFormats[$index + 1]) ? $secs % $timeFormats[$index + 1][0] : $secs;
 
             if (isset($times[$index - $precision])) {
                 unset($times[$index - $precision]);
             }
 
-            if (0 === $milliSeconds) {
+            if (0 === $seconds) {
                 continue;
             }
 
-            $unitCount = ($milliSeconds / $format[0]);
-            $times[$index] = $unitCount.' '.$format[1];
+            $unitCount = ($seconds / $format[0]);
+            $times[$index] = 1 === $unitCount ? $format[1] : $unitCount.' '.$format[2];
 
-            if ($ms === $milliSeconds) {
+            if ($secs === $seconds) {
                 break;
             }
 
-            $ms -= $milliSeconds;
+            $secs -= $seconds;
         }
 
         return implode(', ', array_reverse($times));

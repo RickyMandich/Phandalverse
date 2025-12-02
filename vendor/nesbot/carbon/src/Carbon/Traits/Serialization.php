@@ -73,24 +73,15 @@ trait Serialization
     /**
      * Create an instance from a serialized string.
      *
-     * If $value is not from a trusted source, consider using the allowed_classes option to limit
-     * the types of objects that can be built, for instance:
-     *
-     * @example
-     * ```php
-     * $object = Carbon::fromSerialized($value, ['allowed_classes' => [Carbon::class, CarbonImmutable::class]]);
-     * ```
-     *
-     * @param \Stringable|string $value
-     * @param array              $options example: ['allowed_classes' => [CarbonImmutable::class]]
+     * @param string $value
      *
      * @throws InvalidFormatException
      *
      * @return static
      */
-    public static function fromSerialized($value, array $options = []): static
+    public static function fromSerialized($value): static
     {
-        $instance = @unserialize((string) $value, $options);
+        $instance = @unserialize((string) $value);
 
         if (!$instance instanceof static) {
             throw new InvalidFormatException("Invalid serialized value: $value");
@@ -320,7 +311,6 @@ trait Serialization
         // @codeCoverageIgnoreEnd
     }
 
-    /** @codeCoverageIgnore */
     private function dumpTimezone(mixed $timezone): mixed
     {
         return $timezone instanceof DateTimeZone ? $timezone->getName() : $timezone;

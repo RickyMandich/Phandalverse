@@ -226,7 +226,13 @@ class SqlServerGrammar extends Grammar
         );
     }
 
-    /** @inheritDoc */
+    /**
+     * Compile a rename column command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return array|string
+     */
     public function compileRenameColumn(Blueprint $blueprint, Fluent $command)
     {
         return sprintf("sp_rename %s, %s, N'COLUMN'",
@@ -235,7 +241,13 @@ class SqlServerGrammar extends Grammar
         );
     }
 
-    /** @inheritDoc */
+    /**
+     * Compile a change column command into a series of SQL statements.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return array|string
+     */
     public function compileChange(Blueprint $blueprint, Fluent $command)
     {
         return [
@@ -272,11 +284,10 @@ class SqlServerGrammar extends Grammar
      */
     public function compileUnique(Blueprint $blueprint, Fluent $command)
     {
-        return sprintf('create unique index %s on %s (%s)%s',
+        return sprintf('create unique index %s on %s (%s)',
             $this->wrap($command->index),
             $this->wrapTable($blueprint),
-            $this->columnize($command->columns),
-            $command->online ? ' with (online = on)' : ''
+            $this->columnize($command->columns)
         );
     }
 
@@ -289,11 +300,10 @@ class SqlServerGrammar extends Grammar
      */
     public function compileIndex(Blueprint $blueprint, Fluent $command)
     {
-        return sprintf('create index %s on %s (%s)%s',
+        return sprintf('create index %s on %s (%s)',
             $this->wrap($command->index),
             $this->wrapTable($blueprint),
-            $this->columnize($command->columns),
-            $command->online ? ' with (online = on)' : ''
+            $this->columnize($command->columns)
         );
     }
 
@@ -395,7 +405,7 @@ class SqlServerGrammar extends Grammar
     {
         $columns = $command->name === 'change'
             ? "'".$command->column->name."'"
-            : "'".implode("', '", $command->columns)."'";
+            : "'".implode("','", $command->columns)."'";
 
         $table = $this->wrapTable($blueprint);
         $tableName = $this->quoteString($this->wrapTable($blueprint));
@@ -771,10 +781,6 @@ class SqlServerGrammar extends Grammar
      */
     protected function typeDate(Fluent $column)
     {
-        if ($column->useCurrent) {
-            $column->default(new Expression('CAST(GETDATE() AS DATE)'));
-        }
-
         return 'date';
     }
 
@@ -862,10 +868,6 @@ class SqlServerGrammar extends Grammar
      */
     protected function typeYear(Fluent $column)
     {
-        if ($column->useCurrent) {
-            $column->default(new Expression('CAST(YEAR(GETDATE()) AS INTEGER)'));
-        }
-
         return $this->typeInteger($column);
     }
 
@@ -1031,7 +1033,7 @@ class SqlServerGrammar extends Grammar
     /**
      * Quote the given string literal.
      *
-     * @param  string|array<string>  $value
+     * @param  string|array  $value
      * @return string
      */
     public function quoteString($value)
