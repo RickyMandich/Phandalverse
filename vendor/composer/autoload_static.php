@@ -16,8 +16,8 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
         '667aeda72477189d0494fecd327c3641' => __DIR__ . '/..' . '/symfony/var-dumper/Resources/functions/dump.php',
         '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
-        'ec07570ca5a812141189b1fa81503674' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Assert/Functions.php',
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
+        'ec07570ca5a812141189b1fa81503674' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Assert/Functions.php',
         '35a6ad97d21e794e7e22a17d806652e4' => __DIR__ . '/..' . '/nunomaduro/termwind/src/Functions.php',
         '606a39d89246991a373564698c2d8383' => __DIR__ . '/..' . '/symfony/polyfill-php85/bootstrap.php',
         '662a729f963d39afe703c9d9b7ab4a8c' => __DIR__ . '/..' . '/symfony/polyfill-php83/bootstrap.php',
@@ -59,6 +59,7 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'W' => 
         array (
             'Whoops\\' => 7,
+            'Webuni\\CommonMark\\TableExtension\\' => 33,
             'Webmozart\\Assert\\' => 17,
         ),
         'T' => 
@@ -221,6 +222,10 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'Whoops\\' => 
         array (
             0 => __DIR__ . '/..' . '/filp/whoops/src/Whoops',
+        ),
+        'Webuni\\CommonMark\\TableExtension\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/webuni/commonmark-table-extension/src',
         ),
         'Webmozart\\Assert\\' => 
         array (
@@ -7619,6 +7624,16 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'Webmozart\\Assert\\Assert' => __DIR__ . '/..' . '/webmozart/assert/src/Assert.php',
         'Webmozart\\Assert\\InvalidArgumentException' => __DIR__ . '/..' . '/webmozart/assert/src/InvalidArgumentException.php',
         'Webmozart\\Assert\\Mixin' => __DIR__ . '/..' . '/webmozart/assert/src/Mixin.php',
+        'Webuni\\CommonMark\\TableExtension\\Table' => __DIR__ . '/..' . '/webuni/commonmark-table-extension/src/Table.php',
+        'Webuni\\CommonMark\\TableExtension\\TableCell' => __DIR__ . '/..' . '/webuni/commonmark-table-extension/src/TableCell.php',
+        'Webuni\\CommonMark\\TableExtension\\TableCellRenderer' => __DIR__ . '/..' . '/webuni/commonmark-table-extension/src/TableCellRenderer.php',
+        'Webuni\\CommonMark\\TableExtension\\TableExtension' => __DIR__ . '/..' . '/webuni/commonmark-table-extension/src/TableExtension.php',
+        'Webuni\\CommonMark\\TableExtension\\TableParser' => __DIR__ . '/..' . '/webuni/commonmark-table-extension/src/TableParser.php',
+        'Webuni\\CommonMark\\TableExtension\\TableRenderer' => __DIR__ . '/..' . '/webuni/commonmark-table-extension/src/TableRenderer.php',
+        'Webuni\\CommonMark\\TableExtension\\TableRow' => __DIR__ . '/..' . '/webuni/commonmark-table-extension/src/TableRow.php',
+        'Webuni\\CommonMark\\TableExtension\\TableRowRenderer' => __DIR__ . '/..' . '/webuni/commonmark-table-extension/src/TableRowRenderer.php',
+        'Webuni\\CommonMark\\TableExtension\\TableRows' => __DIR__ . '/..' . '/webuni/commonmark-table-extension/src/TableRows.php',
+        'Webuni\\CommonMark\\TableExtension\\TableRowsRenderer' => __DIR__ . '/..' . '/webuni/commonmark-table-extension/src/TableRowsRenderer.php',
         'Whoops\\Exception\\ErrorException' => __DIR__ . '/..' . '/filp/whoops/src/Whoops/Exception/ErrorException.php',
         'Whoops\\Exception\\Formatter' => __DIR__ . '/..' . '/filp/whoops/src/Whoops/Exception/Formatter.php',
         'Whoops\\Exception\\Frame' => __DIR__ . '/..' . '/filp/whoops/src/Whoops/Exception/Frame.php',

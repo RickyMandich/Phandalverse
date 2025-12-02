@@ -3,7 +3,7 @@
         'name' => 'laravel/laravel',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '8288bbd3e9699e3826b70ea60b937711dbfa5caf',
+        'reference' => '4df3ad7d4e9cc7cc6004d18061d1448ea0a4e37c',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -430,7 +430,7 @@
         'laravel/laravel' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '8288bbd3e9699e3826b70ea60b937711dbfa5caf',
+            'reference' => '4df3ad7d4e9cc7cc6004d18061d1448ea0a4e37c',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -1459,6 +1459,15 @@
             'install_path' => __DIR__ . '/../webmozart/assert',
             'aliases' => array(),
             'dev_requirement' => true,
+        ),
+        'webuni/commonmark-table-extension' => array(
+            'pretty_version' => '0.1.0',
+            'version' => '0.1.0.0',
+            'reference' => '34d17b90b4aa0d7ca48a761da13dc8bcc53a1350',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../webuni/commonmark-table-extension',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
     ),
 );
