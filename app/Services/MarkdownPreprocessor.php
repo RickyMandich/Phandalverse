@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace App\Services;
 
@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\File;
 class MarkdownPreprocessor
 {
     private static ?array $fileIndex = null;
+    private static int $embedDepth = 0;
+    private static int $maxEmbedDepth = 3;
 
     public static function buildFileIndex(): array
     {
@@ -42,8 +44,7 @@ class MarkdownPreprocessor
     public static function findNotePath(string $noteName): string
     {
         $index = self::buildFileIndex();
-        $cleanName = explode('#', $noteName)[0];
-        $cleanName = trim($cleanName);
+        $cleanName = trim($noteName);
 
         if (isset($index[$cleanName])) {
             return $index[$cleanName];
@@ -84,10 +85,11 @@ class MarkdownPreprocessor
     public static function convertWikilinks(string $text): string
     {
         return preg_replace_callback(
-            '/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/',
+            '/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/',
             function ($matches) {
                 $nota = $matches[1];
-                $label = $matches[2] ?? $nota;
+                $label = $matches[2] ?? $matches[0];
+                $label = trim($label, '[]');
                 $path = self::findNotePath($nota);
                 $url = '/vault/' . rawurlencode($path);
                 return '<a href="' . $url . '" class="wikilink">' . htmlspecialchars($label) . '</a>';
@@ -96,37 +98,156 @@ class MarkdownPreprocessor
         );
     }
 
-    public static function convertEmbeds(string $text): string
+    /**
+     * Estrae una sezione da un contenuto markdown
+     * $sectionPath e' tipo "## titolo### sottotitolo"
+     */
+    public static function extractSection(string $content, string $sectionPath): string
+    {
+        if (empty($sectionPath)) {
+            return $content;
+        }
+
+        // Parse section path: "##heading1###heading2" -> [['##', 'heading1'], ['###', 'heading2']]
+        preg_match_all('/(#{1,6})([^#]+)/', $sectionPath, $matches, PREG_SET_ORDER);
+        
+        if (empty($matches)) {
+            return $content;
+        }
+
+        $lines = explode("\n", $content);
+        $result = [];
+        $inSection = false;
+        $targetLevel = 0;
+        $currentMatch = 0;
+        $matchedLevels = [];
+
+        foreach ($lines as $line) {
+            // Check if line is a heading
+            if (preg_match('/^(#{1,6})\s+(.+)$/', $line, $headingMatch)) {
+                $level = strlen($headingMatch[1]);
+                $title = trim($headingMatch[2]);
+
+                if ($currentMatch < count($matches)) {
+                    $wantedLevel = strlen($matches[$currentMatch][1]);
+                    $wantedTitle = trim($matches[$currentMatch][2]);
+
+                    if ($level === $wantedLevel && strcasecmp($title, $wantedTitle) === 0) {
+                        $matchedLevels[] = $level;
+                        $currentMatch++;
+                        
+                        if ($currentMatch === count($matches)) {
+                            $inSection = true;
+                            $targetLevel = $level;
+                            $result[] = $line;
+                            continue;
+                        }
+                    }
+                }
+
+                // Se siamo in sezione e troviamo heading di livello <= target, usciamo
+                if ($inSection && $level <= $targetLevel) {
+                    break;
+                }
+            }
+
+            if ($inSection) {
+                $result[] = $line;
+            }
+        }
+
+        return implode("\n", $result);
+    }
+
+    /**
+     * Carica e renderizza il contenuto di un embed
+     */
+    public static function loadEmbedContent(string $embedRef): string
+    {
+        // Previeni ricorsione infinita
+        if (self::$embedDepth >= self::$maxEmbedDepth) {
+            return '<div class="embed-note embed-error"> Embed troppo annidato</div>';
+        }
+
+        // Parse: "NoteName##section###subsection"
+        $parts = preg_split('/(#{1,6})/', $embedRef, 2, PREG_SPLIT_DELIM_CAPTURE);
+        $noteName = trim($parts[0]);
+        $sectionPath = isset($parts[1]) ? $parts[1] . ($parts[2] ?? '') : '';
+
+        // Trova il file
+        $relativePath = self::findNotePath($noteName);
+        $fullPath = base_path('Vault/' . $relativePath . '.md');
+
+        if (!File::exists($fullPath)) {
+            $url = '/vault/' . rawurlencode($relativePath);
+            return '<div class="embed-note embed-missing"><a href="' . $url . '" class="wikilink"> ' . htmlspecialchars($noteName) . ' (non trovato)</a></div>';
+        }
+
+        $content = File::get($fullPath);
+        
+        // Rimuovi frontmatter YAML
+        $content = preg_replace('/^---\s*\n.*?\n---\s*\n/s', '', $content);
+
+        // Estrai sezione se specificata
+        if (!empty($sectionPath)) {
+            $content = self::extractSection($content, $sectionPath);
+        }
+
+        if (empty(trim($content))) {
+            return '<div class="embed-note embed-empty"> Sezione vuota o non trovata</div>';
+        }
+
+        // Renderizza il contenuto (con protezione ricorsione)
+        self::$embedDepth++;
+        $html = self::toHtml($content);
+        self::$embedDepth--;
+
+        $url = '/vault/' . rawurlencode($relativePath);
+        return '<div class="embed-note"><div class="embed-header"><a href="' . $url . '" class="wikilink"> ' . htmlspecialchars($embedRef) . '</a></div><div class="embed-content">' . $html . '</div></div>';
+    }
+
+    public static function replaceEmbedsWithPlaceholders(string $text, array &$embeds): string
     {
         return preg_replace_callback(
             '/!\[\[([^\]]+)\]\]/',
-            function ($matches) {
+            function ($matches) use (&$embeds) {
                 $content = $matches[1];
-                $imageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'];
-                $ext = strtolower(pathinfo($content, PATHINFO_EXTENSION));
-
-                if (in_array($ext, $imageExt)) {
-                    $url = '/vault/images/' . rawurlencode($content);
-                    return '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image">';
-                }
-
-                $path = self::findNotePath($content);
-                $url = '/vault/' . rawurlencode($path);
-                $label = explode('#', $content)[0];
-                return '<div class="embed-note"><a href="' . $url . '" class="wikilink">' . htmlspecialchars($label) . '</a></div>';
+                $placeholder = '<!--EMBED:' . count($embeds) . '-->';
+                $embeds[] = $content;
+                return $placeholder;
             },
             $text
         );
     }
 
+    public static function restoreEmbeds(string $html, array $embeds): string
+    {
+        foreach ($embeds as $index => $content) {
+            $imageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'];
+            $ext = strtolower(pathinfo($content, PATHINFO_EXTENSION));
+
+            if (in_array($ext, $imageExt)) {
+                $url = '/vault/images/' . rawurlencode($content);
+                $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image">';
+            } else {
+                $replacement = self::loadEmbedContent($content);
+            }
+
+            $html = str_replace('<!--EMBED:' . $index . '-->', $replacement, $html);
+        }
+        return $html;
+    }
+
     public static function toHtml(string $text): string
     {
+        $embeds = [];
+        $text = self::replaceEmbedsWithPlaceholders($text, $embeds);
         $text = self::convertTags($text);
-        $text = self::convertEmbeds($text);
         $text = self::convertWikilinks($text);
 
         $environment = new Environment([
             'renderer' => ['soft_break' => "<br />"],
+            'html_input' => 'allow',
         ]);
 
         $environment->addExtension(new CommonMarkCoreExtension());
@@ -135,6 +256,10 @@ class MarkdownPreprocessor
         $environment->addExtension(new StrikethroughExtension());
 
         $converter = new MarkdownConverter($environment);
-        return $converter->convert($text)->getContent();
+        $html = $converter->convert($text)->getContent();
+
+        $html = self::restoreEmbeds($html, $embeds);
+
+        return $html;
     }
 }
