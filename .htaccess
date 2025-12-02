@@ -7,12 +7,12 @@ RewriteCond %{REQUEST_URI} ^/README\.md$ [OR]
 RewriteCond %{REQUEST_URI} ^/WebScrapingStarWars\.jar$
 RewriteRule ^ - [L]
 
-# Reindirizza verso public/ solo se il file/directory non esiste nella root
+# Gestisci le richieste Laravel
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_URI} !^/public/
-RewriteRule ^(.*)$ public/$1 [L]
+RewriteRule ^(.*)$ index.php [QSA,L]
 
 # Specifica la versione di PHP
 AddHandler av-php84 .php
+
 
