@@ -1,5 +1,5 @@
 RewriteEngine On
-RewriteBase /public
+RewriteBase /public/
 
 # Regola di riscrittura generale
 # RewriteRule ^(.*)$ public/$1 [L]
