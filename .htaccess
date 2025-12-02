@@ -7,8 +7,12 @@ RewriteCond %{REQUEST_URI} ^/README\.md$ [OR]
 RewriteCond %{REQUEST_URI} ^/WebScrapingStarWars\.jar$
 RewriteRule ^ - [L]
 
-# Regola di riscrittura generale
+# Reindirizza verso public/ solo se il file/directory non esiste nella root
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/public/
 RewriteRule ^(.*)$ public/$1 [L]
 
 # Specifica la versione di PHP
 AddHandler av-php84 .php
+
