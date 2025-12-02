@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 Auth::routes();
 
 Route::get('/', function () {
-    return "ciao";//view('welcome');
+    return view('welcome');
 })->name('index');
 
 Route::get('/vault/{note?}', [VaultController::class, 'show'])
