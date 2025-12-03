@@ -78,6 +78,20 @@
                                 </a>
 
                                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                    {{-- Sezione Admin (solo per amministratori) --}}
+                                    @if(Auth::user()->isAdmin())
+                                        <h6 class="dropdown-header">
+                                            <i class="fas fa-shield-alt"></i> Admin
+                                        </h6>
+                                        <a class="dropdown-item" href="{{ route('admin.errors') }}">
+                                            <i class="fas fa-exclamation-triangle"></i> Errori Sistema
+                                        </a>
+                                        <a class="dropdown-item" href="{{ route('admin.logs') }}">
+                                            <i class="fas fa-file-alt"></i> Log
+                                        </a>
+                                        <div class="dropdown-divider"></div>
+                                    @endif
+
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                        onclick="event.preventDefault();
                                                      document.getElementById('logout-form').submit();">

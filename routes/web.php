@@ -20,29 +20,17 @@ Route::get('/vault/{note?}', [VaultController::class, 'show'])
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
 
-// ========== ADMIN ROUTES ==========
+// ========== ADMIN ROUTES (solo amministratori) ==========
+Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+    // Visualizzazione log
+    Route::get('/logs', [LogsController::class, 'index'])->name('admin.logs');
 
-// Visualizzazione log
-Route::get('/admin/logs', [LogsController::class, 'index'])
-    ->name('admin.logs')
-    ->middleware('auth');
-
-// Gestione errori
-Route::get('/admin/errors', [AdminController::class, 'errors'])
-    ->name('admin.errors')
-    ->middleware('auth');
-
-Route::get('/admin/errors/{error}', [AdminController::class, 'showError'])
-    ->name('admin.errors.show')
-    ->middleware('auth');
-
-Route::patch('/admin/errors/{error}', [AdminController::class, 'updateError'])
-    ->name('admin.errors.update')
-    ->middleware('auth');
-
-Route::get('/admin/errors/quick-action/{error}/{action}', [AdminController::class, 'quickActionError'])
-    ->name('admin.errors.quick-action')
-    ->middleware('auth');
+    // Gestione errori
+    Route::get('/errors', [AdminController::class, 'errors'])->name('admin.errors');
+    Route::get('/errors/{error}', [AdminController::class, 'showError'])->name('admin.errors.show');
+    Route::patch('/errors/{error}', [AdminController::class, 'updateError'])->name('admin.errors.update');
+    Route::get('/errors/quick-action/{error}/{action}', [AdminController::class, 'quickActionError'])->name('admin.errors.quick-action');
+});
 
 // ========== JOB ROUTES ==========
 
