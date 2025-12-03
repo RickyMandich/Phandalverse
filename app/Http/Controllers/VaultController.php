@@ -67,6 +67,15 @@ class VaultController extends Controller
 
             $relativePath = str_replace('\\', '/', $file->getRelativePath());
             $name = $file->getFilenameWithoutExtension();
+
+            // Fix encoding per caratteri speciali (es. à, è, ò, ù)
+            if (!mb_check_encoding($name, 'UTF-8')) {
+                $name = mb_convert_encoding($name, 'UTF-8', 'ISO-8859-1');
+            }
+            if (!mb_check_encoding($relativePath, 'UTF-8')) {
+                $relativePath = mb_convert_encoding($relativePath, 'UTF-8', 'ISO-8859-1');
+            }
+
             $fullRelativePath = $relativePath ? $relativePath . '/' . $name : $name;
 
             // Costruisce la struttura ad albero
