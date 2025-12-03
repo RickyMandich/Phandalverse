@@ -9,79 +9,82 @@
  */
 namespace SebastianBergmann\CodeCoverage\Report\Xml;
 
-use function assert;
-use DateTimeImmutable;
 use DOMDocument;
-use DOMElement;
-use SebastianBergmann\Environment\Runtime;
 
 /**
  * @internal This class is not covered by the backward compatibility promise for phpunit/php-code-coverage
  */
 final class Project extends Node
 {
-    private readonly string $directory;
-
     public function __construct(string $directory)
     {
-        $dom = new DOMDocument;
-        $dom->loadXML('<?xml version="1.0" ?><phpunit xmlns="https://schema.phpunit.de/coverage/1.0"><build/><project/></phpunit>');
-
-        parent::__construct(
-            $dom->getElementsByTagNameNS(
-                Facade::XML_NAMESPACE,
-                'project',
-            )->item(0),
-        );
-
-        $this->directory = $directory;
+        $this->init();
+        $this->setProjectSourceDirectory($directory);
     }
 
     public function projectSourceDirectory(): string
     {
-        return $this->directory;
+        return $this->contextNode()->getAttribute('source');
     }
 
-    public function buildInformation(
-        Runtime $runtime,
-        DateTimeImmutable $buildDate,
-        string $phpUnitVersion,
-        string $coverageVersion
-    ): void {
-        $buildNode = $this->dom->getElementsByTagNameNS(
-            Facade::XML_NAMESPACE,
+    public function buildInformation(): BuildInformation
+    {
+        $buildNode = $this->dom()->getElementsByTagNameNS(
+            'https://schema.phpunit.de/coverage/1.0',
             'build',
         )->item(0);
 
-        assert($buildNode instanceof DOMElement);
+        if (!$buildNode) {
+            $buildNode = $this->dom()->documentElement->appendChild(
+                $this->dom()->createElementNS(
+                    'https://schema.phpunit.de/coverage/1.0',
+                    'build',
+                ),
+            );
+        }
 
-        new BuildInformation(
-            $buildNode,
-            $runtime,
-            $buildDate,
-            $phpUnitVersion,
-            $coverageVersion,
-        );
+        return new BuildInformation($buildNode);
     }
 
     public function tests(): Tests
     {
-        $testsNode = $this->contextNode()->appendChild(
-            $this->dom->createElementNS(
-                Facade::XML_NAMESPACE,
-                'tests',
-            ),
-        );
+        $testsNode = $this->contextNode()->getElementsByTagNameNS(
+            'https://schema.phpunit.de/coverage/1.0',
+            'tests',
+        )->item(0);
 
-        assert($testsNode instanceof DOMElement);
+        if (!$testsNode) {
+            $testsNode = $this->contextNode()->appendChild(
+                $this->dom()->createElementNS(
+                    'https://schema.phpunit.de/coverage/1.0',
+                    'tests',
+                ),
+            );
+        }
 
         return new Tests($testsNode);
     }
 
     public function asDom(): DOMDocument
     {
-        $this->contextNode()->setAttribute('source', $this->directory);
+        return $this->dom();
+    }
 
-        return $this->dom;
+    private function init(): void
+    {
+        $dom = new DOMDocument;
+        $dom->loadXML('<?xml version="1.0" ?><phpunit xmlns="https://schema.phpunit.de/coverage/1.0"><build/><project/></phpunit>');
+
+        $this->setContextNode(
+            $dom->getElementsByTagNameNS(
+                'https://schema.phpunit.de/coverage/1.0',
+                'project',
+            )->item(0),
+        );
+    }
+
+    private function setProjectSourceDirectory(string $name): void
+    {
+        $this->contextNode()->setAttribute('source', $name);
     }
 }
