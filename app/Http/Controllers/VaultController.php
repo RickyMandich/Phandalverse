@@ -40,9 +40,10 @@ class VaultController extends Controller
     {
         $index = MarkdownPreprocessor::buildFileIndex();
 
-        // Cerca nel file index un match
+        // Cerca nel file index un match (case-insensitive)
+        $camelPathLower = strtolower($camelPath);
         foreach ($index as $name => $realPath) {
-            if (self::pathToCamelCase($realPath) === $camelPath) {
+            if (strtolower(self::pathToCamelCase($realPath)) === $camelPathLower) {
                 return $realPath;
             }
         }
