@@ -10,6 +10,7 @@ use League\CommonMark\Extension\TaskList\TaskListExtension;
 use League\CommonMark\Extension\Strikethrough\StrikethroughExtension;
 use League\CommonMark\MarkdownConverter;
 use Illuminate\Support\Facades\File;
+use App\Http\Controllers\VaultController;
 
 class MarkdownPreprocessor
 {
@@ -92,7 +93,9 @@ class MarkdownPreprocessor
                 $label = $matches[2] ?? $matches[0];
                 $label = trim($label, '[]');
                 $path = self::findNotePath($nota);
-                $url = '/vault/' . rawurlencode($path);
+                // Converti il path in camelCase per l'URL
+                $camelPath = VaultController::pathToCamelCase($path);
+                $url = '/vault/' . $camelPath;
                 return '<a href="' . $url . '" class="wikilink">' . htmlspecialchars($label) . '</a>';
             },
             $text
@@ -180,7 +183,8 @@ class MarkdownPreprocessor
         $fullPath = base_path('Vault/' . $relativePath . '.md');
 
         if (!File::exists($fullPath)) {
-            $url = '/vault/' . rawurlencode($relativePath);
+            $camelPath = VaultController::pathToCamelCase($relativePath);
+            $url = '/vault/' . $camelPath;
             return '<div class="embed-note embed-missing"><a href="' . $url . '" class="wikilink"> ' . htmlspecialchars($noteName) . ' (non trovato)</a></div>';
         }
 
@@ -203,7 +207,8 @@ class MarkdownPreprocessor
         $html = self::toHtml($content);
         self::$embedDepth--;
 
-        $url = '/vault/' . rawurlencode($relativePath);
+        $camelPath = VaultController::pathToCamelCase($relativePath);
+        $url = '/vault/' . $camelPath;
         $embedDepth = self::$embedDepth;
         $ret = "<div class='embed-note border-primary ps-4 border-start embed-depth-$embedDepth'>";
         if(Auth::check() && Auth::user()->showEmbedLink){
