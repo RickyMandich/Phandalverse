@@ -28,9 +28,46 @@
     @if($isFile)
         <!-- Visualizzazione File -->
         <div class="card">
-            <div class="card-header">
-                <i class="bi bi-file-code"></i> {{ $fileName }}
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-file-code"></i> {{ $fileName }}</span>
+
+                @isset($sessionInfo)
+                    {{-- Pulsante per tornare alla lista sessioni --}}
+                    <a href="{{ route('admin.logs', ['path' => $currentPath]) }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Torna alle Sessioni
+                    </a>
+                @endisset
             </div>
+
+            @isset($sessionInfo)
+                {{-- Info sessione --}}
+                <div class="card-body border-bottom py-2 bg-light">
+                    <div class="row small">
+                        <div class="col-md-3">
+                            <strong>Stato:</strong>
+                            @if($sessionInfo['status'] === 'crashed')
+                                <span class="badge bg-danger">CRASH</span>
+                            @elseif($sessionInfo['status'] === 'incomplete')
+                                <span class="badge bg-warning text-dark">In corso</span>
+                            @elseif($sessionInfo['has_errors'])
+                                <span class="badge bg-warning text-dark">Con errori</span>
+                            @else
+                                <span class="badge bg-success">Completata</span>
+                            @endif
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Request:</strong> {{ $sessionInfo['request'] }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Inizio:</strong> {{ $sessionInfo['start_time'] ?? 'N/A' }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Fine:</strong> {{ $sessionInfo['end_time'] ?? 'N/A' }}
+                        </div>
+                    </div>
+                </div>
+            @endisset
+
             <div class="card-body">
                 <pre class="bg-dark text-light p-3" style="max-height: 600px; overflow: auto;">{{ $fileContent }}</pre>
             </div>
