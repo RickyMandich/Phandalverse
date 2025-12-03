@@ -46,6 +46,34 @@
               "icon": "lucide-file",
               "title": "la mano rossa"
             }
+          },
+          {
+            "id": "09557299c4786d63",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "saghe/Saga di GemGrave.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Saga di GemGrave"
+            }
+          },
+          {
+            "id": "5a5223e443417bc9",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Personaggi/Giocanti/Vargas (Paladino Nano, 65).md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Vargas (Paladino Nano, 65)"
+            }
           }
         ],
         "currentTab": 2
@@ -224,20 +252,21 @@
   },
   "active": "77279836fcfca5a2",
   "lastOpenFiles": [
+    "saghe/Saga di GemGrave.md",
+    "Personaggi/gruppi/la mano rossa.md",
+    "Personaggi/Giocanti/Vargas (Paladino Nano, 65).md",
+    "Personaggi/Non Giocanti/Fumero.md",
     "Personaggi/Giocanti/Than (Warlock tiefling, 30).md",
     "Personaggi/Giocanti/pet/Ren.md",
-    "Personaggi/gruppi/la mano rossa.md",
     "Personaggi/Giocanti/pet/Thraal.md",
     "Personaggi/Giocanti/pet",
     "universi/phandalmain/phandasuland/GemGrave.md",
-    "saghe/Saga di GemGrave.md",
     "artefatti/il Portale.md",
     "universi/fandalmein/atalantide.md",
     "universi/phandalmain/atlantide.md",
     "artefatti/la chiave.md",
     "artefatti/la bussola.md",
     "Personaggi/Non Giocanti/nonno Roshi.md",
-    "Personaggi/Giocanti/Vargas (Paladino Nano, 65).md",
     "Personaggi/Non Giocanti/perrin.md",
     "Personaggi/Non Giocanti/perrin.jpg",
     "saghe/Saga di Suddaria.md",
@@ -253,7 +282,6 @@
     "divinità/Krystallō.md",
     "universi/universo.md",
     "eventi/La frattura.md",
-    "Personaggi/gruppi/prescelti di fandalmein.md",
     "eventi",
     "copilot-custom-prompts",
     "Senza nome.canvas",

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Auth;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Extension\Table\TableExtension;
@@ -203,7 +204,13 @@ class MarkdownPreprocessor
         self::$embedDepth--;
 
         $url = '/vault/' . rawurlencode($relativePath);
-        return '<div class="embed-note"><div class="embed-header"><a href="' . $url . '" class="wikilink"> ' . htmlspecialchars($embedRef) . '</a></div><div class="embed-content">' . $html . '</div></div>';
+        $embedDepth = self::$embedDepth;
+        $ret = "<div class='embed-note border-primary ps-4 border-start embed-depth-$embedDepth'>";
+        if(Auth::check() && Auth::user()->showEmbedLink){
+            $ret = "$ret'<div class='embed-header'><a href='$url' clas='wikilink'> " . htmlspecialchars($embedRef) . '</a></div>';
+        }
+        $ret = $ret.'<div class="embed-content">' . $html . '</div></div>';
+        return $ret;
     }
 
     public static function replaceEmbedsWithPlaceholders(string $text, array &$embeds): string
