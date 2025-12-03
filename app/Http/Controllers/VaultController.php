@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\File;
 use App\Services\MarkdownPreprocessor;
+use Illuminate\Support\Facades\Log;
 
 class VaultController extends Controller
 {
     public function show($note = 'README')
     {
+        Log::info("Visualizzazione nota $note");
         $path = base_path("Vault/" . $note . ".md");
 
         if (!File::exists($path)) {
