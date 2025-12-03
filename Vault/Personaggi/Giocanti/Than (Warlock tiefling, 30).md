@@ -8,3 +8,6 @@ i suoi poteri da worlock (li ottiene a 16 anni in una cerimonia di maturità in 
 quando ha 29 anni arriva nel suo villaggio la carovana di un circo che la setta vuole sacrificare, sopravvive solo [[Dontavious (Ladro Mezzelfo, 25)]] che cerca di rubare l'artefatto del villaggio, Than lo coglie sul fatto e toccando l'artefatto risveglia [[Thraal]], l'imp del primo tiefling del villaggio che si lega a lui. alla fine scappa con il membro del circo.
 
 ![[Thraal]]
+# Campagna
+ora si è unito a [[la mano rossa]]
+![[Saga di GemGrave]]
