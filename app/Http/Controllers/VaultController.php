@@ -130,8 +130,11 @@ class VaultController extends Controller
             $content = MarkdownPreprocessor::stripMasterMarkers($content);
         }
 
+        Log::info("Contenuto dopo filtro: " . $content);
+
         // Converte Markdown → HTML con supporto wikilink/embed
         $html = MarkdownPreprocessor::toHtml($content);
+        Log::info("HTML generato: " . $html);
         return view('vault.note', [
             'title' => $realPath,
             'html'  => $html,
