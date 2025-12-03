@@ -123,7 +123,10 @@ class VaultController extends Controller
 
         // Rimuove i blocchi master
         if(!Auth::isMaster()) {
+            Log::info("Filtro i blocchi master");
             $content = MarkdownPreprocessor::filterMasterBlocks($content);
+        }else{
+            Log::info("Non filtro i blocchi master");
         }
 
         // Converte Markdown → HTML con supporto wikilink/embed
