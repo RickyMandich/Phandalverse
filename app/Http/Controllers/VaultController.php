@@ -13,6 +13,7 @@ class VaultController extends Controller
         Log::info("Visualizzazione nota $note");
         $path = base_path("Vault/" . $note . ".md");
 
+        Log::warning("cerco la nota: $path");
         if (!File::exists($path)) {
             Log::warning("Nota non trovata: $path");
             abort(104, "Nota non trovata");
