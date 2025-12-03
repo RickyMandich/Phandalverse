@@ -16,7 +16,7 @@ class VaultController extends Controller
         Log::warning("cerco la nota: $path");
         if (!File::exists($path)) {
             Log::warning("Nota non trovata: $path");
-            abort(104, "Nota non trovata");
+            abort(404, "Nota non trovata");
         }
 
         $content = File::get($path);

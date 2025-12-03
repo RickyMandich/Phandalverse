@@ -16,3 +16,7 @@ Route::get('/vault/{note?}', [VaultController::class, 'show'])
     ->name('vault.show');
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
+
+Route::fallback(function () {
+    return view('errors.404');
+});
