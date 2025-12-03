@@ -26,7 +26,6 @@ class VaultController extends Controller
 
         // Converte Markdown → HTML con supporto wikilink/embed
         $html = MarkdownPreprocessor::toHtml($content);
-        //return "ciao";
         return view('vault.note', [
             'title' => $note,
             'html'  => $html,
