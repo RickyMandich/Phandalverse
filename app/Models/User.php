@@ -46,4 +46,20 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Check if user is admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->admin == 1;
+    }
+
+    /**
+     * Get all admin users for notifications
+     */
+    public static function getAdmins()
+    {
+        return static::where('admin', 1)->get();
+    }
 }
