@@ -49,7 +49,11 @@
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav me-auto">
-
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('vault.show') }}">
+                                <i class="bi bi-folder2-open"></i> Vault
+                            </a>
+                        </li>
                     </ul>
 
                     <!-- Right Side Of Navbar -->
