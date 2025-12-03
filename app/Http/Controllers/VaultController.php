@@ -122,7 +122,7 @@ class VaultController extends Controller
         $content = File::get($path);
 
         // Rimuove i blocchi master
-        if(Auth::check() && Auth::user()->isMaster()) {
+        if(Auth::isMaster()) {
             $content = MarkdownPreprocessor::filterMasterBlocks($content);
         }
 
