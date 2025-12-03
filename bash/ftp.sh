@@ -1,8 +1,8 @@
-# Ottieni l'elenco dei file modificati nell'ultimo commit
-changedFiles=$(find . -type f -not -path './.git/*')
+# Itera sui file e carica ciascuno di essi (usando while read per gestire spazi nei nomi)
+find . -type f -not -path './.git/*' | while IFS= read -r file; do
+    # Salta righe vuote
+    [ -z "$file" ] && continue
 
-# Itera sui file modificati e carica ciascuno di essi
-for file in $changedFiles; do
     # Costruisci il percorso FTP per il file
     relativePath=$(dirname "$file" | sed 's/^\.\///')
     fileName=$(basename "$file")

@@ -1,10 +1,10 @@
 # Funzione per caricare i file su FTP a partire dal commit
 function uploadFilesFromCommit() {
-    # Ottieni l'elenco dei file modificati nell'ultimo commit
-    changedFiles=$(git diff-tree --no-commit-id --name-only -r HEAD)
+    # Itera sui file modificati e carica ciascuno di essi (usando while read per gestire spazi nei nomi)
+    git diff-tree --no-commit-id --name-only -r HEAD | while IFS= read -r file; do
+        # Salta righe vuote
+        [ -z "$file" ] && continue
 
-    # Itera sui file modificati e carica ciascuno di essi
-    for file in $changedFiles; do
         # Costruisci il percorso FTP per il file
         local relativePath=$(dirname "$file")
         local fileName=$(basename "$file")
@@ -13,7 +13,7 @@ function uploadFilesFromCommit() {
         # Esegui il comando curl per caricare il file
         local curlCommand="curl -T \"$file\" \"$ftpRequest\" --ftp-pasv --ftp-create-dirs"
         echo -e "$curlCommand"
-        
+
         # Esegui curl e cattura l'output e il codice di uscita
         local curlOutput
         curlOutput=$(eval "$curlCommand" 2>&1)
@@ -24,12 +24,12 @@ function uploadFilesFromCommit() {
             # Se l'errore è "Failed to open/read local data", rimuovi il file dal server
             if [[ "$curlOutput" == *"Failed to open/read local data"* ]]; then
                 echo "Errore durante il caricamento di $file. Rimozione dal server in corso..."
-                
+
                 # Comando per eliminare il file dal server FTP
                 local deleteCommand="curl -Q \"DELE $relativePath/$fileName\" \"ftp://Phandalverse:Minecraft35%3F@ftp.Phandalverse.altervista.org:21/\" --ftp-pasv"
                 echo -e "$deleteCommand"
                 eval "$deleteCommand"
-                
+
                 echo "File $relativePath/$fileName rimosso dal server."
             else
                 # Per altri tipi di errori, mostra l'output di curl
