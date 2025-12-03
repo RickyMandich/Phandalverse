@@ -97,10 +97,10 @@ class Auth extends Facade
     }
 
     public static function admin(){
-        return Auth::check() && Auth::user()->admin == true;
+        return Auth::check() && Auth::user()->admin == 1;
     }
 
     public static function isMaster(){
-        return Auth::check() && Auth::user()->master == true;
+        return Auth::check() && Auth::user()->master == 1;
     }
 }
