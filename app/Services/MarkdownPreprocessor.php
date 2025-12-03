@@ -55,6 +55,9 @@ class MarkdownPreprocessor
         return $cleanName;
     }
 
+    /**
+     * Rimuove i blocchi master (per utenti non master)
+     */
     public static function filterMasterBlocks(string $text): string
     {
         $start = '#startMaster';
@@ -65,11 +68,21 @@ class MarkdownPreprocessor
         }
 
         $startPos = strpos($text, $start);
-        $endPos = str_contains($text, $end) 
-            ? strpos($text, $end) + strlen($end) 
+        $endPos = str_contains($text, $end)
+            ? strpos($text, $end) + strlen($end)
             : strlen($text);
 
         return substr($text, 0, $startPos) . substr($text, $endPos);
+    }
+
+    /**
+     * Rimuove solo i marcatori #startMaster e #endMaster ma mantiene il contenuto (per master)
+     */
+    public static function stripMasterMarkers(string $text): string
+    {
+        $text = str_replace('#startMaster', '', $text);
+        $text = str_replace('#endMaster', '', $text);
+        return $text;
     }
 
     public static function convertTags(string $text): string
