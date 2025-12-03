@@ -120,6 +120,7 @@ class VaultController extends Controller
         }
 
         $content = File::get($path);
+        Log::info("Contenuto ORIGINALE dal file: " . $content);
 
         Log::info("ora controllo se è il master: ".Auth::isMaster()."(master=".Auth::user()->master.") e l'utente è ".Auth::user()->name);
         // Gestione blocchi master
