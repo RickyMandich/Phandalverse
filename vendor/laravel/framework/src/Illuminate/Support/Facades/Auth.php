@@ -103,4 +103,12 @@ class Auth extends Facade
     public static function isMaster(){
         return Auth::check() && Auth::user()->master == 1;
     }
+
+    public static function getMaster(){
+        return Auth::check() ? Auth::user()->master : null;
+    }
+
+    public static function getName(){
+        return Auth::check() ? Auth::user()->name : null;
+    }
 }
