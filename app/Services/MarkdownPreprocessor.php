@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Extension\Table\TableExtension;
@@ -80,8 +81,10 @@ class MarkdownPreprocessor
      */
     public static function stripMasterMarkers(string $text): string
     {
+        Log::info("stripMasterMarkers chiamato con: " . $text);
         $text = str_replace('#startMaster', '', $text);
         $text = str_replace('#endMaster', '', $text);
+        Log::info("stripMasterMarkers ritorna: " . $text);
         return $text;
     }
 
