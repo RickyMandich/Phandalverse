@@ -18,8 +18,23 @@
               "icon": "lucide-git-fork",
               "title": "Vista grafo"
             }
+          },
+          {
+            "id": "552b41381e4cd9b5",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Personaggi/Giocanti/pet/Thraal.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Thraal"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -193,7 +208,7 @@
       "terminal:Open terminal": false
     }
   },
-  "active": "c2dffc8f5a92487b",
+  "active": "552b41381e4cd9b5",
   "lastOpenFiles": [
     "Personaggi/gruppi/la mano rossa.md",
     "saghe/Saga di GemGrave.md",
