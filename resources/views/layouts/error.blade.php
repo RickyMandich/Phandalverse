@@ -6,7 +6,7 @@
             Errore @yield('code'):
         </div>
     @endif
-    {{ Auth::user() }}
+    |{{ Auth::user() }}|
     <div class="fs-2">
         @yield('message')
     </div>
