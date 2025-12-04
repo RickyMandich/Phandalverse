@@ -44,7 +44,7 @@ class AdminController extends Controller
 
         $errors = $query->paginate(20);
 
-        return view('admin.errors.index', compact('errors', 'status'));
+        return view('admin.errors.index', compact('errors'));
     }
 
     /**
