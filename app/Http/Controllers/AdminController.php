@@ -167,42 +167,43 @@ class AdminController extends Controller
     }
 
     /**
-     * Update an existing user
+     * Update an existing user's profile data
      */
     public function updateUser(Request $request, User $user)
     {
-        // Regole base
-        $rules = [
+        $validated = $request->validateWithBag('profile', [
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'admin' => 'boolean',
             'master' => 'boolean',
             'showEmbedLink' => 'boolean',
-        ];
+        ]);
 
-        // Aggiungi validazione password solo se il campo è compilato
-        if ($request->filled('password')) {
-            $rules['password'] = 'required|string|min:8|confirmed';
-        }
-
-        $validated = $request->validate($rules);
-
-        $data = [
+        $user->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'admin' => $request->has('admin'),
             'master' => $request->has('master'),
             'showEmbedLink' => $request->has('showEmbedLink'),
-        ];
+        ]);
 
-        // Aggiorna password solo se fornita
-        if ($request->filled('password')) {
-            $data['password'] = Hash::make($validated['password']);
-        }
+        return redirect()->route('admin.users.edit', $user)->with('success', 'Dati utente aggiornati con successo');
+    }
 
-        $user->update($data);
+    /**
+     * Update an existing user's password
+     */
+    public function updateUserPassword(Request $request, User $user)
+    {
+        $validated = $request->validateWithBag('password', [
+            'password' => 'required|string|min:8|confirmed',
+        ]);
 
-        return redirect()->route('admin.users')->with('success', 'Utente aggiornato con successo');
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        return redirect()->route('admin.users.edit', $user)->with('success', 'Password aggiornata con successo');
     }
 
     /**

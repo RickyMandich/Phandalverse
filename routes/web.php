@@ -56,6 +56,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
     Route::get('/users/{user}/edit', [AdminController::class, 'editUser'])->name('admin.users.edit');
     Route::patch('/users/{user}', [AdminController::class, 'updateUser'])->name('admin.users.update');
+    Route::patch('/users/{user}/password', [AdminController::class, 'updateUserPassword'])->name('admin.users.password');
     Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
 });
 
