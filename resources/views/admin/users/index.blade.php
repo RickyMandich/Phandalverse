@@ -87,16 +87,16 @@
                         </td>
                         <td>{{ $user->created_at->format('d/m/Y H:i') }}</td>
                         <td>
-                            <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-pencil"></i>
+                            <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-pencil"></i> Modifica
                             </a>
                             @if($user->id !== Auth::id())
                             <form action="{{ route('admin.users.delete', $user) }}" method="POST" class="d-inline"
                                   onsubmit="return confirm('Sei sicuro di voler eliminare questo utente?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-outline-danger">
-                                    <i class="bi bi-trash"></i>
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="bi bi-trash"></i> Elimina
                                 </button>
                             </form>
                             @endif
