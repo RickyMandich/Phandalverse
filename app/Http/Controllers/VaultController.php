@@ -143,11 +143,17 @@ class VaultController extends Controller
 
         Log::info("Contenuto dopo filtro: " . $content);
 
+        if (preg_match('/(?<=^|[\\\\\\/])[^\\\\\\/]+(?=\\.md$)/', $path, $matches)) {
+            $title = $matches[0];
+            Log::info("il path del file è: $path e il titolo del file è: $title")
+        }
+
+
         // Converte Markdown → HTML con supporto wikilink/embed
         $html = MarkdownPreprocessor::toHtml($content);
         Log::info("HTML generato: " . $html);
         return view('vault.note', [
-            'title' => $realPath,
+            'title' => $title,
             'html'  => $html,
         ]);
     }
