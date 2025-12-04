@@ -989,9 +989,27 @@ namespace App\Models {
     /**
      * App\Models\UserReport
      *
+     * @property \Illuminate\Support\Carbon|null $updated_at
+     * @property \Illuminate\Support\Carbon|null $created_at
+     * @property string|null $admin_notes
+     * @property mixed $status
+     * @property mixed $user_id
+     * @property array|null $page_urls
+     * @property string $description
+     * @property mixed $category
+     * @property int $id
      * @property-read mixed $category_label
      * @property-read mixed $status_label
      * @property-read \App\Models\User $user
+     * @method static \Illuminate\Database\Eloquent\Builder<UserReport>|UserReport whereId($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<UserReport>|UserReport whereCategory($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<UserReport>|UserReport whereDescription($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<UserReport>|UserReport wherePageUrls($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<UserReport>|UserReport whereUserId($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<UserReport>|UserReport whereStatus($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<UserReport>|UserReport whereAdminNotes($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<UserReport>|UserReport whereCreatedAt($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<UserReport>|UserReport whereUpdatedAt($value)
      * @method static \Illuminate\Database\Eloquent\Builder<UserReport>|UserReport status()
      * @method static \Illuminate\Database\Eloquent\Builder<UserReport>|UserReport pending()
      * @method static \Illuminate\Database\Eloquent\Builder<UserReport>|UserReport newModelQuery()
