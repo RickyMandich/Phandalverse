@@ -59,7 +59,7 @@
         <h2 class="tree-title">📚 Vault - File Disponibili</h2>
         @php
             function renderTree($items, $deep = 0) {
-                $html = $isRoot ? '<ul>' : '<ul style="display: block;">';
+                $html = $deep == 0 ? '<ul>' : '<ul style="display: block;">';
                 
                 // Prima le cartelle
                 foreach ($items as $key => $value) {
