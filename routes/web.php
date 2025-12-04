@@ -21,6 +21,12 @@ Route::get('/vault/{note?}', [VaultController::class, 'show'])
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
 
+// ========== PROFILO UTENTE (autenticato) ==========
+Route::middleware(['auth'])->group(function () {
+    Route::patch('/profile', [App\Http\Controllers\HomeController::class, 'updateProfile'])->name('profile.update');
+    Route::patch('/profile/password', [App\Http\Controllers\HomeController::class, 'updatePassword'])->name('profile.password');
+});
+
 // ========== SEGNALAZIONI (pubbliche) ==========
 Route::get('/report', [ReportController::class, 'create'])->name('report.create');
 Route::post('/report', [ReportController::class, 'store'])->name('report.store');
@@ -43,6 +49,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/reports', [ReportController::class, 'index'])->name('admin.reports');
     Route::get('/reports/{report}', [ReportController::class, 'show'])->name('admin.reports.show');
     Route::patch('/reports/{report}', [ReportController::class, 'update'])->name('admin.reports.update');
+
+    // Gestione utenti
+    Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
+    Route::get('/users/create', [AdminController::class, 'createUser'])->name('admin.users.create');
+    Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
+    Route::get('/users/{user}/edit', [AdminController::class, 'editUser'])->name('admin.users.edit');
+    Route::patch('/users/{user}', [AdminController::class, 'updateUser'])->name('admin.users.update');
+    Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
 });
 
 // ========== JOB ROUTES ==========

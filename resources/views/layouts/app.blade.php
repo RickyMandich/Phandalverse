@@ -83,6 +83,9 @@
                                         <h6 class="dropdown-header">
                                             <i class="fas fa-shield-alt"></i> Admin
                                         </h6>
+                                        <a class="dropdown-item" href="{{ route('admin.users') }}">
+                                            <i class="bi bi-people"></i> Utenti
+                                        </a>
                                         <a class="dropdown-item" href="{{ route('admin.reports') }}">
                                             📢 Segnalazioni
                                         </a>
@@ -94,6 +97,10 @@
                                         </a>
                                         <div class="dropdown-divider"></div>
                                     @endif
+
+                                    <a class="dropdown-item" href="{{ route('dashboard') }}">
+                                        <i class="bi bi-person-circle"></i> Il mio Profilo
+                                    </a>
 
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                        onclick="event.preventDefault();

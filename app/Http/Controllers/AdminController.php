@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\SystemError;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
@@ -96,6 +99,118 @@ class AdminController extends Controller
         ]);
 
         return redirect()->route('admin.errors.show', $error)->with('success', 'Errore segnato come ' . $action);
+    }
+
+    // ========== GESTIONE UTENTI ==========
+
+    /**
+     * Display list of all users
+     */
+    public function users(Request $request)
+    {
+        $query = User::query()->orderBy('created_at', 'desc');
+
+        // Ricerca per nome o email
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query->paginate(20);
+
+        return view('admin.users.index', compact('users'));
+    }
+
+    /**
+     * Show form to create a new user
+     */
+    public function createUser()
+    {
+        return view('admin.users.create');
+    }
+
+    /**
+     * Store a new user
+     */
+    public function storeUser(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+            'admin' => 'boolean',
+            'master' => 'boolean',
+            'showEmbedLink' => 'boolean',
+        ]);
+
+        User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'admin' => $request->has('admin'),
+            'master' => $request->has('master'),
+            'showEmbedLink' => $request->has('showEmbedLink'),
+        ]);
+
+        return redirect()->route('admin.users')->with('success', 'Utente creato con successo');
+    }
+
+    /**
+     * Show form to edit an existing user
+     */
+    public function editUser(User $user)
+    {
+        return view('admin.users.edit', compact('user'));
+    }
+
+    /**
+     * Update an existing user
+     */
+    public function updateUser(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+            'password' => 'nullable|string|min:8|confirmed',
+            'admin' => 'boolean',
+            'master' => 'boolean',
+            'showEmbedLink' => 'boolean',
+        ]);
+
+        $data = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'admin' => $request->has('admin'),
+            'master' => $request->has('master'),
+            'showEmbedLink' => $request->has('showEmbedLink'),
+        ];
+
+        // Aggiorna password solo se fornita
+        if (!empty($validated['password'])) {
+            $data['password'] = Hash::make($validated['password']);
+        }
+
+        $user->update($data);
+
+        return redirect()->route('admin.users')->with('success', 'Utente aggiornato con successo');
+    }
+
+    /**
+     * Delete a user
+     */
+    public function deleteUser(User $user)
+    {
+        // Non permettere di eliminare se stessi
+        if ($user->id === Auth::id()) {
+            return redirect()->route('admin.users')->with('error', 'Non puoi eliminare te stesso');
+        }
+
+        $user->delete();
+
+        return redirect()->route('admin.users')->with('success', 'Utente eliminato con successo');
     }
 }
 
