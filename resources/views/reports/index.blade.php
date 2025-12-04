@@ -14,9 +14,9 @@
             <div class="col-md-4">
                 <label class="form-label">Stato</label>
                 <select name="status" class="form-select">
-                    <option value="">Tutti</option>
+                    <option value="all" {{ request('status') === 'all' ? 'selected' : '' }}>Tutti</option>
                     @foreach($statuses as $key => $label)
-                        <option value="{{ $key }}" {{ request('status') === $key ? 'selected' : '' }}>{{ $label }}</option>
+                        <option value="{{ $key }}" {{ request('status') === $key || (!request('status') && $key === 'pending') ? 'selected' : '' }}>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>

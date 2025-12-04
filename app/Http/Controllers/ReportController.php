@@ -59,8 +59,13 @@ class ReportController extends Controller
     {
         $query = UserReport::with('user')->latest();
 
-        // Filtro per stato
-        if ($request->filled('status')) {
+        // Default a "pending" se non specificato
+        if (!$request->has('status')) {
+            $request->merge(['status' => 'pending']);
+        }
+
+        // Filtro per stato (escludi solo se 'all')
+        if ($request->status !== 'all') {
             $query->where('status', $request->status);
         }
 
