@@ -18,8 +18,23 @@
               "icon": "lucide-git-fork",
               "title": "Vista grafo"
             }
+          },
+          {
+            "id": "0e3e54030a07ca1a",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "definizioni/villaggio.md",
+                "mode": "source",
+                "source": true
+              },
+              "icon": "lucide-file",
+              "title": "villaggio"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -193,8 +208,10 @@
       "terminal:Open terminal": false
     }
   },
-  "active": "c2dffc8f5a92487b",
+  "active": "4a0168f4c436222b",
   "lastOpenFiles": [
+    "definizioni/Villaggio2.md",
+    "definizioni/villaggio.md",
     "Personaggi/Giocanti/Vargas (Paladino Nano, 65).md",
     "Personaggi/Giocanti/Than (Warlock tiefling, 30).md",
     "Personaggi/Giocanti/Morbiarum (Paladino Dragonide, 24).md",
@@ -223,8 +240,6 @@
     "universi/phandalmain/Phandalmain.jpg",
     "divinità/Líthos.md",
     "divinità/Krystallō.md",
-    "universi/universo.md",
-    "eventi/La frattura.md",
     "eventi",
     "copilot-custom-prompts",
     "Senza nome.canvas",
