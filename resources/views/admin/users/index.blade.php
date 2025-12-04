@@ -56,7 +56,7 @@
                         <th>Nome</th>
                         <th>Email</th>
                         <th>Ruoli</th>
-                        <th>Opzioni</th>
+                        <th>mostra Embed link</th>
                         <th>Registrato</th>
                         <th>Azioni</th>
                     </tr>
