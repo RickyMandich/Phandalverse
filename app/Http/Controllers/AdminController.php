@@ -37,12 +37,6 @@ class AdminController extends Controller
             $request->status = 'new';
         }
 
-        if(isset($request->status)){
-            $status = "isset true ($request->status)";
-        }else{
-            $status = "isset false";
-        }
-
         // Filter by status if provided
         if (isset($request->status) && $request->status !== 'all') {
             $query->where('status', $request->status);
