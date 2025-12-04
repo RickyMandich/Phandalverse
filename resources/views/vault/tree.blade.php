@@ -65,7 +65,7 @@
                 foreach ($items as $key => $value) {
                     if ($key !== '_files' && $key !== '_dirs' && is_array($value)) {
                         $html .= '<li>';
-                        $html .= '<span class="folder open" onclick="this.classList.toggle(\'open\'); this.nextElementSibling.style.display = this.classList.contains(\'open\') ? \'block\' : \'none\';">' . e($key) . '</span>';
+                        $html .= '<span class="folder" onclick="this.classList.toggle(\'open\'); this.nextElementSibling.style.display = this.classList.contains(\'open\') ? \'block\' : \'none\';">' . e($key) . '</span>';
                         $html .= renderTree($value['_dirs'] ?? [], $deep+1);
                         $html .= '</li>';
                     }
