@@ -30,6 +30,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/errors/{error}', [AdminController::class, 'showError'])->name('admin.errors.show');
     Route::patch('/errors/{error}', [AdminController::class, 'updateError'])->name('admin.errors.update');
     Route::get('/errors/quick-action/{error}/{action}', [AdminController::class, 'quickActionError'])->name('admin.errors.quick-action');
+
+    // Impostazioni Vault
+    Route::post('/vault/set-default-view', [VaultController::class, 'setDefaultView'])->name('admin.vault.setDefaultView');
 });
 
 // ========== JOB ROUTES ==========

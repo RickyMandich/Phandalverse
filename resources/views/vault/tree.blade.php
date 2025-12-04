@@ -55,6 +55,25 @@
 
 @section('content')
 <div class="vault-tree">
+    @if(Auth::check() && Auth::user()->isAdmin())
+    <div class="view-toggle mb-3">
+        <a href="{{ route('vault.show') }}?view=tree" class="btn {{ ($currentView ?? 'tree') === 'tree' ? 'btn-primary' : 'btn-outline-secondary' }}">
+            📂 Vista Albero
+        </a>
+        <a href="{{ route('vault.show') }}?view=graph" class="btn {{ ($currentView ?? 'tree') === 'graph' ? 'btn-primary' : 'btn-outline-secondary' }}">
+            🕸️ Vista Grafo
+        </a>
+
+        <form action="{{ route('admin.vault.setDefaultView') }}" method="POST" class="d-inline ms-3">
+            @csrf
+            <select name="view" class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="this.form.submit()">
+                <option value="tree" {{ \App\Models\SystemSetting::getVaultDefaultView() === 'tree' ? 'selected' : '' }}>Default: Albero</option>
+                <option value="graph" {{ \App\Models\SystemSetting::getVaultDefaultView() === 'graph' ? 'selected' : '' }}>Default: Grafo</option>
+            </select>
+        </form>
+    </div>
+    @endif
+
     <div class="tree-container">
         <h2 class="tree-title">📚 Vault - File Disponibili</h2>
         @php
