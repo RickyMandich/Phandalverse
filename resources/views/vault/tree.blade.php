@@ -58,7 +58,7 @@
     <div class="tree-container">
         <h2 class="tree-title">📚 Vault - File Disponibili</h2>
         @php
-            function renderTree($items, $isRoot = true) {
+            function renderTree($items, $deep = 0) {
                 $html = $isRoot ? '<ul>' : '<ul style="display: block;">';
                 
                 // Prima le cartelle
@@ -66,7 +66,7 @@
                     if ($key !== '_files' && $key !== '_dirs' && is_array($value)) {
                         $html .= '<li>';
                         $html .= '<span class="folder open" onclick="this.classList.toggle(\'open\'); this.nextElementSibling.style.display = this.classList.contains(\'open\') ? \'block\' : \'none\';">' . e($key) . '</span>';
-                        $html .= renderTree($value['_dirs'] ?? [], false);
+                        $html .= renderTree($value['_dirs'] ?? [], $deep+1);
                         $html .= '</li>';
                     }
                 }
