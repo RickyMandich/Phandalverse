@@ -197,8 +197,13 @@ class VaultController extends Controller
             }
         }
 
+        // Filtra i nodi senza connessioni (nodi fantasma/orfani)
+        $connectedNodes = array_filter($nodes, function ($node) {
+            return $node['connections'] > 0;
+        });
+
         return [
-            'nodes' => $nodes,
+            'nodes' => array_values($connectedNodes),
             'links' => array_values($uniqueLinks),
         ];
     }
