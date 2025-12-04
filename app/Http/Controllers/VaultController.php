@@ -145,6 +145,7 @@ class VaultController extends Controller
 
         if (preg_match('/(?<=^|[\\\\\\/])[^\\\\\\/]+(?=\\.md$)/', $path, $matches)) {
             $title = $matches[0];
+            $title = ucfirst($title);
             Log::info("il path del file è: $path e il titolo del file è: $title");
         }
 
