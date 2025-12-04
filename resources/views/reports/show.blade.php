@@ -105,8 +105,8 @@
             </div>
         </div>
 
-        <a href="{{ route('admin.reports') }}" class="btn btn-outline-secondary w-100 mt-3">
-            ← Torna alla lista
+        <a href="{{ route('admin.reports') }}" class="btn btn-secondary w-100 mt-3">
+            <i class="bi bi-arrow-left"></i> Torna alla lista
         </a>
     </div>
 </div>

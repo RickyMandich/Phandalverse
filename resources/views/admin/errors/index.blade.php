@@ -72,8 +72,8 @@
                         </td>
                         <td>{{ $error->created_at->format('d/m/Y H:i') }}</td>
                         <td>
-                            <a href="{{ route('admin.errors.show', $error) }}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-eye"></i>
+                            <a href="{{ route('admin.errors.show', $error) }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-eye"></i> Dettagli
                             </a>
                         </td>
                     </tr>

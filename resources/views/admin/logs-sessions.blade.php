@@ -68,8 +68,8 @@
                                     @endif
                                 </small>
                             </div>
-                            <a href="{{ route('admin.logs', ['path' => $currentPath, 'session' => $index]) }}" 
-                               class="btn btn-sm btn-outline-primary">
+                            <a href="{{ route('admin.logs', ['path' => $currentPath, 'session' => $index]) }}"
+                               class="btn btn-sm btn-primary">
                                 <i class="fas fa-eye"></i> Visualizza Log
                             </a>
                         </div>

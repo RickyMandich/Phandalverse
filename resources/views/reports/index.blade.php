@@ -31,7 +31,7 @@
             </div>
             <div class="col-md-4 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2">Filtra</button>
-                <a href="{{ route('admin.reports') }}" class="btn btn-outline-secondary">Reset</a>
+                <a href="{{ route('admin.reports') }}" class="btn btn-secondary">Reset</a>
             </div>
         </form>
     </div>
@@ -83,8 +83,8 @@
                     </td>
                     <td>{{ $report->created_at->format('d/m/Y H:i') }}</td>
                     <td>
-                        <a href="{{ route('admin.reports.show', $report) }}" class="btn btn-sm btn-outline-primary">
-                            Vedi
+                        <a href="{{ route('admin.reports.show', $report) }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-eye"></i> Vedi
                         </a>
                     </td>
                 </tr>

@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3><i class="bi bi-bug"></i> Errore #{{ $error->id }}</h3>
-        <a href="{{ route('admin.errors') }}" class="btn btn-outline-secondary">
+        <a href="{{ route('admin.errors') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Torna alla lista
         </a>
     </div>

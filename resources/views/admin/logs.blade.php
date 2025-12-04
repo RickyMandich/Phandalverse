@@ -33,7 +33,7 @@
 
                 @isset($sessionInfo)
                     {{-- Pulsante per tornare alla lista sessioni --}}
-                    <a href="{{ route('admin.logs', ['path' => $currentPath]) }}" class="btn btn-sm btn-outline-secondary">
+                    <a href="{{ route('admin.logs', ['path' => $currentPath]) }}" class="btn btn-sm btn-secondary">
                         <i class="fas fa-arrow-left"></i> Torna alle Sessioni
                     </a>
                 @endisset
