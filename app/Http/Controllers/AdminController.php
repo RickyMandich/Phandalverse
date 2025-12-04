@@ -171,14 +171,21 @@ class AdminController extends Controller
      */
     public function updateUser(Request $request, User $user)
     {
-        $validated = $request->validate([
+        // Regole base
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-            'password' => 'nullable|string|min:8|confirmed',
             'admin' => 'boolean',
             'master' => 'boolean',
             'showEmbedLink' => 'boolean',
-        ]);
+        ];
+
+        // Aggiungi validazione password solo se il campo è compilato
+        if ($request->filled('password')) {
+            $rules['password'] = 'required|string|min:8|confirmed';
+        }
+
+        $validated = $request->validate($rules);
 
         $data = [
             'name' => $validated['name'],
@@ -189,7 +196,7 @@ class AdminController extends Controller
         ];
 
         // Aggiorna password solo se fornita
-        if (!empty($validated['password'])) {
+        if ($request->filled('password')) {
             $data['password'] = Hash::make($validated['password']);
         }
 
