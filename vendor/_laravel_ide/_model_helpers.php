@@ -22,6 +22,7 @@ namespace App\Models {
      * @property string $exception_class
      * @property int $id
      * @property-read mixed $short_class_name
+     * @property-read mixed $relative_file
      * @property-read \App\Models\User $user
      * @property-read \App\Models\User $resolvedBy
      * @method static \Illuminate\Database\Eloquent\Builder<SystemError>|SystemError whereId($value)

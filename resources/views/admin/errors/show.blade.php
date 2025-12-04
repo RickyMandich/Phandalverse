@@ -48,6 +48,39 @@
         </div>
     </div>
 
+    <!-- Codice Sorgente -->
+    @php
+        $codeSnippet = $error->getCodeSnippet(5);
+    @endphp
+    @if($codeSnippet)
+    <div class="card mb-3">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="bi bi-code-slash"></i> Codice Sorgente
+                <small class="text-muted ms-2">{{ $error->relative_file }}</small>
+            </h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="overflow-auto">
+                <table class="table table-sm table-dark mb-0 font-monospace" style="font-size: 0.85rem;">
+                    <tbody>
+                        @foreach($codeSnippet['lines'] as $lineNum => $code)
+                            <tr class="{{ $lineNum == $codeSnippet['error_line'] ? 'bg-danger' : '' }}">
+                                <td class="text-end pe-3 text-muted border-end" style="width: 50px; user-select: none;">
+                                    {{ $lineNum }}
+                                </td>
+                                <td class="ps-3">
+                                    <pre class="mb-0" style="white-space: pre-wrap; word-break: break-word;">{{ $code }}</pre>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Stack Trace -->
     <div class="card mb-3">
         <div class="card-header">

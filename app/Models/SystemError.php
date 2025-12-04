@@ -103,5 +103,59 @@ class SystemError extends Model
     {
         return class_basename($this->exception_class);
     }
+
+    /**
+     * Ottieni un estratto del codice sorgente intorno alla linea dell'errore
+     *
+     * @param int $contextLines Numero di righe prima e dopo da mostrare
+     * @return array|null ['lines' => array, 'start' => int, 'error_line' => int]
+     */
+    public function getCodeSnippet(int $contextLines = 5): ?array
+    {
+        if (!file_exists($this->file) || !is_readable($this->file)) {
+            return null;
+        }
+
+        try {
+            $fileLines = file($this->file);
+            if ($fileLines === false) {
+                return null;
+            }
+
+            $totalLines = count($fileLines);
+            $errorLine = $this->line;
+
+            // Calcola le righe di inizio e fine
+            $startLine = max(1, $errorLine - $contextLines);
+            $endLine = min($totalLines, $errorLine + $contextLines);
+
+            // Estrai le righe (array è 0-indexed, le righe sono 1-indexed)
+            $lines = [];
+            for ($i = $startLine; $i <= $endLine; $i++) {
+                $lines[$i] = rtrim($fileLines[$i - 1], "\r\n");
+            }
+
+            return [
+                'lines' => $lines,
+                'start' => $startLine,
+                'end' => $endLine,
+                'error_line' => $errorLine,
+            ];
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Ottieni il percorso relativo del file (senza il path base del progetto)
+     */
+    public function getRelativeFileAttribute(): string
+    {
+        $basePath = base_path() . DIRECTORY_SEPARATOR;
+        if (str_starts_with($this->file, $basePath)) {
+            return substr($this->file, strlen($basePath));
+        }
+        return $this->file;
+    }
 }
 
