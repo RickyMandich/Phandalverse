@@ -4,6 +4,7 @@ use App\Http\Controllers\VaultController;
 use App\Http\Controllers\LogsController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\JobController;
+use App\Http\Controllers\ReportController;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,10 @@ Route::get('/vault/{note?}', [VaultController::class, 'show'])
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
 
+// ========== SEGNALAZIONI (pubbliche) ==========
+Route::get('/report', [ReportController::class, 'create'])->name('report.create');
+Route::post('/report', [ReportController::class, 'store'])->name('report.store');
+
 // ========== ADMIN ROUTES (solo amministratori) ==========
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     // Visualizzazione log
@@ -33,6 +38,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
     // Impostazioni Vault
     Route::post('/vault/set-default-view', [VaultController::class, 'setDefaultView'])->name('admin.vault.setDefaultView');
+
+    // Gestione segnalazioni
+    Route::get('/reports', [ReportController::class, 'index'])->name('admin.reports');
+    Route::get('/reports/{report}', [ReportController::class, 'show'])->name('admin.reports.show');
+    Route::patch('/reports/{report}', [ReportController::class, 'update'])->name('admin.reports.update');
 });
 
 // ========== JOB ROUTES ==========

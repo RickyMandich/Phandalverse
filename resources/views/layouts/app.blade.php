@@ -83,6 +83,9 @@
                                         <h6 class="dropdown-header">
                                             <i class="fas fa-shield-alt"></i> Admin
                                         </h6>
+                                        <a class="dropdown-item" href="{{ route('admin.reports') }}">
+                                            📢 Segnalazioni
+                                        </a>
                                         <a class="dropdown-item" href="{{ route('admin.errors') }}">
                                             <i class="fas fa-exclamation-triangle"></i> Errori Sistema
                                         </a>
@@ -120,9 +123,14 @@
             <div class="container">
                 <div class="row">
                     <div class="col-12 text-center">
+                        <p class="mb-2">
+                            <a href="{{ route('report.create', ['from' => url()->current()]) }}" class="text-warning">
+                                📢 Segnala un problema
+                            </a>
+                        </p>
                         <p>
                             {{ env('APP_VERSION') }}
-                            Created by 
+                            Created by
                             <small class="text-muted text-uppercase">
                                 <a href="https://github.com/RickyMandich" target="_blank" rel="author noopener noreferrer">Mandich Riccardo</a>
                             </small>
