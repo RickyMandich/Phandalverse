@@ -14,7 +14,7 @@
                 <div class="col-auto">
                     <select name="status" class="form-select">
                         <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>Tutti</option>
-                        <option value="new" {{ request('status') == 'new' ? 'selected' : '' }}>Nuovi</option>
+                        <option value="new" {{ request('status') == 'new' || !request('status') ? 'selected' : '' }}>Nuovi</option>
                         <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>In Lavorazione</option>
                         <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Risolti</option>
                         <option value="ignored" {{ request('status') == 'ignored' ? 'selected' : '' }}>Ignorati</option>
