@@ -44,7 +44,7 @@ class AdminController extends Controller
         }
 
         // Filter by status if provided
-        if ($request->has('status') && $request->status !== 'all') {
+        if (isset($request->status) && $request->status !== 'all') {
             $query->where('status', $request->status);
         }
 
