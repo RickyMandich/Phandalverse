@@ -33,6 +33,8 @@ class AdminController extends Controller
 
         $query = SystemError::query()->orderBy('created_at', 'desc');
 
+        $status = $request->status;
+
         // Filter by status if provided
         if ($request->has('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
@@ -40,7 +42,7 @@ class AdminController extends Controller
 
         $errors = $query->paginate(20);
 
-        return view('admin.errors.index', compact('errors'));
+        return view('admin.errors.index', compact('errors', 'status'));
     }
 
     /**

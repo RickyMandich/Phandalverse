@@ -5,6 +5,7 @@
 @section('content')
 <div class="container-fluid">
     <h3><i class="bi bi-bug"></i> Errori di Sistema</h3>
+    |{{ $status }}|
 
     <!-- Filtri -->
     <div class="card mb-3">
