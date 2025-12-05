@@ -140,23 +140,24 @@
 
 @section('content')
 <div class="vault-graph-page">
-    @if(Auth::check() && Auth::user()->isAdmin())
-    <div class="view-toggle d-flex align-items-center gap-2 mb-3">
-        <a href="{{ route('vault.show') }}?view=tree" class="{{ $currentView === 'tree' ? 'active' : '' }}">
-            📂 Vista Albero
-        </a>
-        <a href="{{ route('vault.show') }}?view=graph" class="{{ $currentView === 'graph' ? 'active' : '' }}">
-            🕸️ Vista Grafo
-        </a>
-
-        <form action="{{ route('admin.vault.setDefaultView') }}" method="POST" class="d-inline ms-3">
-            @csrf
-            <select name="view" class="form-select form-select-sm" style="width: auto; background: rgba(0,0,0,0.5); color: #fff; border-color: #4a5568;" onchange="this.form.submit()">
-                <option value="tree" {{ \App\Models\SystemSetting::getVaultDefaultView() === 'tree' ? 'selected' : '' }}>Default: Albero</option>
-                <option value="graph" {{ \App\Models\SystemSetting::getVaultDefaultView() === 'graph' ? 'selected' : '' }}>Default: Grafo</option>
-            </select>
-        </form>
-    </div>
+    @if(Auth::check() && (Auth::isAdmin() || Auth::isMaster()))
+        <div class="view-toggle d-flex align-items-center gap-2 mb-3">
+            <a href="{{ route('vault.show') }}?view=tree" class="{{ $currentView === 'tree' ? 'active' : '' }}">
+                📂 Vista Albero
+            </a>
+            <a href="{{ route('vault.show') }}?view=graph" class="{{ $currentView === 'graph' ? 'active' : '' }}">
+                🕸️ Vista Grafo
+            </a>
+            @if(Auth::isAdmin())
+                <form action="{{ route('admin.vault.setDefaultView') }}" method="POST" class="d-inline ms-3">
+                    @csrf
+                    <select name="view" class="form-select form-select-sm" style="width: auto; background: rgba(0,0,0,0.5); color: #fff; border-color: #4a5568;" onchange="this.form.submit()">
+                        <option value="tree" {{ \App\Models\SystemSetting::getVaultDefaultView() === 'tree' ? 'selected' : '' }}>Default: Albero</option>
+                        <option value="graph" {{ \App\Models\SystemSetting::getVaultDefaultView() === 'graph' ? 'selected' : '' }}>Default: Grafo</option>
+                    </select>
+                </form>
+            @endif
+        </div>
     @endif
     
     <div class="graph-container">
