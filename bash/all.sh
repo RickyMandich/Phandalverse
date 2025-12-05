@@ -9,9 +9,10 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 # Variabili per le opzioni
 VERSION_MAJOR=false
 VERSION_PATCH=false
+COMMIT_MESSAGE=""
 
 # Parsing delle opzioni
-while getopts "vph" opt; do
+while getopts "vpm:h" opt; do
     case $opt in
         v)
             VERSION_MAJOR=true
@@ -19,17 +20,24 @@ while getopts "vph" opt; do
         p)
             VERSION_PATCH=true
             ;;
+        m)
+            COMMIT_MESSAGE="$OPTARG"
+            echo "Messaggio personalizzato: $COMMIT_MESSAGE"
+            ;;
         h)
+            echo "Uso: $0 [-v] [-p] [-m messaggio]"
             echo "  -v  (versione): Incrementa APP_VERSION_PRIMARY e resetta APP_VERSION_SECONDARY a 0"
             echo "  -p  (patch): Incrementa APP_VERSION_SECONDARY"
+            echo "  -m  (messaggio): Aggiungi un messaggio personale al commit"
             echo "Le opzioni -v e -p non possono essere usate insieme"
             exit 0
             ;;
         \?)
             echo "Opzione non valida: -$OPTARG" >&2
-            echo "Uso: $0 [-v] [-p]"
+            echo "Uso: $0 [-v] [-p] [-m messaggio]"
             echo "  -v  (versione): Incrementa APP_VERSION_PRIMARY e resetta APP_VERSION_SECONDARY a 0"
             echo "  -p  (patch): Incrementa APP_VERSION_SECONDARY"
+            echo "  -m  (messaggio): Aggiungi un messaggio personale al commit"
             echo "Le opzioni -v e -p non possono essere usate insieme"
             exit 1
             ;;
@@ -111,5 +119,10 @@ increment_version() {
 increment_version
 
 # Esegui gli script usando il percorso completo
-"$SCRIPT_DIR/cmt.sh"
+# Passa il messaggio personalizzato a cmt.sh se presente
+if [ -n "$COMMIT_MESSAGE" ]; then
+    "$SCRIPT_DIR/cmt.sh" -m "$COMMIT_MESSAGE"
+else
+    "$SCRIPT_DIR/cmt.sh"
+fi
 "$SCRIPT_DIR/onlyFtpOfLastCmt.sh"
