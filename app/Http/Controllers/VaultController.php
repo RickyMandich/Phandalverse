@@ -217,7 +217,7 @@ class VaultController extends Controller
             $requestedView = $request->query('view');
 
             // Gli admin possono scegliere la vista, gli altri vedono solo la default
-            if (Auth::check() && Auth::user()->isMaster() && $requestedView) {
+            if (Auth::check() && Auth::isMaster() && $requestedView) {
                 $currentView = $requestedView;
             } else {
                 $currentView = $defaultView;
