@@ -55,8 +55,9 @@ class VaultController extends Controller
 
     /**
      * Costruisce l'albero dei file del vault
+     * @param string|null $basePath Path relativo della cartella da cui partire (es. "Personaggi/Giocanti")
      */
-    private function buildFileTree(): array
+    private function buildFileTree(?string $basePath = null): array
     {
         $vaultPath = base_path('Vault');
         $files = File::allFiles($vaultPath);
@@ -78,6 +79,16 @@ class VaultController extends Controller
                 $relativePath = mb_convert_encoding($relativePath, 'UTF-8', 'ISO-8859-1');
             }
 
+            // Se abbiamo un basePath, filtra solo i file che iniziano con quel path
+            if ($basePath !== null) {
+                if (!str_starts_with($relativePath, $basePath)) {
+                    continue;
+                }
+                // Rimuovi il basePath dal relativePath per costruire l'albero relativo
+                $relativePath = substr($relativePath, strlen($basePath));
+                $relativePath = ltrim($relativePath, '/');
+            }
+
             $fullRelativePath = $relativePath ? $relativePath . '/' . $name : $name;
 
             // Costruisce la struttura ad albero
@@ -91,10 +102,13 @@ class VaultController extends Controller
                 $current = &$current[$part]['_dirs'];
             }
 
+            // Mantieni l'URL originale (con basePath) per i link
+            $originalFullPath = $basePath ? $basePath . '/' . $fullRelativePath : $fullRelativePath;
+
             $current['_files'][] = [
                 'name' => $name,
                 'path' => $fullRelativePath,
-                'url' => self::pathToCamelCase($fullRelativePath),
+                'url' => self::pathToCamelCase($originalFullPath),
             ];
         }
 
@@ -208,6 +222,44 @@ class VaultController extends Controller
         ];
     }
 
+    /**
+     * Converte un path camelCase in path reale cercando cartelle
+     * Es: "personaggi/giocanti" -> "Personaggi/Giocanti"
+     */
+    public static function camelCaseToFolderPath(string $camelPath): ?string
+    {
+        $vaultPath = base_path('Vault');
+
+        // Crea un indice di tutte le cartelle (ricorsivamente)
+        $folderIndex = [];
+        $stack = [$vaultPath];
+
+        while (!empty($stack)) {
+            $currentDir = array_pop($stack);
+            $subDirs = File::directories($currentDir);
+
+            foreach ($subDirs as $dir) {
+                $relativePath = str_replace('\\', '/', substr($dir, strlen($vaultPath) + 1));
+
+                // Fix encoding
+                if (!mb_check_encoding($relativePath, 'UTF-8')) {
+                    $relativePath = mb_convert_encoding($relativePath, 'UTF-8', 'ISO-8859-1');
+                }
+
+                // Salta le cartelle nascoste (come .obsidian)
+                if (str_starts_with(basename($relativePath), '.')) {
+                    continue;
+                }
+
+                $folderIndex[strtolower(self::pathToCamelCase($relativePath))] = $relativePath;
+                $stack[] = $dir;
+            }
+        }
+
+        $camelPathLower = strtolower($camelPath);
+        return $folderIndex[$camelPathLower] ?? null;
+    }
+
     public function show(Request $request, $note = null)
     {
         // Se non viene passato il parametro note, mostra l'albero o grafo
@@ -237,10 +289,36 @@ class VaultController extends Controller
                 'title' => 'Vault',
                 'tree' => $tree,
                 'currentView' => $currentView,
+                'folderPath' => null,
             ]);
         }
 
         Log::info("Visualizzazione nota $note");
+
+        // Prima controlla se è una cartella
+        $folderPath = self::camelCaseToFolderPath($note);
+        if ($folderPath !== null) {
+            Log::info("È una cartella: $folderPath");
+
+            // Determina quale vista mostrare
+            $defaultView = SystemSetting::getVaultDefaultView();
+            $requestedView = $request->query('view');
+
+            if (Auth::check() && Auth::isMaster() && $requestedView) {
+                $currentView = $requestedView;
+            } else {
+                $currentView = $defaultView;
+            }
+
+            // Per le cartelle mostriamo solo la vista albero
+            $tree = $this->buildFileTree($folderPath);
+            return view('vault.tree', [
+                'title' => 'Vault - ' . basename($folderPath),
+                'tree' => $tree,
+                'currentView' => 'tree',
+                'folderPath' => $folderPath,
+            ]);
+        }
 
         // Converti il path camelCase in path reale
         $realPath = self::camelCaseToPath($note);

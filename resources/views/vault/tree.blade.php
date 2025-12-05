@@ -76,7 +76,29 @@
     @endif
 
     <div class="tree-container">
-        <h2 class="tree-title">📚 Vault - File Disponibili</h2>
+        @if(isset($folderPath) && $folderPath)
+            <nav class="mb-3">
+                <a href="{{ route('vault.show') }}" class="text-info">📚 Vault</a>
+                @php
+                    $parts = explode('/', $folderPath);
+                    $currentPath = '';
+                @endphp
+                @foreach($parts as $part)
+                    @php
+                        $currentPath = $currentPath ? $currentPath . '/' . $part : $part;
+                    @endphp
+                    <span class="text-muted"> / </span>
+                    @if($loop->last)
+                        <span class="text-warning">📂 {{ $part }}</span>
+                    @else
+                        <a href="{{ route('vault.show', ['note' => \App\Http\Controllers\VaultController::pathToCamelCase($currentPath)]) }}" class="text-info">{{ $part }}</a>
+                    @endif
+                @endforeach
+            </nav>
+            <h2 class="tree-title">📂 {{ basename($folderPath) }} - File Disponibili</h2>
+        @else
+            <h2 class="tree-title">📚 Vault - File Disponibili</h2>
+        @endif
         @php
             function renderTree($items, $deep = 0) {
                 $html = $deep == 0 ? '<ul>' : '<ul style="display: none;" class="border-start ps-4">';
