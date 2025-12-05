@@ -96,7 +96,7 @@ class Auth extends Facade
         static::$app->make('router')->auth($options);
     }
 
-    public static function admin(){
+    public static function isAdmin(){
         return Auth::check() && Auth::user()->admin == 1;
     }
 

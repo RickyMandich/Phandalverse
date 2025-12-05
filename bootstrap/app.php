@@ -68,7 +68,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // ========== RENDERABLE: Debug differenziato per tipo utente ==========
         $exceptions->renderable(function (Throwable $e, $request) {
             // Se l'utente è admin, mostra debug completo
-            if (Auth::admin()) {
+            if (Auth::isAdmin()) {
                 config(['app.debug' => true]);
 
                 return response()->view('errors.admin-debug', [

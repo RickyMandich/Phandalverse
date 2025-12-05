@@ -13,7 +13,7 @@ class LogsController extends Controller
      */
     public function index(Request $request)
     {
-        if (!Auth::admin()) {
+        if (!Auth::isAdmin()) {
             return view("errors.403");
         }
 
