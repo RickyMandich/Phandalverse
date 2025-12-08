@@ -36,7 +36,7 @@
 
 @yield('style')
 <body>
-    <div id="app" class="d-flex flex-column justify-content-between min-vh-100">
+    <div id="app" class="d-flex flex-column">
         <nav class="navbar navbar-expand-md shadow-sm bg-custom-light">
             <div class="container">
                 <a class="navbar-brand" href="{{ url('/') }}">

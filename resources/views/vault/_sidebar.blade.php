@@ -45,7 +45,7 @@
             flex: 0 0 300px;
             width: 300px;
             min-width: 40px;
-            background: rgba(0,0,0,0.28);
+            background: rgba(0,0,0,1);
             border-right: 1px solid rgba(255,255,255,0.04);
             overflow-y: auto;
             transition: width 0.2s ease, transform 0.25s ease;
@@ -142,8 +142,8 @@
                         sidebar.classList.remove('collapsed');
                     }
                 } else {
-                    // Desktop: collapse to narrow bar
-                    sidebar.classList.toggle('collapsed');
+                    // Desktop: do not collapse the sidebar (keep always open)
+                    // no-op to avoid reducing sidebar on desktop
                 }
 
                 // Update toggle icon
