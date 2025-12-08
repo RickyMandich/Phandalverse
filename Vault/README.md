@@ -1,1 +1,0 @@
-# appunti per la campagna di Dungeons and dragons nella 5e

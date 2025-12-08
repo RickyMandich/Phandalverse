@@ -6,7 +6,7 @@
 
 <div class="mt-4">
     <a href="{{ route('vault.show') }}" class="btn btn-primary btn-lg">
-        <i class="bi bi-folder2-open"></i> Esplora il Vault
+        <i class="bi bi-folder2-open"></i> {{ __('VaultWelcome') }}
     </a>
 </div>
 @endsection

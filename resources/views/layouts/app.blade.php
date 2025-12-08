@@ -51,7 +51,7 @@
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('vault.show') }}">
-                                <i class="bi bi-folder2-open"></i> Vault
+                                <i class="bi bi-folder2-open"></i> {{ __('Vault') }}
                             </a>
                         </li>
                     </ul>

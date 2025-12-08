@@ -17,6 +17,8 @@
     "Please confirm your password before continuing.": "Per favore conferma la tua password prima di continuare.",
     "Reset Password": "Reimposta Password",
     "Send Password Reset Link": "Invia link per reimpostare la password",
-    "Logout": "Esci"
+    "Logout": "Esci",
+    "Vault": "Vault",
+    "VaultWelcome": "Esplora il Vault"
 }
 

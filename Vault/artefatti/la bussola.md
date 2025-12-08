@@ -1,1 +1,0 @@
-questo artefatto originariamente serviva a trovare la chiave, viene modificato nel 1312 [[La frattura#calendario|DF]] da [[nonno Roshi]] per diventare capace di indicare i singoli pezzi di chiave ora che è rotta  (questa uova versione necessita del nucleo della chiave al suo interno)
