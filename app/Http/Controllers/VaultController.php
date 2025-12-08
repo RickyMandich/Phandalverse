@@ -406,11 +406,13 @@ class VaultController extends Controller
 
             // Per le cartelle mostriamo solo la vista albero
             $tree = $this->buildFileTree($folderPath);
+            $graphConfig = $this->loadGraphConfig();
             return view('vault.tree', [
                 'title' => 'Vault - ' . basename($folderPath),
                 'tree' => $tree,
                 'currentView' => 'tree',
                 'folderPath' => $folderPath,
+                'graphConfig' => $graphConfig,
             ]);
         }
 
@@ -455,9 +457,13 @@ class VaultController extends Controller
         // Converte Markdown → HTML con supporto wikilink/embed
         $html = MarkdownPreprocessor::toHtml($content);
         Log::info("HTML generato: " . $html);
+        $tree = $this->buildFileTree();
+        $graphConfig = $this->loadGraphConfig();
         return view('vault.note', [
             'title' => $title,
             'html'  => $html,
+            'tree' => $tree,
+            'graphConfig' => $graphConfig,
         ]);
     }
 

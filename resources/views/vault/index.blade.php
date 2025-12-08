@@ -196,46 +196,11 @@
 @endsection
 
 @section('content')
-<div class="vault-layout">
-    <!-- Sidebar con albero -->
-    <aside class="vault-sidebar" id="vault-sidebar">
-        <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
-            <span id="toggle-icon">◀</span>
-        </button>
-        <div class="sidebar-content">
-            <h5 class="text-warning mb-3">📚 Vault</h5>
-            <div class="vault-tree">
-                @php
-                    function renderTreeIndex($items, $deep = 0) {
-                        $html = $deep == 0 ? '<ul>' : '<ul style="display: none;" class="border-start border-secondary ps-3">';
-
-                        foreach ($items as $key => $value) {
-                            if ($key !== '_files' && $key !== '_dirs' && is_array($value)) {
-                                $html .= '<li>';
-                                $html .= '<span class="folder" onclick="this.classList.toggle(\'open\'); this.nextElementSibling.style.display = this.classList.contains(\'open\') ? \'block\' : \'none\';">' . e($key) . '</span>';
-                                $html .= renderTreeIndex($value['_dirs'] ?? [], $deep+1);
-                                $html .= '</li>';
-                            }
-                        }
-
-                        $files = $items['_files'] ?? [];
-                        foreach ($files as $file) {
-                            $html .= '<li>';
-                            $html .= '<a href="/vault/' . $file['url'] . '" class="file">' . e($file['name']) . '</a>';
-                            $html .= '</li>';
-                        }
-
-                        $html .= '</ul>';
-                        return $html;
-                    }
-                @endphp
-                {!! renderTreeIndex($tree) !!}
-            </div>
-        </div>
-    </aside>
+<div class="vault-layout d-flex">
+    @include('vault._sidebar', ['tree' => $tree])
 
     <!-- Area principale con grafo -->
-    <main class="vault-main">
+    <main class="vault-main flex-grow-1">
         <div class="graph-container">
             <div class="graph-controls">
                 <button onclick="resetZoom()" title="Reset Zoom">🔄</button>
@@ -267,18 +232,7 @@
 @section('script')
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
-// Sidebar toggle
-function toggleSidebar() {
-    const sidebar = document.getElementById('vault-sidebar');
-    const icon = document.getElementById('toggle-icon');
-    sidebar.classList.toggle('collapsed');
-    icon.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
-
-    // Trigger resize per il grafo
-    setTimeout(() => {
-        window.dispatchEvent(new Event('resize'));
-    }, 350);
-}
+// Sidebar toggle is handled by the sidebar partial script
 
 // Graph
 const graphData = @json($graphData);

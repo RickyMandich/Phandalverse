@@ -54,7 +54,11 @@
 @endsection
 
 @section('content')
-<div class="vault-tree">
+<div class="vault-layout d-flex">
+    @include('vault._sidebar', ['tree' => $tree])
+
+    <main class="vault-main flex-grow-1">
+        <div class="vault-tree p-4">
     @if(Auth::check() && (Auth::isAdmin() || Auth::isMaster()))
         <div class="view-toggle mb-3">
             <a href="{{ route('vault.show') }}?view=tree" class="btn {{ ($currentView ?? 'tree') === 'tree' ? 'btn-primary' : 'btn-outline-secondary' }}">
@@ -127,7 +131,8 @@
         @endphp
         
         {!! renderTree($tree) !!}
-    </div>
+        </div>
+    </main>
 </div>
 @endsection
 

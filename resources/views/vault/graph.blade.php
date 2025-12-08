@@ -139,7 +139,11 @@
 @endsection
 
 @section('content')
-<div class="vault-graph-page">
+<div class="vault-layout d-flex">
+    @include('vault._sidebar', ['tree' => $tree ?? []])
+
+    <main class="vault-main flex-grow-1">
+        <div class="vault-graph-page">
     @if(Auth::check() && (Auth::isAdmin() || Auth::isMaster()))
         <div class="view-toggle d-flex align-items-center gap-2 mb-3">
             <a href="{{ route('vault.show') }}?view=tree" class="{{ $currentView === 'tree' ? 'active' : '' }}">
@@ -172,36 +176,19 @@
         <div class="tooltip-graph" id="tooltip"></div>
         
         <div class="legend">
-            <div class="legend-item">
-                <div class="legend-color" style="background: #D66B5C;"></div>
-                <span>Universi</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #D6C05C;"></div>
-                <span>Città</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #C6307F;"></div>
-                <span>Personaggi (PG)</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #7A7AFF;"></div>
-                <span>PNG</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #5CD67A;"></div>
-                <span>Saghe</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #5CBCD6;"></div>
-                <span>Eventi</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #888;"></div>
-                <span>Altri</span>
-            </div>
+            @php
+                $legend = $graphConfig['legend'] ?? [];
+                $colors = $graphConfig['colors'] ?? [];
+            @endphp
+            @foreach($legend as $key => $label)
+                <div class="legend-item">
+                    <div class="legend-color" style="background: {{ $colors[$key] ?? ($colors['default'] ?? '#888') }};"></div>
+                    <span>{{ $label }}</span>
+                </div>
+            @endforeach
         </div>
-    </div>
+        </div>
+    </main>
 </div>
 @endsection
 
@@ -209,6 +196,7 @@
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
 const graphData = @json($graphData);
+const graphConfig = @json($graphConfig ?? []);
 
 const container = document.querySelector('.graph-container');
 const width = container.clientWidth;
@@ -231,18 +219,20 @@ svg.call(zoom);
 
 // Color scale based on folder/tags
 function getNodeColor(node) {
-    const path = node.path.toLowerCase();
+    const path = (node.path || '').toLowerCase();
     const tags = node.tags || [];
+    const colors = (graphConfig && graphConfig.colors) ? graphConfig.colors : {};
+    const def = colors['default'] || '#888';
 
-    if (tags.includes('universo') || path.includes('universi')) return '#D66B5C';
-    if (tags.includes('città')) return '#D6C05C';
-    if (tags.includes('pg') || path.includes('giocanti')) return '#C6307F';
-    if (tags.includes('png') || path.includes('non giocanti')) return '#7A7AFF';
-    if (tags.includes('saga') || path.includes('saghe')) return '#5CD67A';
-    if (tags.includes('evento') || path.includes('eventi')) return '#5CBCD6';
-    if (path.includes('definizioni')) return '#AD7FA8';
-    if (path.includes('artefatti')) return '#FCE94F';
-    return '#888';
+    if (tags.includes('universo') || path.includes('universi')) return colors['universo'] || def;
+    if (tags.includes('città')) return colors['città'] || def;
+    if (tags.includes('pg') || path.includes('giocanti')) return colors['pg'] || def;
+    if (tags.includes('png') || path.includes('non giocanti')) return colors['png'] || def;
+    if (tags.includes('saga') || path.includes('saghe')) return colors['saga'] || def;
+    if (tags.includes('evento') || path.includes('eventi')) return colors['evento'] || def;
+    if (path.includes('definizioni')) return colors['definizioni'] || def;
+    if (path.includes('artefatti')) return colors['artefatti'] || def;
+    return def;
 }
 
 // Force simulation
