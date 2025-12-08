@@ -56,7 +56,7 @@
         }
 
         /* Detached spacing from main content */
-        .vault-layout { gap: 18px; }
+        .vault-layout { gap: 18px; display: flex; height: calc(100vh - 180px); }
 
         /* Toggle inside sidebar so it is never clipped */
         .sidebar-toggle{ position: absolute; top: 10px; right: 10px; z-index: 20; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); color: #fff; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
@@ -97,15 +97,16 @@
             let mobileOpenBtn = null;
 
             function ensureMobileButton(){
-                if(!mobileOpenBtn){
-                    mobileOpenBtn = document.createElement('button');
-                    mobileOpenBtn.className = 'mobile-open-toggle';
-                    mobileOpenBtn.innerHTML = '☰';
-                    mobileOpenBtn.onclick = () => {
-                        sidebar.classList.add('open');
-                    };
-                    document.body.appendChild(mobileOpenBtn);
-                }
+                    if(!mobileOpenBtn){
+                        mobileOpenBtn = document.createElement('button');
+                        mobileOpenBtn.className = 'mobile-open-toggle';
+                        mobileOpenBtn.innerHTML = '☰';
+                        mobileOpenBtn.onclick = () => {
+                            // Use the same toggle logic to ensure classes are consistent
+                            toggleSidebar();
+                        };
+                        document.body.appendChild(mobileOpenBtn);
+                    }
             }
 
             function removeMobileButton(){
@@ -145,9 +146,31 @@
                     sidebar.classList.toggle('collapsed');
                 }
 
+                // Update toggle icon
+                const icon = document.getElementById('toggle-icon');
+                if(window.innerWidth <= 768){
+                    icon.textContent = sidebar.classList.contains('open') ? '✖' : '☰';
+                } else {
+                    icon.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+                }
+
                 // trigger resize for graphs
                 setTimeout(()=>window.dispatchEvent(new Event('resize')), 250);
             }
+
+            // Close sidebar on mobile when clicking outside
+            document.addEventListener('click', function(e){
+                try {
+                    if(window.innerWidth <= 768 && sidebar.classList.contains('open')){
+                        const path = e.composedPath ? e.composedPath() : (e.path || []);
+                        if(!path.includes(sidebar) && !path.includes(mobileOpenBtn)){
+                            toggleSidebar();
+                        }
+                    }
+                } catch(err) {
+                    // ignore
+                }
+            });
 
             window.addEventListener('resize', updateMobileUI);
             document.addEventListener('DOMContentLoaded', updateMobileUI);
