@@ -9,6 +9,7 @@ use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Services\CustomLogger;
 
 class VaultController extends Controller
 {
@@ -387,7 +388,7 @@ class VaultController extends Controller
             ]);
         }
 
-        Log::info("Visualizzazione nota $note");
+        CustomLogger::note($note, "Visualizzazione nota $note");
 
         // Prima controlla se è una cartella
         $folderPath = self::camelCaseToFolderPath($note);
@@ -426,26 +427,26 @@ class VaultController extends Controller
 
         $path = base_path("Vault/" . $realPath . ".md");
 
-        Log::info("cerco la nota: $path");
+        CustomLogger::note($note, "cerco la nota: $path");
         if (!File::exists($path)) {
-            Log::warning("Nota non trovata: $path");
+            CustomLogger::note($note, "Nota non trovata: $path", 'warning');
             abort(404, "Nota non trovata");
         }
 
         $content = File::get($path);
-        Log::info("Contenuto ORIGINALE dal file: " . $content);
+        CustomLogger::note($note, "Contenuto ORIGINALE dal file: " . $content);
 
-        Log::info("ora controllo se è il master: ".Auth::isMaster()."(master=".Auth::getMaster().") e l'utente è ".Auth::getName());
+        CustomLogger::note($note, "ora controllo se è il master: ".Auth::isMaster()."(master=".Auth::getMaster().") e l'utente è ".Auth::getName());
         // Gestione blocchi master
         if(!Auth::isMaster()) {
-            Log::info("Filtro i blocchi master");
+            CustomLogger::note($note, "Filtro i blocchi master");
             $content = MarkdownPreprocessor::filterMasterBlocks($content);
         }else{
-            Log::info("Mostro i blocchi master");
+            CustomLogger::note($note, "Mostro i blocchi master");
             $content = MarkdownPreprocessor::stripMasterMarkers($content);
         }
 
-        Log::info("Contenuto dopo filtro: " . $content);
+        CustomLogger::note($note, "Contenuto dopo filtro: " . $content);
 
         if (preg_match('/(?<=^|[\\\\\\/])[^\\\\\\/]+(?=\\.md$)/', $path, $matches)) {
             $title = $matches[0];
@@ -456,7 +457,7 @@ class VaultController extends Controller
 
         // Converte Markdown → HTML con supporto wikilink/embed
         $html = MarkdownPreprocessor::toHtml($content);
-        Log::info("HTML generato: " . $html);
+        CustomLogger::note($note, "HTML generato: " . $html);
         $tree = $this->buildFileTree();
         $graphConfig = $this->loadGraphConfig();
         return view('vault.note', [
