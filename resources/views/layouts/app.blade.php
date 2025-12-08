@@ -135,6 +135,9 @@
                                 📢 Segnala un problema
                             </a>
                         </p>
+                        <p class="mb-1">
+                            <span class="text-info">🕐 {{ now()->format('d/m/Y H:i:s') }}</span>
+                        </p>
                         <p>
                             {{ env('APP_VERSION') }}
                             Created by

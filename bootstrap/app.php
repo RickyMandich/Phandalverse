@@ -63,6 +63,14 @@ return Application::configure(basePath: dirname(__DIR__))
             } catch (\Exception $emailException) {
                 Log::error("Impossibile inviare email errore: " . $emailException->getMessage());
             }
+            // Fallback: se le email non sono inviate (server senza SMTP), invia notifica via Telegram se configurato
+            try {
+                if (env('TELEGRAM_BOT_TOKEN')) {
+                    \App\Services\TelegramService::notifyError($e, $requestUrl);
+                }
+            } catch (\Exception $telEx) {
+                Log::error("Impossibile inviare notifica Telegram: " . $telEx->getMessage());
+            }
         });
 
         // ========== RENDERABLE: Debug differenziato per tipo utente ==========

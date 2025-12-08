@@ -35,6 +35,117 @@ class VaultController extends Controller
     }
 
     /**
+     * Carica la configurazione estetica del grafo da `Vault/.obsidian/graph-config.json`
+     * Se il file non esiste o è invalido, ritorna una configurazione di default.
+     */
+    private function loadGraphConfig(): array
+    {
+        $obsidianDir = base_path('Vault/.obsidian');
+        $configPath = $obsidianDir . DIRECTORY_SEPARATOR . 'graph-config.json';
+        $graphJsonPath = $obsidianDir . DIRECTORY_SEPARATOR . 'graph.json';
+
+        try {
+            // Prefer explicit graph-config.json if present
+            if (\Illuminate\Support\Facades\File::exists($configPath)) {
+                $json = \Illuminate\Support\Facades\File::get($configPath);
+                $data = json_decode($json, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
+                    return $data;
+                }
+            }
+
+            // Fallback: try to parse Obsidian's graph.json and map colorGroups
+            if (\Illuminate\Support\Facades\File::exists($graphJsonPath)) {
+                $json = \Illuminate\Support\Facades\File::get($graphJsonPath);
+                $data = json_decode($json, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
+                    $colors = [];
+                    $legend = [];
+
+                    $groups = $data['colorGroups'] ?? [];
+                    foreach ($groups as $grp) {
+                        $query = $grp['query'] ?? '';
+                        $colorObj = $grp['color'] ?? null;
+                        $rgb = null;
+                        if (is_array($colorObj) && isset($colorObj['rgb'])) {
+                            $rgb = $colorObj['rgb'];
+                        }
+
+                        if ($rgb !== null) {
+                            $hex = sprintf('#%06X', $rgb & 0xFFFFFF);
+                        } else {
+                            $hex = null;
+                        }
+
+                        // try to extract a key from query
+                        $key = null;
+                        if (str_contains($query, 'tag:#')) {
+                            // tag:#universo or tag:#png  tag:#phandalmain
+                            if (preg_match('/tag:#([a-zA-Z0-9_\-]+)/', $query, $m)) {
+                                $key = strtolower($m[1]);
+                            }
+                        } elseif (str_contains($query, 'path:')) {
+                            if (preg_match('/path:([a-zA-Z0-9_\-]+)/', $query, $m)) {
+                                $key = strtolower($m[1]);
+                            }
+                        }
+
+                        if ($key) {
+                            if ($hex) {
+                                $colors[$key] = $hex;
+                            }
+                            // generate a readable label
+                            $labelMap = [
+                                'universo' => 'Universi',
+                                'città' => 'Città',
+                                'citta' => 'Città',
+                                'pg' => 'PG',
+                                'png' => 'PNG',
+                                'saga' => 'Saghe',
+                                'evento' => 'Eventi',
+                                'definizioni' => 'Definizioni',
+                                'artefatti' => 'Artefatti'
+                            ];
+                            $legend[$key] = $labelMap[$key] ?? ucfirst($key);
+                        }
+                    }
+
+                    return [
+                        'colors' => $colors,
+                        'legend' => $legend,
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            // ignore and fallback to defaults
+        }
+
+        // Default colors & legend (keeps previous hardcoded values)
+        return [
+            'colors' => [
+                'universo' => '#D66B5C',
+                'città' => '#D6C05C',
+                'pg' => '#C6307F',
+                'png' => '#7A7AFF',
+                'saga' => '#5CD67A',
+                'evento' => '#5CBCD6',
+                'definizioni' => '#AD7FA8',
+                'artefatti' => '#FCE94F',
+                'default' => '#888'
+            ],
+            'legend' => [
+                'universo' => 'Universi',
+                'città' => 'Città',
+                'pg' => 'PG',
+                'png' => 'PNG',
+                'saga' => 'Saghe',
+                'evento' => 'Eventi',
+                'altro' => 'Altri'
+            ]
+        ];
+    }
+
+    /**
      * Converte un path camelCase in path reale cercando nel file index
      * Es: "personaggi/laRuota" -> "Personaggi/La Ruota"
      */
@@ -262,34 +373,17 @@ class VaultController extends Controller
 
     public function show(Request $request, $note = null)
     {
-        // Se non viene passato il parametro note, mostra l'albero o grafo
+        // Se non viene passato il parametro note, mostra la home del vault
+        // con pannello laterale (albero) e vista a grafo nella stessa pagina.
         if ($note === null || $note === '') {
-            // Determina quale vista mostrare
-            $defaultView = SystemSetting::getVaultDefaultView();
-            $requestedView = $request->query('view');
-
-            // Gli admin possono scegliere la vista, gli altri vedono solo la default
-            if (Auth::check() && Auth::isMaster() && $requestedView) {
-                $currentView = $requestedView;
-            } else {
-                $currentView = $defaultView;
-            }
-
-            if ($currentView === 'graph') {
-                $graphData = $this->buildGraphData();
-                return view('vault.graph', [
-                    'title' => 'Vault - Grafo',
-                    'graphData' => $graphData,
-                    'currentView' => $currentView,
-                ]);
-            }
-
             $tree = $this->buildFileTree();
-            return view('vault.tree', [
+            $graphData = $this->buildGraphData();
+            $graphConfig = $this->loadGraphConfig();
+            return view('vault.index', [
                 'title' => 'Vault',
                 'tree' => $tree,
-                'currentView' => $currentView,
-                'folderPath' => null,
+                'graphData' => $graphData,
+                'graphConfig' => $graphConfig,
             ]);
         }
 
