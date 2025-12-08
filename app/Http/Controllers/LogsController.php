@@ -41,10 +41,6 @@ class LogsController extends Controller
         } else {
             $fileName = basename($fullPath);
 
-            // Visualizzazione speciale per laravel.log
-            if ($fileName === 'laravel.log') {
-                return $this->showLaravelLog($fullPath, $currentPath, $breadcrumbs, $sessionIndex);
-            }
 
             $fileContent = $this->getFileContent($fullPath);
             return view('admin.logs', [
