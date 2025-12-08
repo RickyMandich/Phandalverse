@@ -2,7 +2,7 @@
     // $tree expected
     $tree = $tree ?? [];
 @endphp
-<aside class="vault-sidebar" id="vault-sidebar">
+<aside class="vault-sidebar bg-custom-light" id="vault-sidebar">
     <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle Sidebar">
         <span id="toggle-icon">◀</span>
     </button>
@@ -45,7 +45,7 @@
             flex: 0 0 300px;
             width: 300px;
             min-width: 40px;
-            background: rgba(0,0,0,1);
+            background: inherit;
             border-right: 1px solid rgba(255,255,255,0.04);
             overflow-y: auto;
             transition: width 0.2s ease, transform 0.25s ease;
@@ -56,7 +56,7 @@
         }
 
         /* Detached spacing from main content */
-        .vault-layout { gap: 18px; display: flex; height: calc(100vh - 180px); }
+        .vault-layout { gap: 18px; display: flex; min-height: calc(100vh - 180px); }
 
         /* Toggle inside sidebar so it is never clipped */
         .sidebar-toggle{ position: absolute; top: 10px; right: 10px; z-index: 20; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); color: #fff; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
