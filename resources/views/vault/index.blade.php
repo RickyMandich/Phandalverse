@@ -6,55 +6,6 @@
 
 @section('style')
 <style>
-    .vault-layout {
-        display: flex;
-        height: calc(100vh - 180px);
-        gap: 0;
-    }
-    
-    .vault-sidebar {
-        width: 300px;
-        min-width: 250px;
-        max-width: 400px;
-        background: rgba(0,0,0,0.3);
-        border-right: 1px solid #444;
-        overflow-y: auto;
-        transition: width 0.3s ease;
-        position: relative;
-    }
-    
-    .vault-sidebar.collapsed {
-        width: 40px;
-        min-width: 40px;
-        overflow: hidden;
-    }
-    
-    .vault-sidebar.collapsed .sidebar-content {
-        display: none;
-    }
-    
-    .sidebar-toggle {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        z-index: 10;
-        background: rgba(255,255,255,0.1);
-        border: 1px solid #555;
-        color: #fff;
-        padding: 5px 10px;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-    
-    .vault-sidebar.collapsed .sidebar-toggle {
-        right: 5px;
-    }
-    
-    .sidebar-content {
-        padding: 1rem;
-        padding-top: 50px;
-    }
-    
     .vault-main {
         flex: 1;
         position: relative;
