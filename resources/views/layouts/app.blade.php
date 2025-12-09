@@ -23,7 +23,7 @@
 
 <style>
     .bg-custom-light{
-        background-color: #555555;
+        background-color: #555555 !important;
     }
     /* nav{
         z-index: 1021;
