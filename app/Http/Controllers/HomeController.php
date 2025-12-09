@@ -73,6 +73,34 @@ class HomeController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
+        // Notifica Telegram della modifica password (profilo utente)
+        try {
+            $hasToken = env('TELEGRAM_BOT_TOKEN') ? true : false;
+            $hasChatId = env('TELEGRAM_ADMIN_CHAT_ID') ? true : false;
+            $actor = Auth::user();
+            $by = $actor ? ($actor->email ?? $actor->name) : 'sistema';
+
+            \Illuminate\Support\Facades\Log::info('Telegram notify attempt for profile password change', [
+                'has_token' => $hasToken,
+                'has_chat_id' => $hasChatId,
+                'target_user' => $user->email,
+                'actor' => $by,
+            ]);
+
+            if ($hasToken && $hasChatId) {
+                \App\Services\TelegramService::notify(
+                    'Password modificata (profilo)',
+                    "Utente: {$user->email}\nModificata da: {$by}"
+                );
+
+                \Illuminate\Support\Facades\Log::info('Telegram notify invoked for profile password change', ['target_user' => $user->email]);
+            } else {
+                \Illuminate\Support\Facades\Log::warning('Telegram not configured for profile password change notification', ['has_token' => $hasToken, 'has_chat_id' => $hasChatId]);
+            }
+        } catch (\Exception $ex) {
+            \Illuminate\Support\Facades\Log::error('Impossibile inviare notifica Telegram per password aggiornata (profilo): ' . $ex->getMessage());
+        }
+
         return redirect()->route('dashboard')->with('success', 'Password aggiornata con successo');
     }
 }
