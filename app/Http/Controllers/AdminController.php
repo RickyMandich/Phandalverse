@@ -34,11 +34,13 @@ class AdminController extends Controller
         $query = SystemError::query()->orderBy('created_at', 'desc');
 
         if(!isset($request->status)) {
-            $request->status = 'new';
+            $status = 'new';
+        }else{
+            $status = $request->status;
         }
 
         // Filter by status if provided
-        if (isset($request->status) && $request->status !== 'all') {
+        if ($status !== 'all') {
             $query->where('status', $request->status);
         }
 
