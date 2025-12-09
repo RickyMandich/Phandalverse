@@ -6,7 +6,7 @@
     <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle Sidebar">
         <span id="toggle-icon">◀</span>
     </button>
-    <div class="sidebar-content background-custom-light">
+    <div class="sidebar-content bg-custom-light">
         <h5 class="text-warning mb-3">📚 Vault</h5>
         <div class="vault-tree">
             @php
