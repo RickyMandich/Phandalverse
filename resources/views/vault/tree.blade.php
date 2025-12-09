@@ -59,25 +59,6 @@
 
     <main class="vault-main flex-grow-1">
         <div class="vault-tree p-4">
-    @if(Auth::check() && (Auth::isAdmin() || Auth::isMaster()))
-        <div class="view-toggle mb-3">
-            <a href="{{ route('vault.show') }}?view=tree" class="btn {{ ($currentView ?? 'tree') === 'tree' ? 'btn-primary' : 'btn-outline-secondary' }}">
-                📂 Vista Albero
-            </a>
-            <a href="{{ route('vault.show') }}?view=graph" class="btn {{ ($currentView ?? 'tree') === 'graph' ? 'btn-primary' : 'btn-outline-secondary' }}">
-                🕸️ Vista Grafo
-            </a>
-            @if(Auth::isAdmin())
-            <form action="{{ route('admin.vault.setDefaultView') }}" method="POST" class="d-inline ms-3">
-                @csrf
-                <select name="view" class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="this.form.submit()">
-                    <option value="tree" {{ \App\Models\SystemSetting::getVaultDefaultView() === 'tree' ? 'selected' : '' }}>Default: Albero</option>
-                    <option value="graph" {{ \App\Models\SystemSetting::getVaultDefaultView() === 'graph' ? 'selected' : '' }}>Default: Grafo</option>
-                </select>
-            </form>
-            @endif
-        </div>
-    @endif
 
     <div class="tree-container">
         @if(isset($folderPath) && $folderPath)
