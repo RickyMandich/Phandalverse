@@ -221,13 +221,27 @@ class AdminController extends Controller
 
         // Notifica su Telegram che la password dell'utente è stata modificata
         try {
-            if (env('TELEGRAM_BOT_TOKEN')) {
-                $actor = \Illuminate\Support\Facades\Auth::user();
-                $by = $actor ? ($actor->email ?? $actor->name) : 'sistema';
+            $hasToken = env('TELEGRAM_BOT_TOKEN') ? true : false;
+            $hasChatId = env('TELEGRAM_ADMIN_CHAT_ID') ? true : false;
+            $actor = \Illuminate\Support\Facades\Auth::user();
+            $by = $actor ? ($actor->email ?? $actor->name) : 'sistema';
+
+            \Illuminate\Support\Facades\Log::info('Telegram notify attempt for password change', [
+                'has_token' => $hasToken,
+                'has_chat_id' => $hasChatId,
+                'target_user' => $user->email,
+                'actor' => $by,
+            ]);
+
+            if ($hasToken && $hasChatId) {
                 \App\Services\TelegramService::notify(
                     'Password modificata',
                     "Utente: {$user->email}\nModificata da: {$by}"
                 );
+
+                \Illuminate\Support\Facades\Log::info('Telegram notify invoked for password change', ['target_user' => $user->email]);
+            } else {
+                \Illuminate\Support\Facades\Log::warning('Telegram not configured for password change notification', ['has_token' => $hasToken, 'has_chat_id' => $hasChatId]);
             }
         } catch (\Exception $ex) {
             \Illuminate\Support\Facades\Log::error('Impossibile inviare notifica Telegram per password aggiornata: ' . $ex->getMessage());
