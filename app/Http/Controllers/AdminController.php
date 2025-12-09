@@ -150,7 +150,7 @@ class AdminController extends Controller
             'showEmbedLink' => 'boolean',
         ]);
 
-        User::create([
+        $newUser = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
@@ -158,6 +158,18 @@ class AdminController extends Controller
             'master' => $request->has('master'),
             'showEmbedLink' => $request->has('showEmbedLink'),
         ]);
+
+        // Notifica su Telegram la creazione del nuovo utente
+        try {
+            if (env('TELEGRAM_BOT_TOKEN')) {
+                \App\Services\TelegramService::notify(
+                    'Nuovo utente',
+                    "Nome: {$newUser->name}\nEmail: {$newUser->email}\nAdmin: " . ($newUser->admin ? 'sì' : 'no')
+                );
+            }
+        } catch (\Exception $ex) {
+            \Illuminate\Support\Facades\Log::error('Impossibile inviare notifica Telegram per nuovo utente: ' . $ex->getMessage());
+        }
 
         return redirect()->route('admin.users')->with('success', 'Utente creato con successo');
     }
@@ -206,6 +218,20 @@ class AdminController extends Controller
         $user->update([
             'password' => Hash::make($validated['password']),
         ]);
+
+        // Notifica su Telegram che la password dell'utente è stata modificata
+        try {
+            if (env('TELEGRAM_BOT_TOKEN')) {
+                $actor = \Illuminate\Support\Facades\Auth::user();
+                $by = $actor ? ($actor->email ?? $actor->name) : 'sistema';
+                \App\Services\TelegramService::notify(
+                    'Password modificata',
+                    "Utente: {$user->email}\nModificata da: {$by}"
+                );
+            }
+        } catch (\Exception $ex) {
+            \Illuminate\Support\Facades\Log::error('Impossibile inviare notifica Telegram per password aggiornata: ' . $ex->getMessage());
+        }
 
         return redirect()->route('admin.users.edit', $user)->with('success', 'Password aggiornata con successo');
     }

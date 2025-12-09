@@ -54,19 +54,13 @@ return Application::configure(basePath: dirname(__DIR__))
                 Log::error("Impossibile salvare errore nel database: " . $dbException->getMessage());
             }
 
-            // 2. INVIA EMAIL A TUTTI GLI ADMIN
-            try {
-                \App\Services\EmailQueueService::queueToAdmins(
-                    new \App\Mail\ErrorNotificationEmail($e, $requestUrl, $requestMethod, $userAgent, $systemError),
-                    'Notifica errore sistema'
-                );
-            } catch (\Exception $emailException) {
-                Log::error("Impossibile inviare email errore: " . $emailException->getMessage());
-            }
-            // Fallback: se le email non sono inviate (server senza SMTP), invia notifica via Telegram se configurato
+            // 2. NOTIFICA AGLI ADMIN: usa Telegram invece delle email (le email vengono spesso scritte solo nei log)
             try {
                 if (env('TELEGRAM_BOT_TOKEN')) {
                     \App\Services\TelegramService::notifyError($e, $requestUrl);
+                } else {
+                    // Se Telegram non configurato, scrivi un warning nel log
+                    Log::warning('Telegram non configurato: TELEGRAM_BOT_TOKEN mancante, notifica errore non inviata');
                 }
             } catch (\Exception $telEx) {
                 Log::error("Impossibile inviare notifica Telegram: " . $telEx->getMessage());

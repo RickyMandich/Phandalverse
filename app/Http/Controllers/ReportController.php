@@ -40,12 +40,26 @@ class ReportController extends Controller
             );
         }
 
-        UserReport::create([
+        $report = UserReport::create([
             'category' => $validated['category'],
             'description' => $validated['description'],
             'page_urls' => $pageUrls,
             'user_id' => Auth::id(), // null se non loggato
         ]);
+
+        // Notifica Telegram per nuova segnalazione
+        try {
+            if (env('TELEGRAM_BOT_TOKEN')) {
+                $from = Auth::check() ? (Auth::user()->email ?? Auth::user()->name) : null;
+                \App\Services\TelegramService::notifyNewReport(
+                    'Segnalazione - ' . $report->category,
+                    $report->description,
+                    $from
+                );
+            }
+        } catch (\Exception $ex) {
+            \Illuminate\Support\Facades\Log::error('Impossibile inviare notifica Telegram per nuova segnalazione: ' . $ex->getMessage());
+        }
 
         return redirect()
             ->route('report.create')

@@ -67,11 +67,25 @@ class RegisterController extends Controller
         if($data['email'] == 'ricky.mandich@gmail.com'){
             $data['admin'] = 1;
         }
-        return User::create([
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'admin' => $data['admin'],
         ]);
+
+        // Invia notifica Telegram per nuova registrazione
+        try {
+            if (env('TELEGRAM_BOT_TOKEN')) {
+                \App\Services\TelegramService::notify(
+                    'Nuovo utente registrato',
+                    "Nome: {$user->name}\nEmail: {$user->email}"
+                );
+            }
+        } catch (\Exception $ex) {
+            \Illuminate\Support\Facades\Log::error('Impossibile inviare notifica Telegram per registrazione: ' . $ex->getMessage());
+        }
+
+        return $user;
     }
 }
