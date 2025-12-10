@@ -1,3 +1,4 @@
+# bash/ftp.sh
 # Itera sui file e carica ciascuno di essi (usando while read per gestire spazi nei nomi)
 find . -type f -not -path './.git/*' | while IFS= read -r file; do
     # Salta righe vuote
