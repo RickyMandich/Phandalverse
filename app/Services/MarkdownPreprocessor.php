@@ -310,23 +310,56 @@ class MarkdownPreprocessor
 
             $foundImagePath = null;
 
-            // If the exact path exists and is a file, check its extension
-            if (File::exists($candidate) && is_file($candidate)) {
-                $foundExt = strtolower(pathinfo($candidate, PATHINFO_EXTENSION));
-                if (in_array($foundExt, $imageExt)) {
-                    $foundImagePath = $content;
-                }
-            }
+            // Resolve images by searching the Vault. Support:
+            // - explicit relative paths like "Personaggi/NonGiocanti/perrin.png"
+            // - short names like "perrin.jpg" or "perrin" (search anywhere)
+            $foundImagePath = null;
 
-            // Otherwise, try appending common image extensions (allow referencing without ext)
-            if ($foundImagePath === null) {
-                foreach ($imageExt as $ext) {
-                    $try = $candidate . '.' . $ext;
-                    if (File::exists($try) && is_file($try)) {
-                        // build relative path with the appended extension
-                        $foundImagePath = $content . '.' . $ext;
-                        break;
+            // If the content contains a folder separator, try direct resolution first
+            if (strpos($content, '/') !== false || strpos($content, '\\') !== false) {
+                $candidate = $vaultBase . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $content);
+                if (File::exists($candidate) && is_file($candidate)) {
+                    $foundImagePath = str_replace($vaultBase, '', $candidate);
+                    $foundImagePath = str_replace(DIRECTORY_SEPARATOR, '/', $foundImagePath);
+                } else {
+                    // try appending common extensions
+                    foreach ($imageExt as $ext) {
+                        $try = $candidate . '.' . $ext;
+                        if (File::exists($try) && is_file($try)) {
+                            $foundImagePath = str_replace($vaultBase, '', $try);
+                            $foundImagePath = str_replace(DIRECTORY_SEPARATOR, '/', $foundImagePath);
+                            break;
+                        }
                     }
+                }
+            } else {
+                // No path component: search the whole vault for matching filename
+                try {
+                    $all = File::allFiles(base_path('Vault'));
+                    $needleName = strtolower($content);
+                    foreach ($all as $f) {
+                        $extFound = strtolower($f->getExtension());
+                        if (!in_array($extFound, $imageExt)) {
+                            continue;
+                        }
+
+                        // Exact filename match (case-insensitive)
+                        if (strtolower($f->getFilename()) === $needleName) {
+                            $foundImagePath = str_replace($vaultBase, '', $f->getPathname());
+                            $foundImagePath = str_replace(DIRECTORY_SEPARATOR, '/', $foundImagePath);
+                            break;
+                        }
+
+                        // If content has no extension, match by basename (without ext)
+                        $needleNoExt = strtolower(pathinfo($content, PATHINFO_FILENAME));
+                        if ($needleNoExt !== '' && strtolower($f->getBasename('.' . $f->getExtension())) === $needleNoExt) {
+                            $foundImagePath = str_replace($vaultBase, '', $f->getPathname());
+                            $foundImagePath = str_replace(DIRECTORY_SEPARATOR, '/', $foundImagePath);
+                            break;
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // ignore search errors and fall back
                 }
             }
 
@@ -334,10 +367,9 @@ class MarkdownPreprocessor
                 $url = '/vault/raw/' . rawurlencode($foundImagePath);
                 $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($foundImagePath) . '" class="wikilink-image">';
             } else {
-                // Not an image file on disk: fallback to previous logic
+                // fallback: if content looks like an image path/filename, emit img to raw route
                 $ext = strtolower(pathinfo($content, PATHINFO_EXTENSION));
-                if (in_array($ext, $imageExt)) {
-                    // Even if file not found on disk, keep backward-compatible behavior
+                if (in_array($ext, $imageExt) || $ext === '') {
                     $url = '/vault/raw/' . rawurlencode($content);
                     $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image">';
                 } else {
@@ -364,7 +396,9 @@ class MarkdownPreprocessor
         $text = preg_replace_callback('/#startMaster\s*(.*?)\s*#endMaster/s', function ($m) use (&$masterBlocks) {
             $idx = count($masterBlocks);
             $masterBlocks[$idx] = $m[1];
-            return "___MASTER_BLOCK_{$idx}___";
+            // Use an HTML comment placeholder so the main markdown pass won't
+            // modify the token (underscores and other chars can be mangled).
+            return "<!--MASTER_BLOCK:{$idx}-->";
         }, $text);
 
         $environment = new Environment([
@@ -386,7 +420,7 @@ class MarkdownPreprocessor
         foreach ($masterBlocks as $i => $innerMarkdown) {
             $innerHtml = $converter->convert($innerMarkdown)->getContent();
             $wrapped = '<span class="master-block">' . $innerHtml . '</span>';
-            $html = str_replace("___MASTER_BLOCK_{$i}___", $wrapped, $html);
+            $html = str_replace("<!--MASTER_BLOCK:{$i}-->", $wrapped, $html);
         }
 
         // Finally, restore embeds (placeholders -> actual embed HTML)
