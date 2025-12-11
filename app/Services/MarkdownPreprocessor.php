@@ -302,15 +302,47 @@ class MarkdownPreprocessor
     {
         foreach ($embeds as $index => $content) {
             $imageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'];
-            $ext = strtolower(pathinfo($content, PATHINFO_EXTENSION));
 
-            if (in_array($ext, $imageExt)) {
-                // Serve images/files from their raw vault path. Use rawurlencode
-                // so slashes are encoded and can be safely sent as a single route segment.
-                $url = '/vault/raw/' . rawurlencode($content);
-                $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image">';
+            // Prefer to resolve the embed target on disk inside Vault.
+            // This allows embeds to point to images placed anywhere in the Vault.
+            $vaultBase = base_path('Vault') . DIRECTORY_SEPARATOR;
+            $candidate = $vaultBase . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $content);
+
+            $foundImagePath = null;
+
+            // If the exact path exists and is a file, check its extension
+            if (File::exists($candidate) && is_file($candidate)) {
+                $foundExt = strtolower(pathinfo($candidate, PATHINFO_EXTENSION));
+                if (in_array($foundExt, $imageExt)) {
+                    $foundImagePath = $content;
+                }
+            }
+
+            // Otherwise, try appending common image extensions (allow referencing without ext)
+            if ($foundImagePath === null) {
+                foreach ($imageExt as $ext) {
+                    $try = $candidate . '.' . $ext;
+                    if (File::exists($try) && is_file($try)) {
+                        // build relative path with the appended extension
+                        $foundImagePath = $content . '.' . $ext;
+                        break;
+                    }
+                }
+            }
+
+            if ($foundImagePath !== null) {
+                $url = '/vault/raw/' . rawurlencode($foundImagePath);
+                $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($foundImagePath) . '" class="wikilink-image">';
             } else {
-                $replacement = self::loadEmbedContent($content);
+                // Not an image file on disk: fallback to previous logic
+                $ext = strtolower(pathinfo($content, PATHINFO_EXTENSION));
+                if (in_array($ext, $imageExt)) {
+                    // Even if file not found on disk, keep backward-compatible behavior
+                    $url = '/vault/raw/' . rawurlencode($content);
+                    $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image">';
+                } else {
+                    $replacement = self::loadEmbedContent($content);
+                }
             }
 
             $html = str_replace('<!--EMBED:' . $index . '-->', $replacement, $html);
