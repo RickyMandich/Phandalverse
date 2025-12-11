@@ -107,29 +107,27 @@ class MarkdownPreprocessor
      */
     public static function stripMasterMarkers(string $text): string
     {
-        // Sostituisce i marcatori #startMaster ... #endMaster con un wrapper HTML
-        // che evidenzia il contenuto per i master (sfondo viola chiaro).
-        // Usa preg_replace_callback per mantenere il contenuto intatto.
-        $pattern = '/#startMaster\s*(.*?)\s*#endMaster/s';
+        // Replace master markers with HTML comments so the inner markdown
+        // is still processed by the markdown converter. We'll wrap the
+        // final converted HTML after conversion.
+        $text = preg_replace('/#startMaster\s*/i', '<!--MASTER_START-->', $text);
+        $text = preg_replace('/\s*#endMaster\s*/i', '<!--MASTER_END-->', $text);
+        return $text;
+    }
 
-        $replaced = preg_replace_callback($pattern, function ($m) {
+    /**
+     * After markdown conversion, replace MASTER comment markers with a wrapper
+     * so the resulting HTML is highlighted for masters while still allowing
+     * markdown inside the section to be rendered normally.
+     */
+    public static function wrapMasterBlocksInHtml(string $html): string
+    {
+        // Replace <!--MASTER_START--> ... <!--MASTER_END--> with a wrapper
+        $pattern = '/<!--MASTER_START-->(.*?)<!--MASTER_END-->/is';
+        return preg_replace_callback($pattern, function ($m) {
             $inner = $m[1];
-            $escapedInner = $inner; // non eseguiamo escaping perché l'HTML verrà processato dal markdown converter (html_input => allow)
-
-            // Wrapper con classe (stile gestito dalle view/CSS)
-            $wrapper = "<span class=\"master-block\">" . $escapedInner . "</span>";
-            return $wrapper;
-        }, $text);
-
-        // Se non ci sono match, restituisci il testo originale rimuovendo comunque eventuali marcatori isolati
-        if ($replaced === null) {
-            // preg_replace_callback può tornare null in caso di errore regex; fallback semplice
-            $text = str_replace('#startMaster', '', $text);
-            $text = str_replace('#endMaster', '', $text);
-            return $text;
-        }
-
-        return $replaced;
+            return '<span class="master-block">' . $inner . '</span>';
+        }, $html);
     }
 
     /**
@@ -307,7 +305,9 @@ class MarkdownPreprocessor
             $ext = strtolower(pathinfo($content, PATHINFO_EXTENSION));
 
             if (in_array($ext, $imageExt)) {
-                $url = '/vault/images/' . rawurlencode($content);
+                // Serve images/files from their raw vault path. Use rawurlencode
+                // so slashes are encoded and can be safely sent as a single route segment.
+                $url = '/vault/raw/' . rawurlencode($content);
                 $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image">';
             } else {
                 $replacement = self::loadEmbedContent($content);
@@ -324,6 +324,16 @@ class MarkdownPreprocessor
         $text = self::replaceEmbedsWithPlaceholders($text, $embeds);
         $text = self::convertTags($text);
         $text = self::convertWikilinks($text);
+        // Extract master sections and replace them with placeholders so we can
+        // convert the surrounding markdown as a whole, then convert each
+        // master section separately to ensure inner markdown (headings, lists,
+        // etc.) is rendered correctly.
+        $masterBlocks = [];
+        $text = preg_replace_callback('/#startMaster\s*(.*?)\s*#endMaster/s', function ($m) use (&$masterBlocks) {
+            $idx = count($masterBlocks);
+            $masterBlocks[$idx] = $m[1];
+            return "___MASTER_BLOCK_{$idx}___";
+        }, $text);
 
         $environment = new Environment([
             'renderer' => ['soft_break' => "<br />"],
@@ -336,8 +346,18 @@ class MarkdownPreprocessor
         $environment->addExtension(new StrikethroughExtension());
 
         $converter = new MarkdownConverter($environment);
+
+        // Convert the main text (with master placeholders)
         $html = $converter->convert($text)->getContent();
 
+        // Convert each master block separately and insert the rendered HTML
+        foreach ($masterBlocks as $i => $innerMarkdown) {
+            $innerHtml = $converter->convert($innerMarkdown)->getContent();
+            $wrapped = '<span class="master-block">' . $innerHtml . '</span>';
+            $html = str_replace("___MASTER_BLOCK_{$i}___", $wrapped, $html);
+        }
+
+        // Finally, restore embeds (placeholders -> actual embed HTML)
         $html = self::restoreEmbeds($html, $embeds);
 
         return $html;

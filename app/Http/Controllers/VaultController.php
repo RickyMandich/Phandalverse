@@ -388,6 +388,17 @@ class VaultController extends Controller
 
     public function show(Request $request, $note = null)
     {
+        // Special case: serve raw files from the Vault via /vault/raw/<encoded-path>
+        // The <encoded-path> is rawurlencoded and may contain subfolders, e.g. Vault/Personaggi/Img.png
+        if ($note !== null && preg_match('#^raw/(.+)$#', $note, $m)) {
+            $enc = $m[1];
+            $rel = rawurldecode($enc);
+            $filePath = base_path('Vault' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel));
+            if (!File::exists($filePath)) {
+                abort(404, 'File non trovato');
+            }
+            return response()->file($filePath);
+        }
         // Se non viene passato il parametro note, mostra la home del vault
         // con pannello laterale (albero) e vista a grafo nella stessa pagina.
         if ($note === null || $note === '') {
@@ -451,14 +462,20 @@ class VaultController extends Controller
         CustomLogger::note($note, "Contenuto ORIGINALE dal file: " . $content);
 
         CustomLogger::note($note, "ora controllo se è il master: ".Auth::isMaster()."(master=".Auth::getMaster().") e l'utente è ".Auth::getName());
-        // Gestione blocchi master
+        // Gestione blocchi master e DM
+        // If file is DM-only and user is not master, act as if file doesn't exist
+        if (!Auth::isMaster() && preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
+            CustomLogger::note($note, "Accesso negato: file DM per non-master");
+            abort(404, 'Nota non trovata');
+        }
+
         if(!Auth::isMaster()) {
             CustomLogger::note($note, "Filtro i blocchi master");
             $content = MarkdownPreprocessor::filterMasterBlocks($content);
-        }else{
+        } else {
             CustomLogger::note($note, "Mostro i blocchi master");
-            $content = MarkdownPreprocessor::stripMasterMarkers($content);
-            // Rimuovi anche il marker #dm per i master (se presente)
+            // Non rimuoviamo qui i marker: il renderizer li gestirà correttamente.
+            // Rimuovi solo il marker #dm per i master (se presente)
             $content = MarkdownPreprocessor::stripDmMarker($content);
         }
 
