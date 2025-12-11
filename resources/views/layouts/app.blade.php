@@ -22,12 +22,6 @@
 </head>
 
 <style>
-    .bg-custom-light{
-        background-color: #555555 !important;
-    }
-    /* nav{
-        z-index: 1021;
-    } */
     a{
         text-decoration: none;
         color: inherit;
@@ -37,7 +31,7 @@
 @yield('style')
 <body>
     <div id="app" class="d-flex flex-column">
-        <nav class="navbar navbar-expand-md shadow-sm bg-custom-light">
+        <nav class="navbar navbar-expand-md shadow-sm bg-secondary">
             <div class="container">
                 <a class="navbar-brand" href="{{ url('/') }}">
                     {{ config('app.name', 'Laravel') }}
@@ -126,7 +120,7 @@
             </div>
         </main>
 
-        <footer class="bg-custom-light pt-2">
+        <footer class="bg-secondary pt-2">
             <div class="container">
                 <div class="row">
                     <div class="col-12 text-center">

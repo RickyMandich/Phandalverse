@@ -2,7 +2,7 @@
     // $tree expected
     $tree = $tree ?? [];
 @endphp
-<aside class="vault-sidebar bg-custom-light" id="vault-sidebar">
+<aside class="vault-sidebar bg-secondary" id="vault-sidebar">
     <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle Sidebar">
         <span id="toggle-icon">◀</span>
     </button>
