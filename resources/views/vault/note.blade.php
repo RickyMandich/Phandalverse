@@ -5,10 +5,8 @@
     /* Stile per blocchi master resi visibili solo a chi li può vedere */
     .master-block {
         /* background-color: #f3e8ff; */
-        border-left: 4px solid #8a2be2;
-        padding: 0.5rem;
+        border: 4px solid #8a2be2;
         border-radius: 4px;
-        margin: 0.5rem 0;
     }
 
     .master-block .master-block-content {
