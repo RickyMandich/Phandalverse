@@ -35,7 +35,10 @@
                 }
             @endphp
 
-            {!! renderTreeIndexPartial($tree) !!}
+            {{-- {!! renderTreeIndexPartial($tree) !!} --}}
+        </div>
+        <div class="legenda">
+
         </div>
     </div>
 
