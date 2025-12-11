@@ -364,13 +364,15 @@ class MarkdownPreprocessor
             }
 
             if ($foundImagePath !== null) {
-                $url = '/vault/raw/' . rawurlencode($foundImagePath);
+                // Use the /vault/<encoded-path> URL so the file appears under the
+                // same /vault namespace (not under /vault/raw).
+                $url = '/vault/' . rawurlencode($foundImagePath);
                 $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($foundImagePath) . '" class="wikilink-image">';
             } else {
-                // fallback: if content looks like an image path/filename, emit img to raw route
+                // fallback: if content looks like an image path/filename, emit img to vault route
                 $ext = strtolower(pathinfo($content, PATHINFO_EXTENSION));
                 if (in_array($ext, $imageExt) || $ext === '') {
-                    $url = '/vault/raw/' . rawurlencode($content);
+                    $url = '/vault/' . rawurlencode($content);
                     $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image">';
                 } else {
                     $replacement = self::loadEmbedContent($content);

@@ -388,16 +388,15 @@ class VaultController extends Controller
 
     public function show(Request $request, $note = null)
     {
-        // Special case: serve raw files from the Vault via /vault/raw/<encoded-path>
-        // The <encoded-path> is rawurlencoded and may contain subfolders, e.g. Vault/Personaggi/Img.png
-        if ($note !== null && preg_match('#^raw/(.+)$#', $note, $m)) {
-            $enc = $m[1];
-            $rel = rawurldecode($enc);
-            $filePath = base_path('Vault' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel));
-            if (!File::exists($filePath)) {
-                abort(404, 'File non trovato');
+        // If the requested note segment decodes to an existing file inside Vault,
+        // serve it directly (this allows image embeds to point to /vault/<encoded-path>). 
+        if ($note !== null) {
+            // decode the segment and normalize separators
+            $decoded = rawurldecode($note);
+            $candidate = base_path('Vault' . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $decoded));
+            if (File::exists($candidate) && is_file($candidate)) {
+                return response()->file($candidate);
             }
-            return response()->file($filePath);
         }
         // Se non viene passato il parametro note, mostra la home del vault
         // con pannello laterale (albero) e vista a grafo nella stessa pagina.
