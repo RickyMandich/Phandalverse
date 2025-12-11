@@ -5,6 +5,12 @@ function uploadFilesFromCommit() {
         # Salta righe vuote
         [ -z "$file" ] && continue
 
+        # Salta file dentro cartelle escluse
+        if [[ "$file" == node_modules/* || "$file" == vendor/* ]]; then
+            echo "Skipping $file (excluded directory)"
+            continue
+        fi
+
         # Costruisci il percorso FTP per il file
         local relativePath=$(dirname "$file")
         local fileName=$(basename "$file")

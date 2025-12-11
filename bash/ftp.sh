@@ -1,6 +1,6 @@
 # bash/ftp.sh
 # Itera sui file e carica ciascuno di essi (usando while read per gestire spazi nei nomi)
-find . -type f -not -path './.git/*' | while IFS= read -r file; do
+find . -type f -not -path './.git/*' -not -path './node_modules/*' -not -path './vendor/*' | while IFS= read -r file; do
     # Salta righe vuote
     [ -z "$file" ] && continue
 

@@ -1,0 +1,6 @@
+@use "bootstrap/scss/bootstrap" as *;
+
+.wikilink {
+    @extend .text-muted;
+    @extend .text-uppercase;
+}
