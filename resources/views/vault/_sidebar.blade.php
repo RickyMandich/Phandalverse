@@ -35,9 +35,10 @@
                 }
             @endphp
 
-            {{-- {!! renderTreeIndexPartial($tree) !!} --}}
+            {!! renderTreeIndexPartial($tree) !!}
         </div>
         <div class="legenda">
+            <h5 class="text-warning mb-3">📚 Vault</h5>
 
         </div>
     </div>
