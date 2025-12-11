@@ -3,4 +3,8 @@
 .wikilink {
     @extend .text-muted;
     @extend .text-uppercase;
+    @extend .border;
+    @extend .border-info;
+    @extend .bg-secondary;
+    @extend .rounded;
 }
