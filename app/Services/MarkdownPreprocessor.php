@@ -70,6 +70,11 @@ class MarkdownPreprocessor
      */
     public static function filterMasterBlocks(string $text): string
     {
+        // If the file is marked as DM-only, hide the entire file for non-master users
+        if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $text)) {
+            return '';
+        }
+
         $start = '#startMaster';
         $end   = '#endMaster';
 
@@ -113,6 +118,14 @@ class MarkdownPreprocessor
         }
 
         return $replaced;
+    }
+
+    /**
+     * Remove the #dm marker so masters don't see the tag in the rendered output
+     */
+    public static function stripDmMarker(string $text): string
+    {
+        return preg_replace('/(?<=^|\s)#dm(?=\s|$)/i', '', $text);
     }
 
     public static function convertTags(string $text): string
