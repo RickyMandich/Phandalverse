@@ -14,7 +14,7 @@
     }
 
     /* Piccola etichetta opzionale a lato (non invasiva) */
-    .master-block::before {
+    /* .master-block::before {
         content: "MASTER";
         display: inline-block;
         font-size: 0.75rem;
@@ -23,7 +23,7 @@
         margin-right: 0.6rem;
         vertical-align: middle;
         opacity: 0.9;
-    }
+    } */
 </style>
 @endsection
 @section('content')

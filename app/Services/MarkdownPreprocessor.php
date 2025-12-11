@@ -100,8 +100,8 @@ class MarkdownPreprocessor
             $escapedInner = $inner; // non eseguiamo escaping perché l'HTML verrà processato dal markdown converter (html_input => allow)
 
             // Wrapper con classe (stile gestito dalle view/CSS)
-            $wrapper = "<div class=\"master-block\">";
-            $wrapper .= "<div class=\"master-block-content\">" . $escapedInner . "</div></div>";
+            $wrapper = "<span class=\"master-block\">";
+            $wrapper .= "<span class=\"master-block-content\">" . $escapedInner . "</span></span>";
             return $wrapper;
         }, $text);
 
