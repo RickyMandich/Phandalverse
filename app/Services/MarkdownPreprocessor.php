@@ -90,11 +90,30 @@ class MarkdownPreprocessor
      */
     public static function stripMasterMarkers(string $text): string
     {
-        Log::info("stripMasterMarkers chiamato con: " . $text);
-        $text = str_replace('#startMaster', '', $text);
-        $text = str_replace('#endMaster', '', $text);
-        Log::info("stripMasterMarkers ritorna: " . $text);
-        return $text;
+        // Sostituisce i marcatori #startMaster ... #endMaster con un wrapper HTML
+        // che evidenzia il contenuto per i master (sfondo viola chiaro).
+        // Usa preg_replace_callback per mantenere il contenuto intatto.
+        $pattern = '/#startMaster\s*(.*?)\s*#endMaster/s';
+
+        $replaced = preg_replace_callback($pattern, function ($m) {
+            $inner = $m[1];
+            $escapedInner = $inner; // non eseguiamo escaping perché l'HTML verrà processato dal markdown converter (html_input => allow)
+
+            // Wrapper con classe (stile gestito dalle view/CSS)
+            $wrapper = "<div class=\"master-block\">";
+            $wrapper .= "<div class=\"master-block-content\">" . $escapedInner . "</div></div>";
+            return $wrapper;
+        }, $text);
+
+        // Se non ci sono match, restituisci il testo originale rimuovendo comunque eventuali marcatori isolati
+        if ($replaced === null) {
+            // preg_replace_callback può tornare null in caso di errore regex; fallback semplice
+            $text = str_replace('#startMaster', '', $text);
+            $text = str_replace('#endMaster', '', $text);
+            return $text;
+        }
+
+        return $replaced;
     }
 
     public static function convertTags(string $text): string
