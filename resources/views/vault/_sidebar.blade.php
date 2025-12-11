@@ -38,9 +38,9 @@
             {!! renderTreeIndexPartial($tree) !!}
         </div>
         <h5 class="text-warning mb-3">📣 Legenda</h5>
-        <div class="legenda vault-tree">
+        <div class="legenda vault-tree bg-secondary-subtle p-2 rounded">
             <ul>
-                <li class="master-block border border-info bg-custom-light wikilink">esclusivo master</li>
+                <li class="master-block border border-info bg-secondary wikilink">esclusivo master</li>
             </ul>
         </div>
     </div>
