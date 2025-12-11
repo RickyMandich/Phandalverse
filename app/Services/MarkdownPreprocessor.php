@@ -364,15 +364,20 @@ class MarkdownPreprocessor
             }
 
             if ($foundImagePath !== null) {
-                // Use the /vault/<encoded-path> URL so the file appears under the
-                // same /vault namespace (not under /vault/raw).
-                $url = '/vault/' . rawurlencode($foundImagePath);
+                // Encode each path segment separately (do not encode slashes)
+                $segments = explode('/', $foundImagePath);
+                $enc = implode('/', array_map('rawurlencode', $segments));
+                $url = '/vault/' . $enc;
                 $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($foundImagePath) . '" class="wikilink-image">';
             } else {
+                // Log that we couldn't resolve the embed to an image in the Vault
+                Log::warning('Embed image not found in Vault: ' . $content);
                 // fallback: if content looks like an image path/filename, emit img to vault route
                 $ext = strtolower(pathinfo($content, PATHINFO_EXTENSION));
                 if (in_array($ext, $imageExt) || $ext === '') {
-                    $url = '/vault/' . rawurlencode($content);
+                    $segments = explode('/', $content);
+                    $enc = implode('/', array_map('rawurlencode', $segments));
+                    $url = '/vault/' . $enc;
                     $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image">';
                 } else {
                     $replacement = self::loadEmbedContent($content);

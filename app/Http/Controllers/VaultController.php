@@ -393,9 +393,22 @@ class VaultController extends Controller
         if ($note !== null) {
             // decode the segment and normalize separators
             $decoded = rawurldecode($note);
+            // security: block attempts to escape the vault
+            if (strpos($decoded, '..') !== false) {
+                abort(404);
+            }
+            $decoded = ltrim($decoded, '/\\');
             $candidate = base_path('Vault' . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $decoded));
             if (File::exists($candidate) && is_file($candidate)) {
                 return response()->file($candidate);
+            } else {
+                // If the decoded segment looks like an image path/name but the file
+                // does not exist, log a warning to aid debugging.
+                $ext = strtolower(pathinfo($decoded, PATHINFO_EXTENSION));
+                $imageExt = ['png','jpg','jpeg','gif','webp','svg','bmp'];
+                if (in_array($ext, $imageExt) || $ext === '') {
+                    Log::warning('Requested vault file not found: ' . $candidate . ' (decoded from: ' . $note . ')');
+                }
             }
         }
         // Se non viene passato il parametro note, mostra la home del vault
