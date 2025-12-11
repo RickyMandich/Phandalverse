@@ -368,7 +368,7 @@ class MarkdownPreprocessor
                 $segments = explode('/', $foundImagePath);
                 $enc = implode('/', array_map('rawurlencode', $segments));
                 $url = '/vault/' . $enc;
-                $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($foundImagePath) . '" class="wikilink-image">';
+                $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($foundImagePath) . '" class="wikilink-image" style="max-width: 100%; height: auto;">';
             } else {
                 // Log that we couldn't resolve the embed to an image in the Vault
                 Log::warning('Embed image not found in Vault: ' . $content);
@@ -378,7 +378,7 @@ class MarkdownPreprocessor
                     $segments = explode('/', $content);
                     $enc = implode('/', array_map('rawurlencode', $segments));
                     $url = '/vault/' . $enc;
-                    $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image">';
+                    $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image" style="max-width: 100%; height: auto;">';
                 } else {
                     $replacement = self::loadEmbedContent($content);
                 }
