@@ -1,10 +1,12 @@
 @extends('layouts.app')
 @section('title', $title)
 @section('style')
+<style>
     .wikilink {
         @extend .text-muted;
         @extend .text-uppercase;
     }
+</style>
 @endsection
 @section('content')
 <div class="vault-layout d-flex">
