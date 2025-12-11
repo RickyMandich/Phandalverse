@@ -139,7 +139,7 @@ class MarkdownPreprocessor
                 // Converti il path in camelCase per l'URL
                 $camelPath = VaultController::pathToCamelCase($path);
                 $url = '/vault/' . $camelPath;
-                return '<a href="' . $url . '" class="wikilink text-muted text-uppercase">' . htmlspecialchars($label) . '</a>';
+                return '<a href="' . $url . '" class="wikilink">' . htmlspecialchars($label) . '</a>';
             },
             $text
         );
