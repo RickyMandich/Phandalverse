@@ -3,6 +3,9 @@
 .wikilink {
     @extend .text-muted;
     @extend .text-uppercase;
+}
+
+.master-block{
     @extend .border;
     @extend .border-info;
     @extend .bg-secondary;
