@@ -1,5 +1,11 @@
 @extends('layouts.app')
 @section('title', $title)
+@section('style')
+    .wikilink {
+        @extend .text-muted;
+        @extend .text-uppercase;
+    }
+@endsection
 @section('content')
 <div class="vault-layout d-flex">
     @include('vault._sidebar', ['tree' => $tree ?? []])
