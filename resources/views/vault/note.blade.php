@@ -3,15 +3,11 @@
 @section('style')
 <style>
     /* Stile per blocchi master resi visibili solo a chi li può vedere */
-    .master-block {
-        /* background-color: #f3e8ff; */
+    /* .master-block {
+        background-color: #f3e8ff;
         border: 4px solid #8a2be2;
         border-radius: 4px;
-    }
-
-    .master-block .master-block-content {
-        color: inherit;
-    }
+    } */
 
     /* Piccola etichetta opzionale a lato (non invasiva) */
     /* .master-block::before {
