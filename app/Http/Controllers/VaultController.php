@@ -180,6 +180,20 @@ class VaultController extends Controller
                 continue;
             }
 
+            // If user is not master, skip files marked with #dm so they appear nonexistent
+            if (!\Illuminate\Support\Facades\Auth::check() || !\Illuminate\Support\Facades\Auth::isMaster()) {
+                try {
+                    $contentPreview = File::get($file->getPathname());
+                    if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $contentPreview)) {
+                        // skip this file completely for non-master users
+                        continue;
+                    }
+                } catch (\Throwable $e) {
+                    // if file can't be read, skip it to avoid breaking the tree
+                    continue;
+                }
+            }
+
             $relativePath = str_replace('\\', '/', $file->getRelativePath());
             $name = $file->getFilenameWithoutExtension();
 

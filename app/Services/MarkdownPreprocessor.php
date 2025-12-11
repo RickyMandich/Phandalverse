@@ -31,6 +31,18 @@ class MarkdownPreprocessor
 
         foreach ($files as $file) {
             if ($file->getExtension() === 'md') {
+                // If user is not master, skip files that are DM-only so they are not discoverable
+                if (!\Illuminate\Support\Facades\Auth::check() || !\Illuminate\Support\Facades\Auth::isMaster()) {
+                    try {
+                        $fileContent = File::get($file->getPathname());
+                        if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $fileContent)) {
+                            continue;
+                        }
+                    } catch (\Throwable $e) {
+                        // If cannot read file, skip it
+                        continue;
+                    }
+                }
                 $name = $file->getFilenameWithoutExtension();
                 $relativePath = str_replace('\\', '/', $file->getRelativePath());
 
