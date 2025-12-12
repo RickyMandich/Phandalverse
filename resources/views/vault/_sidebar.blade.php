@@ -41,6 +41,7 @@
         <div class="legenda vault-tree bg-secondary-subtle p-2 pe-4 pb-4 pt-4 rounded">
             <ul>
                 <li class="master-block wikilink">esclusivo master</li>
+                <li class="wikilink">collegamenti ad altre pagine</li>
             </ul>
         </div>
     </div>
