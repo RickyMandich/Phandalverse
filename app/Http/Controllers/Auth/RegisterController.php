@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class RegisterController extends Controller
@@ -78,8 +79,10 @@ class RegisterController extends Controller
         ]);
 
         // Genera la password con il nuovo formato e aggiungi il prefisso
-        $newHash = Hash::make($data['password'] . env('APP_KEY', '42') . "#$user->id");
+        $personalSalt = env('APP_KEY', '42') . "#$user->id";
+        $newHash = Hash::make($data['password'] . $personalSalt);
         $user->password = CustomUserProvider::NEW_HASH_PREFIX . $newHash;
+        Log::info("Password utente {$user->email} aggiornata al nuovo formato di hashing (hisPassword$personalSalt).");
         $user->save();
 
         // Invia notifica Telegram per nuova registrazione
@@ -91,7 +94,7 @@ class RegisterController extends Controller
                 );
             }
         } catch (\Exception $ex) {
-            \Illuminate\Support\Facades\Log::error('Impossibile inviare notifica Telegram per registrazione: ' . $ex->getMessage());
+            Log::error('Impossibile inviare notifica Telegram per registrazione: ' . $ex->getMessage());
         }
 
         return $user;
