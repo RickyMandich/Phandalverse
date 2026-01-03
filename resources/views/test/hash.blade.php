@@ -36,7 +36,7 @@
             </div>
         </div>
         <form action="{{ route('test.hash') }}">
-            <button type="submit" class="btn btn-primary">Test Hash</button>
+            <button type="submit" class="btn btn-primary">Reset Test</button>
         </form>
     @elseif ($mode == 'toHash')
         <div class="row">
@@ -45,12 +45,12 @@
                 <pre class="form-control">{{ $toHash }}</pre>
             </div>
             <div class="col-6">
-                <span>Hashed:</span>
+                <span>risultato atteso:</span>
                 <pre class="form-control">{{ $newHash }}</pre>
             </div>
         </div>
         <form action="{{ route('test.hash') }}">
-            <button type="submit" class="btn btn-primary">Test Hash</button>
+            <button type="submit" class="btn btn-primary">Reset Test</button>
         </form>
     @else
         <div class="row">
