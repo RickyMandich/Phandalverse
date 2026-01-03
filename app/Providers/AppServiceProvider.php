@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -48,6 +49,10 @@ class AppServiceProvider extends ServiceProvider
                 // Fine normale
                 Log::channel('single')->info("◀◀◀ EXECUTION_END [{$this->getExecutionId()}]");
             }
+        });
+
+        Auth::provider('custom', function ($app, array $config) {
+            return new \App\Auth\CustomUserProvider($app['hash'], $config['model']);
         });
     }
 

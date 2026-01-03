@@ -67,12 +67,18 @@ class RegisterController extends Controller
         if($data['email'] == 'ricky.mandich@gmail.com'){
             $data['admin'] = 1;
         }
+
+        // Crea l'utente con una password temporanea
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'password' => Hash::make('temp_' . $data['password']), // temporaneo
             'admin' => $data['admin'],
         ]);
+
+        // Aggiorna con la password definitiva usando l'ID reale
+        $user->password = Hash::make($data['password'] . env('APP_KEY', '42') . "#$user->id");
+        $user->save();
 
         // Invia notifica Telegram per nuova registrazione
         try {
