@@ -80,8 +80,8 @@ class RegisterController extends Controller
 
         // Genera la password con il nuovo formato e aggiungi il prefisso
         $personalSalt = env('APP_KEY', '42') . "#$user->id";
-        $newHash = Hash::make($data['password'] . $personalSalt);
-        $user->password = CustomUserProvider::NEW_HASH_PREFIX . $newHash;
+        $newHash = CustomUserProvider::NEW_HASH_PREFIX . Hash::make($data['password'] . $personalSalt);
+        $user->password = $newHash;
         Log::info("Password utente {$user->email} aggiornata al nuovo formato di hashing (`hisPassword`$personalSalt)=>{$newHash}");
         $user->save();
 
