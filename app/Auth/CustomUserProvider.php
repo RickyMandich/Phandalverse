@@ -26,10 +26,13 @@ class CustomUserProvider extends EloquentUserProvider
             
             return Hash::check($customPassword, $actualHash);
         }
+
+        \Illuminate\Support\Facades\Log::info("Utente ID {$user->getAuthIdentifier()} sta usando il vecchio formato di password.");
         
         // Vecchio formato: valida normalmente
         if (Hash::check($plain, $storedPassword)) {
             // Password corretta! Aggiorna al nuovo formato
+            \Illuminate\Support\Facades\Log::info("Password corretta! Aggiorna al nuovo formato");
             $this->upgradePassword($user, $plain);
             return true;
         }
@@ -42,6 +45,7 @@ class CustomUserProvider extends EloquentUserProvider
      */
     protected function upgradePassword(Authenticatable $user, string $plainPassword)
     {
+        \Illuminate\Support\Facades\Log::info("Aggiornamento password utente ID {$user->getAuthIdentifier()} al nuovo formato.");
         $newHash = Hash::make($plainPassword . env('APP_KEY', '42') . "#{$user->getAuthIdentifier()}");
         
         // Aggiungi il prefisso per identificare il nuovo formato
