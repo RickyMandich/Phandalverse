@@ -11,7 +11,12 @@ class TestController extends Controller
     {
         if($request->has('hashed')){
             $newHash = Hash::make($request->input('plain'));
-            return view('test.hash', ['newHash' => $newHash, 'plain' => $request->input('plain'), 'hashed' => $request->input('hashed'), 'match' => Hash::check($request->input('plain'), $request->input('hashed')), 'mode' => 'hashed']);
+            return view('test.hash', [
+                'newHash' => $newHash,
+                'plain' => $request->input('plain'),
+                'hashed' => $request->input('hashed'),
+                'match' => $request->input('plain') === $request->input('hashed'),
+                'mode' => 'hashed']);
         }else if($request->has('toHash')){
             $newHash = Hash::make($request->input('toHash'));
             return view('test.hash', ['newHash' => $newHash, 'toHash' => $request->input('toHash'), 'mode' => 'toHash']);
