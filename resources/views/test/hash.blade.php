@@ -50,7 +50,7 @@
     @else
         <div class="row">
             <div class="col-6">
-                <form action="{{ route('test.hash') }}">
+                <form action="{{ route('test.hash') }}" class="border border-primary">
                     <div class="mb-3">
                         <label for="plain" class="form-label">testo in chiaro</label>
                         <input type="text" class="form-control" id="plain" name="plain" required>
