@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Hash;
 
 class CustomUserProvider extends EloquentUserProvider
 {
-    const NEW_HASH_PREFIX = '§'; // Carattere speciale per identificare il nuovo formato
+    const NEW_HASH_PREFIX = '$my'; // Carattere speciale per identificare il nuovo formato
     
     /**
      * Validate a user against the given credentials.
