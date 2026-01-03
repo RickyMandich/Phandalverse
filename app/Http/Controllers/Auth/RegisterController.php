@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Auth\CustomUserProvider;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Foundation\Auth\RegistersUsers;
@@ -76,8 +77,9 @@ class RegisterController extends Controller
             'admin' => $data['admin'],
         ]);
 
-        // Aggiorna con la password definitiva usando l'ID reale
-        $user->password = Hash::make($data['password'] . env('APP_KEY', '42') . "#$user->id");
+        // Genera la password con il nuovo formato e aggiungi il prefisso
+        $newHash = Hash::make($data['password'] . env('APP_KEY', '42') . "#$user->id");
+        $user->password = CustomUserProvider::NEW_HASH_PREFIX . $newHash;
         $user->save();
 
         // Invia notifica Telegram per nuova registrazione
