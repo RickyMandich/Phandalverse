@@ -32,7 +32,12 @@ class CustomUserProvider extends EloquentUserProvider
         // Vecchio formato: valida normalmente
         if (Hash::check($plain, $storedPassword)) {
             // Password corretta! Aggiorna al nuovo formato
-            \Illuminate\Support\Facades\Log::info("Password corretta! Aggiorna al nuovo formato");
+            \Illuminate\Support\Facades\Log::info("Password corretta! sto per aggiornare al nuovo formato");
+            $this->upgradePassword($user, $plain);
+            return true;
+        }else if(Hash::check($plain . env('APP_KEY', '42') . "#{$user->getAuthIdentifier()}", $storedPassword)){
+            // Password aggiornata senza prefisso
+            \Illuminate\Support\Facades\Log::info("Password aggiornata senza prefisso! Aggiungi il prefisso per identificare il nuovo formato");
             $this->upgradePassword($user, $plain);
             return true;
         }
@@ -51,5 +56,7 @@ class CustomUserProvider extends EloquentUserProvider
         // Aggiungi il prefisso per identificare il nuovo formato
         $user->password = self::NEW_HASH_PREFIX . $newHash;
         $user->save();
+
+        \Illuminate\Support\Facades\Log::info("Password utente ID {$user->getAuthIdentifier()} aggiornata con successo.");
     }
 }
