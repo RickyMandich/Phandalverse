@@ -5,7 +5,7 @@ use App\Http\Controllers\LogsController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\ReportController;
-
+use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -69,3 +69,5 @@ Route::get("/job/ProcessEmailQueue", [JobController::class, 'processEmailQueue']
 Route::fallback(function () {
     return view('errors.404');
 });
+
+Route::get('/test-hash', [TestController::class, 'testHash'])->name('test.hash');
