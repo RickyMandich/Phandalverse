@@ -35,7 +35,7 @@
                 }
             @endphp
 
-            {!! renderTreeIndexPartial($tree) !!}
+            {{-- {!! renderTreeIndexPartial($tree) !!} --}}
         </div>
         <h5 class="text-warning mb-3">📣 Legenda</h5>
         <div class="legenda vault-tree bg-secondary-subtle p-2 pe-4 pb-4 pt-4 rounded">

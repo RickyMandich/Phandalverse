@@ -464,6 +464,9 @@ class VaultController extends Controller
 
         $path = base_path("Vault/" . $realPath . ".md");
 
+        $realPath = preg_split('#[\\\\/]#', $realPath);
+
+
         CustomLogger::note($note, "cerco la nota: $path");
         if (!File::exists($path)) {
             CustomLogger::note($note, "Nota non trovata: $path", 'error');
@@ -509,6 +512,7 @@ class VaultController extends Controller
             'title' => $title,
             'html'  => $html,
             'tree' => $tree,
+            'path' => $realPath,
             'graphConfig' => $graphConfig,
         ]);
     }
