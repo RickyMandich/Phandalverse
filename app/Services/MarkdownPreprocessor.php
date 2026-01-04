@@ -370,16 +370,17 @@ class MarkdownPreprocessor
                 $url = '/vault/' . $enc;
                 $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($foundImagePath) . '" class="wikilink-image" style="max-width: 100%; height: auto;">';
             } else {
-                // Log that we couldn't resolve the embed to an image in the Vault
-                Log::warning('Embed image not found in Vault: ' . $content);
-                // fallback: if content looks like an image path/filename, emit img to vault route
+                // Check if it has an explicit image extension
                 $ext = strtolower(pathinfo($content, PATHINFO_EXTENSION));
-                if (in_array($ext, $imageExt) || $ext === '') {
+                if (in_array($ext, $imageExt)) {
+                    // Has image extension but not found → render as broken image
+                    Log::warning('Embed image not found in Vault: ' . $content);
                     $segments = explode('/', $content);
                     $enc = implode('/', array_map('rawurlencode', $segments));
                     $url = '/vault/' . $enc;
                     $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image" style="max-width: 100%; height: auto;">';
                 } else {
+                    // No extension or non-image extension → try as note embed
                     $replacement = self::loadEmbedContent($content);
                 }
             }
