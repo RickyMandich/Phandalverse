@@ -1,6 +1,7 @@
 @php
-    // $tree expected
+    // $tree expected, $path is the current note path array (e.g. ["Personaggi", "Giocanti", "Vargas (Paladino Nano, 65)"])
     $tree = $tree ?? [];
+    $currentPath = $path ?? [];
 @endphp
 <aside class="vault-sidebar bg-secondary" id="vault-sidebar">
     <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle Sidebar">
@@ -10,23 +11,51 @@
         <h5 class="text-warning mb-3">📚 Vault</h5>
         <div class="vault-tree">
             @php
-                // Reuse a safe renderer for the tree structure
-                function renderTreeIndexPartial($items, $deep = 0) {
-                    $html = $deep == 0 ? '<ul>' : '<ul style="display: none;" class="border-start border-secondary ps-3">';
+                // Renderer that auto-expands folders matching the current path
+                function renderTreeIndexPartial($items, $deep, $currentPath) {
+                    // Check if current folder matches the path at this depth
+                    $pathSegment = $currentPath[$deep] ?? null;
+                    $isOnPath = $pathSegment !== null;
+
+                    // Root level is always visible, nested levels depend on path match
+                    if ($deep == 0) {
+                        $html = '<ul>';
+                    } else {
+                        $html = '<ul style="display: none;" class="border-start border-secondary ps-3">';
+                    }
 
                     foreach ($items as $key => $value) {
                         if ($key !== '_files' && $key !== '_dirs' && is_array($value)) {
+                            // Check if this folder matches the current path segment (case-insensitive)
+                            $folderMatchesPath = $isOnPath && strcasecmp($key, $pathSegment) === 0;
+                            $openClass = $folderMatchesPath ? ' open' : '';
+
                             $html .= '<li>';
-                            $html .= '<span class="folder" onclick="this.classList.toggle(\'open\'); this.nextElementSibling.style.display = this.classList.contains(\'open\') ? \'block\' : \'none\';">' . e($key) . '</span>';
-                            $html .= renderTreeIndexPartial($value['_dirs'] ?? [], $deep+1);
+                            $html .= '<span class="folder' . $openClass . '" onclick="this.classList.toggle(\'open\'); this.nextElementSibling.style.display = this.classList.contains(\'open\') ? \'block\' : \'none\';">' . e($key) . '</span>';
+
+                            // Render children, passing updated path context
+                            $childHtml = renderTreeIndexPartial($value['_dirs'] ?? [], $deep + 1, $folderMatchesPath ? $currentPath : []);
+
+                            // If folder matches path, show its children
+                            if ($folderMatchesPath) {
+                                $childHtml = str_replace('style="display: none;"', 'style="display: block;"', $childHtml);
+                            }
+
+                            $html .= $childHtml;
                             $html .= '</li>';
                         }
                     }
 
+                    // Check if current file matches (last element of path)
+                    $currentFileName = count($currentPath) > 0 ? end($currentPath) : null;
+
                     $files = $items['_files'] ?? [];
                     foreach ($files as $file) {
+                        $isActiveFile = $currentFileName !== null && strcasecmp($file['name'], $currentFileName) === 0;
+                        $activeClass = $isActiveFile ? ' active' : '';
+
                         $html .= '<li>';
-                        $html .= '<a href="/vault/' . $file['url'] . '" class="file">' . e($file['name']) . '</a>';
+                        $html .= '<a href="/vault/' . $file['url'] . '" class="file' . $activeClass . '">' . e($file['name']) . '</a>';
                         $html .= '</li>';
                     }
 
@@ -35,7 +64,7 @@
                 }
             @endphp
 
-            {!! renderTreeIndexPartial($tree) !!}
+            {!! renderTreeIndexPartial($tree, 0, $currentPath) !!}
             
         </div>
         <h5 class="text-warning mb-3">📣 Legenda</h5>
@@ -95,6 +124,7 @@
         .vault-tree .file{ color: #7fc3ff; }
         .vault-tree .file::before{ content: '📄\00a0'; }
         .vault-tree .file:hover{ color: #fff; text-decoration: underline; }
+        .vault-tree .file.active{ color: #fff; font-weight: 600; background: rgba(255,255,255,0.1); border-radius: 4px; padding: 2px 6px; }
     </style>
 
     <script>
