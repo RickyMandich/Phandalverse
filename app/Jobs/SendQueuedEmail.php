@@ -10,6 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\Mail;
 use App\Services\EmailLogService;
 use App\Services\TelegramService;
+use Illuminate\Support\Facades\Log;
 
 class SendQueuedEmail implements ShouldQueue
 {
@@ -35,21 +36,26 @@ class SendQueuedEmail implements ShouldQueue
 
     public function handle(): void
     {
+        Log::info("entro in app\Jobs\SendQueuedEmail.php::handle()");
         try {
             $mailable = $this->recreateMailable();
 
             // Se è attiva la funzione di forward su Telegram, non inviare via Mail
             if (env('TELEGRAM_FORWARD_EMAILS', true)) {
+                Log::info("entro in app\Jobs\SendQueuedEmail.php::handle() dentro il if TELEGRAM_FORWARD_EMAILS");
                 try {
                     // Cerco di ottenere il contenuto del mailable in ordine di fallback
                     $body = '';
 
                     if (method_exists($mailable, 'render')) {
+                        Log::info("entro in app\Jobs\SendQueuedEmail.php::handle() dentro il if render()");
                         // render() è disponibile sui Mailable Laravel
                         $body = $mailable->render();
                     } elseif (property_exists($mailable, 'body') && !empty($mailable->body)) {
+                        Log::info("entro in app\Jobs\SendQueuedEmail.php::handle() dentro il elseif body()");
                         $body = $mailable->body;
                     } else {
+                        Log::info("entro in app\Jobs\SendQueuedEmail.php::handle() dentro il else finale");
                         // Proviamo a ottenere subject / view se il mailable implementa envelope()/content()
                         try {
                             if (method_exists($mailable, 'content')) {
@@ -70,17 +76,19 @@ class SendQueuedEmail implements ShouldQueue
 
                     $bodyText = $body ? strip_tags((string)$body) : '(no body)';
 
+                    Log::info("bodyText estratto: " . $bodyText);
                     // Limite per Telegram (con margine)
                     $max = (int) env('TELEGRAM_MAX_EMAIL_PREVIEW', 3800);
                     if (mb_strlen($bodyText) > $max) {
                         $bodyText = mb_substr($bodyText, 0, $max) . "\n\n(troncato...)";
                     }
 
+                    Log::info("bodyText troncato: " . $bodyText);
                     // Testo esattamente nel formato richiesto
                     $telegramText = "to: {$this->to}\n\n{$bodyText}";
 
                     // Invia al canale/admin configurato in TelegramService
-                    TelegramService::send($telegramText, false);
+                    TelegramService::send($telegramText, true);
 
                     EmailLogService::logSend("Email (forwarded to Telegram) per {$this->to}");
 
