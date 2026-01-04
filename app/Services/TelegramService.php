@@ -41,18 +41,26 @@ class TelegramService
                 return false;
             }
 
-            $response = Http::post(self::getApiUrl() . '/sendMessage', [
+            // costruisci payload evitando di inviare parse_mode quando non necessario
+            $payload = [
                 'chat_id' => $chatId,
                 'text' => $message,
-                'parse_mode' => $parseHtml ? 'HTML' : null,
                 'disable_web_page_preview' => true,
-            ]);
+            ];
+
+            if ($parseHtml) {
+                // manda parse_mode solo se effettivamente richiesto
+                $payload['parse_mode'] = 'HTML';
+            }
+
+            $response = Http::post(self::getApiUrl() . '/sendMessage', $payload);
 
             if ($response->successful()) {
                 Log::info("Telegram: messaggio inviato");
                 return true;
             }
 
+            // log della risposta (utile per debugging)
             Log::error('Telegram API error: ' . $response->body());
             return false;
 
