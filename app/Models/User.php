@@ -45,8 +45,27 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Mutatore personalizzato per la password
+     * Non hasha se la password inizia con V2: (già processata)
+     */
+    public function setPasswordAttribute($value)
+    {
+        // Se inizia con V2:, è già stata hashata con il nostro sistema custom
+        if (str_starts_with($value, 'V2:')) {
+            $this->attributes['password'] = $value;
+        }
+        // Se inizia con $2y$, è già un hash bcrypt standard
+        elseif (str_starts_with($value, '$2y$') || str_starts_with($value, '$2a$')) {
+            $this->attributes['password'] = $value;
+        }
+        // Altrimenti, è una password in chiaro da hashare
+        else {
+            $this->attributes['password'] = Hash::make($value);
+        }
     }
 
     /**
