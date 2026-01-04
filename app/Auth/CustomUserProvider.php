@@ -5,10 +5,11 @@ namespace App\Auth;
 use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class CustomUserProvider extends EloquentUserProvider
 {
-    const NEW_HASH_PREFIX = '$my'; // Carattere speciale per identificare il nuovo formato
+    const NEW_HASH_PREFIX = 'V2:'; // Prefisso chiaro e sicuro
     
     /**
      * Validate a user against the given credentials.
@@ -18,30 +19,42 @@ class CustomUserProvider extends EloquentUserProvider
         $plain = $credentials['password'];
         $storedPassword = $user->getAuthPassword();
         
-        // Controlla se è il nuovo formato (inizia con §)
+        Log::info("=== LOGIN ATTEMPT User ID: {$user->getAuthIdentifier()} ===");
+        Log::info("Password stored (first 20 chars): " . substr($storedPassword, 0, 20));
+        
+        // Controlla se è il nuovo formato (inizia con V2:)
         if (str_starts_with($storedPassword, self::NEW_HASH_PREFIX)) {
-            // Rimuovi il prefisso e valida con la nuova logica
-            $actualHash = substr($storedPassword, 1);
+            Log::info("✓ Rilevato NUOVO formato password");
+            
+            // Rimuovi il prefisso correttamente
+            $actualHash = substr($storedPassword, strlen(self::NEW_HASH_PREFIX));
             $customPassword = $plain . env('APP_KEY', '42') . "#{$user->getAuthIdentifier()}";
             
-            return Hash::check($customPassword, $actualHash);
+            Log::info("Hash estratto (first 20 chars): " . substr($actualHash, 0, 20));
+            
+            $isValid = Hash::check($customPassword, $actualHash);
+            Log::info("Risultato validazione: " . ($isValid ? 'SUCCESS ✓' : 'FAILED ✗'));
+            
+            return $isValid;
         }
-
-        \Illuminate\Support\Facades\Log::info("Utente ID {$user->getAuthIdentifier()} sta usando il vecchio formato di password.");
+        
+        Log::info("⚠ Rilevato VECCHIO formato password");
         
         // Vecchio formato: valida normalmente
         if (Hash::check($plain, $storedPassword)) {
-            // Password corretta! Aggiorna al nuovo formato
-            \Illuminate\Support\Facades\Log::info("Password corretta! sto per aggiornare al nuovo formato");
-            $this->upgradePassword($user, $plain);
-            return true;
-        }else if(Hash::check($plain . env('APP_KEY', '42') . "#{$user->getAuthIdentifier()}", $storedPassword)){
-            // Password aggiornata senza prefisso
-            \Illuminate\Support\Facades\Log::info("Password aggiornata senza prefisso! Aggiungi il prefisso per identificare il nuovo formato");
+            Log::info("✓ Password vecchio formato corretta! Upgrading...");
             $this->upgradePassword($user, $plain);
             return true;
         }
         
+        // Fallback: password già aggiornata ma senza prefisso (caso edge)
+        if (Hash::check($plain . env('APP_KEY', '42') . "#{$user->getAuthIdentifier()}", $storedPassword)) {
+            Log::info("✓ Password nuovo formato SENZA prefisso! Aggiungendo prefisso...");
+            $this->upgradePassword($user, $plain);
+            return true;
+        }
+        
+        Log::info("✗ Password non valida");
         return false;
     }
     
@@ -50,13 +63,17 @@ class CustomUserProvider extends EloquentUserProvider
      */
     protected function upgradePassword(Authenticatable $user, string $plainPassword)
     {
-        \Illuminate\Support\Facades\Log::info("Aggiornamento password utente ID {$user->getAuthIdentifier()} al nuovo formato.");
-        $newHash = Hash::make($plainPassword . env('APP_KEY', '42') . "#{$user->getAuthIdentifier()}");
+        Log::info(">>> Inizio upgrade password User ID: {$user->getAuthIdentifier()}");
         
-        // Aggiungi il prefisso per identificare il nuovo formato
-        $user->password = self::NEW_HASH_PREFIX . $newHash;
+        $personalSalt = env('APP_KEY', '42') . "#{$user->getAuthIdentifier()}";
+        $newHash = Hash::make($plainPassword . $personalSalt);
+        $finalPassword = self::NEW_HASH_PREFIX . $newHash;
+        
+        Log::info("Nuovo hash generato (first 30 chars): " . substr($finalPassword, 0, 30));
+        
+        $user->password = $finalPassword;
         $user->save();
-
-        \Illuminate\Support\Facades\Log::info("Password utente ID {$user->getAuthIdentifier()} aggiornata con successo.");
+        
+        Log::info("<<< Password upgrade completato con successo!");
     }
 }

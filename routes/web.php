@@ -69,5 +69,3 @@ Route::get("/job/ProcessEmailQueue", [JobController::class, 'processEmailQueue']
 Route::fallback(function () {
     return view('errors.404');
 });
-
-Route::get('/test-hash', [TestController::class, 'testHash'])->name('test.hash');

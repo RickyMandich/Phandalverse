@@ -80,9 +80,14 @@ class RegisterController extends Controller
 
         // Genera la password con il nuovo formato e aggiungi il prefisso
         $personalSalt = env('APP_KEY', '42') . "#$user->id";
-        $newHash = CustomUserProvider::NEW_HASH_PREFIX . Hash::make($data['password'] . $personalSalt);
-        $user->password = $newHash;
-        Log::info("Password utente {$user->email} aggiornata al nuovo formato di hashing (`hisPassword`$personalSalt)=>$newHash");
+        $newHash = Hash::make($data['password'] . $personalSalt);
+        $finalPassword = CustomUserProvider::NEW_HASH_PREFIX . $newHash;
+        
+        $user->password = $finalPassword;
+        
+        Log::info("Nuova registrazione: {$user->email}");
+        Log::info("Password formato: " . substr($finalPassword, 0, 30) . "...");
+        
         $user->save();
 
         // Invia notifica Telegram per nuova registrazione
