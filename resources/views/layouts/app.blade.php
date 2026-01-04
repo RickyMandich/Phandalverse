@@ -30,7 +30,7 @@
 
 @yield('style')
 <body>
-    <div id="app" class="d-flex flex-column">
+    <div id="app" class="d-flex flex-column justify-content-between min-vh-100">
         <nav class="navbar navbar-expand-md shadow-sm bg-secondary">
             <div class="container">
                 <a class="navbar-brand" href="{{ url('/') }}">
@@ -120,10 +120,10 @@
             </div>
         </main>
 
-        <footer class="bg-secondary pt-2">
+        <footer class="bg-secondary mt-auto pt-2">
             <div class="container">
                 <div class="row">
-                    <div class="col-12 text-center">
+                    <div class="col text-center">
                         <p class="mb-2">
                             <a href="{{ route('report.create', ['from' => url()->current()]) }}" class="text-warning">
                                 📢 Segnala un problema
