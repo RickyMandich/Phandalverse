@@ -88,7 +88,7 @@ class SendQueuedEmail implements ShouldQueue
                     $telegramText = "to: {$this->to}\n\n{$bodyText}";
 
                     // Invia al canale/admin configurato in TelegramService
-                    TelegramService::send($telegramText, true);
+                    TelegramService::send($telegramText, false);
 
                     EmailLogService::logSend("Email (forwarded to Telegram) per {$this->to}");
 
