@@ -466,6 +466,8 @@ class VaultController extends Controller
 
         $realPath = preg_split('#[\\\\/]#', $realPath);
 
+        Log::info("Il path reale della nota è: " . print_r($realPath, true));
+
 
         CustomLogger::note($note, "cerco la nota: $path");
         if (!File::exists($path)) {

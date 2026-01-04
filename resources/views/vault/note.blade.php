@@ -2,7 +2,7 @@
 @section('title', $title)
 @section('content')
 <div class="vault-layout d-flex">
-    @include('vault._sidebar', ['tree' => $tree ?? []])
+    @include('vault._sidebar', ['tree' => $tree ?? [], 'path' => $path ?? []])
 
     <main class="vault-main flex-grow-1 p-4">
         <h1>{{ $title }}</h1>

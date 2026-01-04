@@ -23,12 +23,12 @@
                         }
                     }
 
-                    // $files = $items['_files'] ?? [];
-                    // foreach ($files as $file) {
-                    //     $html .= '<li>';
-                    //     $html .= '<a href="/vault/' . $file['url'] . '" class="file">' . e($file['name']) . '</a>';
-                    //     $html .= '</li>';
-                    // }
+                    $files = $items['_files'] ?? [];
+                    foreach ($files as $file) {
+                        $html .= '<li>';
+                        $html .= '<a href="/vault/' . $file['url'] . '" class="file">' . e($file['name']) . '</a>';
+                        $html .= '</li>';
+                    }
 
                     $html .= '</ul>';
                     return $html;
@@ -36,6 +36,7 @@
             @endphp
 
             {!! renderTreeIndexPartial($tree) !!}
+            
         </div>
         <h5 class="text-warning mb-3">📣 Legenda</h5>
         <div class="legenda vault-tree bg-secondary-subtle p-2 pe-4 pb-4 pt-4 rounded">
