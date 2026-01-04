@@ -36,9 +36,9 @@
                             // Render children, passing updated path context
                             $childHtml = renderTreeIndexPartial($value['_dirs'] ?? [], $deep + 1, $folderMatchesPath ? $currentPath : []);
 
-                            // If folder matches path, show its children
+                            // If folder matches path, show only its immediate child <ul>
                             if ($folderMatchesPath) {
-                                $childHtml = str_replace('style="display: none;"', 'style="display: block;"', $childHtml);
+                                $childHtml = preg_replace('/style="display: none;"/', 'style="display: block;"', $childHtml, 1);
                             }
 
                             $html .= $childHtml;
