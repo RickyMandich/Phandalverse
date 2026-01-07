@@ -88,7 +88,7 @@ class MarkdownPreprocessor
         }
 
         $start = '#startMaster';
-        $end   = '#endMaster';
+        $end = '#endMaster';
 
         if (!str_contains($text, $start)) {
             return $text;
@@ -126,7 +126,7 @@ class MarkdownPreprocessor
         $pattern = '/<!--MASTER_START-->(.*?)<!--MASTER_END-->/is';
         return preg_replace_callback($pattern, function ($m) {
             $inner = $m[1];
-            return '<span class="master-block">' . $inner . '</span>';
+            return '<div class="master-block">' . $inner . '</div>';
         }, $html);
     }
 
@@ -180,7 +180,7 @@ class MarkdownPreprocessor
 
         // Parse section path: "##heading1###heading2" -> [['##', 'heading1'], ['###', 'heading2']]
         preg_match_all('/(#{1,6})([^#]+)/', $sectionPath, $matches, PREG_SET_ORDER);
-        
+
         if (empty($matches)) {
             return $content;
         }
@@ -205,7 +205,7 @@ class MarkdownPreprocessor
                     if ($level === $wantedLevel && strcasecmp($title, $wantedTitle) === 0) {
                         $matchedLevels[] = $level;
                         $currentMatch++;
-                        
+
                         if ($currentMatch === count($matches)) {
                             $inSection = true;
                             $targetLevel = $level;
@@ -255,7 +255,7 @@ class MarkdownPreprocessor
         }
 
         $content = File::get($fullPath);
-        
+
         // Rimuovi frontmatter YAML
         $content = preg_replace('/^---\s*\n.*?\n---\s*\n/s', '', $content);
 
@@ -277,10 +277,10 @@ class MarkdownPreprocessor
         $url = '/vault/' . $camelPath;
         $embedDepth = self::$embedDepth;
         $ret = "<div class='embed-note border-primary ps-4 border-start embed-depth-$embedDepth'>";
-        if(Auth::check() && Auth::user()->showEmbedLink){
+        if (Auth::check() && Auth::user()->showEmbedLink) {
             $ret = "$ret<div class='embed-header'><a href='$url' clas='wikilink'> " . htmlspecialchars($embedRef) . '</a></div>';
         }
-        $ret = $ret.'<div class="embed-content">' . $html . '</div></div>';
+        $ret = $ret . '<div class="embed-content">' . $html . '</div></div>';
         return $ret;
     }
 
@@ -427,7 +427,7 @@ class MarkdownPreprocessor
         // Convert each master block separately and insert the rendered HTML
         foreach ($masterBlocks as $i => $innerMarkdown) {
             $innerHtml = $converter->convert($innerMarkdown)->getContent();
-            $wrapped = '<span class="master-block">' . $innerHtml . '</span>';
+            $wrapped = '<div class="master-block">' . $innerHtml . '</div>';
             $html = str_replace("<!--MASTER_BLOCK:{$i}-->", $wrapped, $html);
         }
 

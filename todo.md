@@ -8,4 +8,4 @@
 - creare un sistema di notifiche (preferibilmente mail, alternativamente bot telegram, nel mio server non posso mettere SMTP)
 - sistemare visualizzazione foto
 # da fare
-- sistemare l'elaborazione del markdown nelle sezioni master
+- sistemare l'elaborazione del css delle sezioni master
