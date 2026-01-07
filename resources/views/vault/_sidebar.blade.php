@@ -8,6 +8,7 @@
     #vault-sidebar {
         width: 300px;
         min-width: 44px; /* Collapsed width */
+        flex-shrink: 0;
         transition: width 0.2s ease, transform 0.25s ease;
     }
     #vault-sidebar.collapsed { width: 44px; }
