@@ -427,7 +427,7 @@ class MarkdownPreprocessor
         // Convert each master block separately and insert the rendered HTML
         foreach ($masterBlocks as $i => $innerMarkdown) {
             $innerHtml = $converter->convert($innerMarkdown)->getContent();
-            $wrapped = '<span class="master-block">' . $innerHtml . '</span>';
+            $wrapped = '<div class="master-block">' . $innerHtml . '</div>';
             $html = str_replace("<!--MASTER_BLOCK:{$i}-->", $wrapped, $html);
         }
 
