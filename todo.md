@@ -7,5 +7,5 @@
 - ricontrollare la generazione del grafo per fare in modo che la configurazione estetica non sia statica ma venga fatta prendendo i dati della directory vault/.obsidian
 - creare un sistema di notifiche (preferibilmente mail, alternativamente bot telegram, nel mio server non posso mettere SMTP)
 - sistemare visualizzazione foto
-# da fare
 - sistemare l'elaborazione del css delle sezioni master
+# da fare
