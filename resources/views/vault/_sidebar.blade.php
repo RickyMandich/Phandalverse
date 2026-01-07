@@ -101,8 +101,8 @@
         <h5 class="text-warning mb-3 fw-bold">📣 Legenda</h5>
         <div class="legenda bg-dark-subtle p-3 rounded small font-monospace">
             <ul class="list-unstyled m-0">
-                <li class="mb-1"><span class="text-danger fw-bold">#dm</span> : esclusivo master</li>
-                <li class="mb-1"><span class="text-info">[[link]]</span> : collegamenti</li>
+                <li class="mb-1"><span class="text-danger fw-bold">#dm</span> : <span class="master-block">esclusivo master</span></li>
+                <li class="mb-1"><span class="text-info">[[link]]</span> : <span class="wikilink">collegamenti</span></li>
             </ul>
         </div>
     </div>
