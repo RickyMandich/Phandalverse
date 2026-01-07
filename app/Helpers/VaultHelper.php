@@ -43,17 +43,18 @@ class VaultHelper
         $count = count($parts);
         for ($i = 0; $i < $count; $i++) {
             $part = $parts[$i];
+            $lowerPart = strtolower($part);
             $isLast = ($i === $count - 1);
 
             if ($isLast) {
                 // Look in 'files'
-                if (isset($currentNode['files'][$part])) {
-                    return $currentNode['files'][$part];
+                if (isset($currentNode['files'][$lowerPart])) {
+                    return $currentNode['files'][$lowerPart];
                 }
             } else {
                 // Look in 'directories'
-                if (isset($currentNode['directories'][$part])) {
-                    $currentNode = $currentNode['directories'][$part];
+                if (isset($currentNode['directories'][$lowerPart])) {
+                    $currentNode = $currentNode['directories'][$lowerPart];
                 } else {
                     // Path not found in map
                     return self::prettify($originalName);
@@ -74,8 +75,9 @@ class VaultHelper
         $currentNode = self::$map;
 
         foreach ($parts as $part) {
-            if (isset($currentNode['directories'][$part])) {
-                $currentNode = $currentNode['directories'][$part];
+            $lowerPart = strtolower($part);
+            if (isset($currentNode['directories'][$lowerPart])) {
+                $currentNode = $currentNode['directories'][$lowerPart];
             } else {
                 return self::prettify($part);
             }
