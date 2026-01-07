@@ -221,10 +221,18 @@ class VaultController extends Controller
             // Costruisce la struttura ad albero
             $parts = $relativePath ? explode('/', $relativePath) : [];
             $current = &$tree;
+            $currentDirPath = $basePath ?? '';
 
             foreach ($parts as $part) {
+                // Costruisci il path della cartella corrente per cercare il nome originale nel DB/Map
+                $currentDirPath = $currentDirPath ? $currentDirPath . '/' . $part : $part;
+
                 if (!isset($current[$part])) {
-                    $current[$part] = ['_files' => [], '_dirs' => []];
+                    $current[$part] = [
+                        '_files' => [],
+                        '_dirs' => [],
+                        '_label' => VaultHelper::getOriginalDirectoryName($currentDirPath)
+                    ];
                 }
                 $current = &$current[$part]['_dirs'];
             }
@@ -233,7 +241,7 @@ class VaultController extends Controller
             $originalFullPath = $basePath ? $basePath . '/' . $fullRelativePath : $fullRelativePath;
 
             $current['_files'][] = [
-                'name' => VaultHelper::getOriginalName($fullRelativePath), // Use original name for display
+                'name' => VaultHelper::getOriginalName($fullRelativePath . '.md'), // Use original name for display (append extension for lookup)
                 'path' => $fullRelativePath,
                 'url' => self::pathToCamelCase($originalFullPath),
             ];

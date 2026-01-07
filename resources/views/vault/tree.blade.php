@@ -59,9 +59,10 @@
                             // Prima le cartelle (folders first)
                             foreach ($items as $key => $value) {
                                 if ($key !== '_files' && $key !== '_dirs' && is_array($value)) {
+                                    $displayName = $value['_label'] ?? $key;
                                     $html .= '<li class="my-1">';
                                     // Toggle logic: toggle 'open' on span, toggle 'd-none' on next UL
-                                    $html .= '<span class="folder fw-bold text-warning cursor-pointer" onclick="this.classList.toggle(\'open\'); this.nextElementSibling.classList.toggle(\'d-none\'); this.innerText = this.classList.contains(\'open\') ? \'📂\u00a0\' + this.dataset.name : \'📁\u00a0\' + this.dataset.name;" data-name="' . e($key) . '">📁&nbsp;' . e($key) . '</span>';
+                                    $html .= '<span class="folder fw-bold text-warning cursor-pointer" onclick="this.classList.toggle(\'open\'); this.nextElementSibling.classList.toggle(\'d-none\'); this.innerText = this.classList.contains(\'open\') ? \'📂\u00a0\' + this.dataset.name : \'📁\u00a0\' + this.dataset.name;" data-name="' . e($displayName) . '">📁&nbsp;' . e($displayName) . '</span>';
                                     $html .= renderTree($value['_dirs'] ?? [], $deep + 1);
                                     $html .= '</li>';
                                 }

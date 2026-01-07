@@ -57,10 +57,12 @@
                             $openClass = $folderMatchesPath ? ' open' : '';
                             // Icon toggle logic relies on 'open' class
                             $icon = $folderMatchesPath ? '📂' : '📁';
+                            
+                            $displayName = $value['_label'] ?? $key;
 
                             $html .= '<li class="my-1">';
                             // Use d-bock/d-none toggling
-                            $html .= '<span class="folder' . $openClass . ' fw-bold text-warning cursor-pointer" onclick="this.classList.toggle(\'open\'); const ul = this.nextElementSibling; ul.classList.toggle(\'d-none\'); this.innerText = this.classList.contains(\'open\') ? \'📂\u00a0\' + this.dataset.name : \'📁\u00a0\' + this.dataset.name;" data-name="' . e($key) . '">' . $icon . '&nbsp;' . e($key) . '</span>';
+                            $html .= '<span class="folder' . $openClass . ' fw-bold text-warning cursor-pointer" onclick="this.classList.toggle(\'open\'); const ul = this.nextElementSibling; ul.classList.toggle(\'d-none\'); this.innerText = this.classList.contains(\'open\') ? \'📂\u00a0\' + this.dataset.name : \'📁\u00a0\' + this.dataset.name;" data-name="' . e($displayName) . '">' . $icon . '&nbsp;' . e($displayName) . '</span>';
 
                             // Render children, passing updated path context
                             $childHtml = renderTreeIndexPartial($value['_dirs'] ?? [], $deep + 1, $folderMatchesPath ? $currentPath : []);
