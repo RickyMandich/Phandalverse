@@ -48,8 +48,8 @@ class VaultController extends Controller
 
         try {
             // Prefer explicit graph-config.json if present
-            if (\Illuminate\Support\Facades\File::exists($configPath)) {
-                $json = \Illuminate\Support\Facades\File::get($configPath);
+            if (File::exists($configPath)) {
+                $json = File::get($configPath);
                 $data = json_decode($json, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
                     return $data;
@@ -57,8 +57,8 @@ class VaultController extends Controller
             }
 
             // Fallback: try to parse Obsidian's graph.json and map colorGroups
-            if (\Illuminate\Support\Facades\File::exists($graphJsonPath)) {
-                $json = \Illuminate\Support\Facades\File::get($graphJsonPath);
+            if (File::exists($graphJsonPath)) {
+                $json = File::get($graphJsonPath);
                 $data = json_decode($json, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
                     $colors = [];
@@ -182,7 +182,7 @@ class VaultController extends Controller
             }
 
             // If user is not master, skip files marked with #dm so they appear nonexistent
-            if (!\Illuminate\Support\Facades\Auth::check() || !\Illuminate\Support\Facades\Auth::isMaster()) {
+            if (!Auth::check() || !Auth::isMaster()) {
                 try {
                     $contentPreview = File::get($file->getPathname());
                     if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $contentPreview)) {
