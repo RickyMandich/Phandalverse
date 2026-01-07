@@ -5,9 +5,10 @@
     @extend .text-uppercase;
 }
 
-.master-block{
+.master-block {
     @extend .border;
     @extend .border-info;
     @extend .bg-secondary;
     @extend .rounded;
+    @extend .d-inline;
 }
