@@ -56,7 +56,7 @@ class VaultHelper
                     $currentNode = $currentNode['directories'][$part];
                 } else {
                     // Path not found in map
-                    return self::prettify($part);
+                    return self::prettify($originalName);
                 }
             }
         }
