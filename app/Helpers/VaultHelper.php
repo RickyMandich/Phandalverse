@@ -15,7 +15,7 @@ class VaultHelper
             return;
         }
 
-        self::$mapPath = base_path('../Vault/.normalize/map.json');
+        self::$mapPath = base_path('/Vault/.normalize/map.json');
 
         if (File::exists(self::$mapPath)) {
             self::$map = json_decode(File::get(self::$mapPath), true);
