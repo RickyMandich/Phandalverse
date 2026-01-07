@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Services\CustomLogger;
+use App\Helpers\VaultHelper;
 
 class VaultController extends Controller
 {
@@ -232,7 +233,7 @@ class VaultController extends Controller
             $originalFullPath = $basePath ? $basePath . '/' . $fullRelativePath : $fullRelativePath;
 
             $current['_files'][] = [
-                'name' => $name,
+                'name' => VaultHelper::getOriginalName($fullRelativePath), // Use original name for display
                 'path' => $fullRelativePath,
                 'url' => self::pathToCamelCase($originalFullPath),
             ];
@@ -405,7 +406,7 @@ class VaultController extends Controller
                 // If the decoded segment looks like an image path/name but the file
                 // does not exist, log a warning to aid debugging.
                 $ext = strtolower(pathinfo($decoded, PATHINFO_EXTENSION));
-                $imageExt = ['png','jpg','jpeg','gif','webp','svg','bmp'];
+                $imageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'];
                 if (in_array($ext, $imageExt) || $ext === '') {
                     Log::warning('Requested vault file not found: ' . $candidate . ' (decoded from: ' . $note . ')');
                 }
@@ -478,7 +479,7 @@ class VaultController extends Controller
         $content = File::get($path);
         CustomLogger::note($note, "Contenuto ORIGINALE dal file: " . $content);
 
-        CustomLogger::note($note, "ora controllo se è il master: ".Auth::isMaster()."(master=".Auth::getMaster().") e l'utente è ".Auth::getName());
+        CustomLogger::note($note, "ora controllo se è il master: " . Auth::isMaster() . "(master=" . Auth::getMaster() . ") e l'utente è " . Auth::getName());
         // Gestione blocchi master e DM
         // If file is DM-only and user is not master, act as if file doesn't exist
         if (!Auth::isMaster() && preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
@@ -486,7 +487,7 @@ class VaultController extends Controller
             abort(404, 'Nota non trovata');
         }
 
-        if(!Auth::isMaster()) {
+        if (!Auth::isMaster()) {
             CustomLogger::note($note, "Filtro i blocchi master");
             $content = MarkdownPreprocessor::filterMasterBlocks($content);
         } else {
@@ -499,8 +500,13 @@ class VaultController extends Controller
         CustomLogger::note($note, "Contenuto dopo filtro: " . $content);
 
         if (preg_match('/(?<=^|[\\\\\\/])[^\\\\\\/]+(?=\\.md$)/', $path, $matches)) {
-            $title = $matches[0];
-            $title = ucfirst($title);
+            // Use VaultHelper to get the original displayed title if possible
+            // $path is absolute here. We need relative path to look up in map.
+            $relativePathForHelper = str_replace(base_path('Vault/'), '', $path);
+            // Fix slashes
+            $relativePathForHelper = str_replace('\\', '/', $relativePathForHelper);
+
+            $title = VaultHelper::getOriginalName($relativePathForHelper);
             Log::info("il path del file è: $path e il titolo del file è: $title");
         }
 
@@ -512,7 +518,7 @@ class VaultController extends Controller
         $graphConfig = $this->loadGraphConfig();
         return view('vault.note', [
             'title' => $title,
-            'html'  => $html,
+            'html' => $html,
             'tree' => $tree,
             'path' => $realPath,
             'graphConfig' => $graphConfig,
