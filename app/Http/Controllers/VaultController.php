@@ -384,6 +384,10 @@ class VaultController extends Controller
                     $result['directory'] = '';
                 }
             }
+
+            if (count($results) == 1) {
+                return redirect()->route('vault.show', ['note' => $results[0]['url']]);
+            }
         }
 
         $graphConfig = $this->loadGraphConfig();
