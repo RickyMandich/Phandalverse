@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use App\Services\CustomLogger;
 use Illuminate\Support\Facades\File;
 
 class VaultHelper
@@ -111,6 +112,9 @@ class VaultHelper
         if (isset($node['files'])) {
             foreach ($node['files'] as $normalizedName => $originalName) {
                 if (str_contains(strtolower($originalName), $query)) {
+                    CustomLogger::note("search=>$query", "originalName=>" . $originalName);
+                    CustomLogger::note("search=>$query", "normalizedName=>" . $normalizedName);
+                    CustomLogger::note("search=>$query", "currentPath=>" . $currentPath);
                     $results[] = [
                         'original' => $originalName,
                         'path' => $currentPath ? $currentPath . '/' . $normalizedName : $normalizedName,
