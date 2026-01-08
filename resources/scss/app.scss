@@ -17,9 +17,9 @@
     @extend .me-1;
 }
 
-// table {
-//     @extend .table;
-//     @extend .table-striped;
-//     @extend .border-secondary;
-//     @extend .table-bordered;
-// }
+table {
+    @extend .table;
+    @extend .table-striped;
+    @extend .border-secondary;
+    @extend .table-bordered;
+}
