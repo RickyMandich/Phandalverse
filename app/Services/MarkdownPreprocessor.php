@@ -141,7 +141,7 @@ class MarkdownPreprocessor
             '',
             preg_replace(
                 '/<h1 class=".*?">.*?<\/h1>/m',
-                '<h1 class="$1 master-block">',
+                '<h1 class="\${1} master-block">',
                 $text
             )
         );
