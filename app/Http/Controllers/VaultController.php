@@ -494,7 +494,7 @@ class VaultController extends Controller
         if (!Auth::isMaster() && preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
             CustomLogger::note($note, "Accesso negato: file DM per non-master");
             abort(504, 'Nota non trovata');
-        } else if (Auth::isMaster()) {
+        } else if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
             $masterFile = true;
         }
 
