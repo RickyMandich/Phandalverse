@@ -61,7 +61,7 @@
         <div class="vault-tree font-monospace small">
             @php
                 // Renderer that auto-expands folders matching the current path
-                function renderTreeIndexPartial($items, $deep, $currentPath)
+                function renderTreeIndexPartial($items, $deep, $currentPath, $note)
                 {
                     // Check if current folder matches the path at this depth
                     $pathSegment = $currentPath[$deep] ?? null;
@@ -89,7 +89,7 @@
                             $html .= '<span class="folder' . $openClass . ' fw-bold text-warning cursor-pointer" onclick="this.classList.toggle(\'open\'); const ul = this.nextElementSibling; ul.classList.toggle(\'d-none\'); this.innerText = this.classList.contains(\'open\') ? \'📂\u00a0\' + this.dataset.name : \'📁\u00a0\' + this.dataset.name;" data-name="' . e($displayName) . '">' . $icon . '&nbsp;' . e($displayName) . '</span>';
 
                             // Render children, passing updated path context
-                            $childHtml = renderTreeIndexPartial($value['_dirs'] ?? [], $deep + 1, $folderMatchesPath ? $currentPath : []);
+                            $childHtml = renderTreeIndexPartial($value['_dirs'] ?? [], $deep + 1, $folderMatchesPath ? $currentPath : [], $note);
 
                             // If folder matches path, show only its immediate child <ul> (remove d-none)
                             if ($folderMatchesPath) {
@@ -121,7 +121,7 @@
                 }
             @endphp
 
-            {!! renderTreeIndexPartial($tree, 0, $currentPath) !!}
+            {!! renderTreeIndexPartial($tree, 0, $currentPath, $note) !!}
 
         </div>
         <hr class="border-secondary">
