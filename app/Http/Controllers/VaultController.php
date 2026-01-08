@@ -181,18 +181,19 @@ class VaultController extends Controller
                 continue;
             }
 
+            // Check if file contains #dm tag (for all users, to include in tree data)
+            $isDmFile = false;
+            try {
+                $contentPreview = File::get($file->getPathname());
+                $isDmFile = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $contentPreview) ? true : false;
+            } catch (\Throwable $e) {
+                // if file can't be read, skip it to avoid breaking the tree
+                continue;
+            }
+
             // If user is not master, skip files marked with #dm so they appear nonexistent
-            if (!Auth::check() || !Auth::isMaster()) {
-                try {
-                    $contentPreview = File::get($file->getPathname());
-                    if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $contentPreview)) {
-                        // skip this file completely for non-master users
-                        continue;
-                    }
-                } catch (\Throwable $e) {
-                    // if file can't be read, skip it to avoid breaking the tree
-                    continue;
-                }
+            if ((!Auth::check() || !Auth::isMaster()) && $isDmFile) {
+                continue;
             }
 
             $relativePath = str_replace('\\', '/', $file->getRelativePath());
@@ -244,6 +245,7 @@ class VaultController extends Controller
                 'name' => VaultHelper::getOriginalName($fullRelativePath . '.md'), // Use original name for display (append extension for lookup)
                 'path' => $fullRelativePath,
                 'url' => self::pathToCamelCase($originalFullPath),
+                'dm' => $isDmFile, // Boolean indicating if file is DM-only
             ];
         }
 
