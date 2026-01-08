@@ -28,7 +28,8 @@ th {
     @extend .text-center;
 }
 
-.title-container {
+.title-container,
+li {
     position: relative;
 }
 
