@@ -1,4 +1,5 @@
 @php
+    \App\Services\CustomLogger::note($note, "-------------------inizio view _sideboard-------------------");
     // $tree expected, $path is the current note path array (e.g. ["Personaggi", "Giocanti", "Vargas (Paladino Nano, 65)"])
     $tree = $tree ?? [];
     $currentPath = $path ?? [];
@@ -241,3 +242,6 @@
         })();
     </script>
 </aside>
+@php
+\App\Services\CustomLogger::note($note, "-------------------fine view _sidebar-------------------");
+@endphp
