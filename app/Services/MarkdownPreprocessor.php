@@ -414,7 +414,7 @@ class MarkdownPreprocessor
             'html_input' => 'allow',
             'default_attributes' => [
                 \League\CommonMark\Extension\Table\Table::class => [
-                    'class' => ['table table-striped border-secondary table-bordered'],
+                    'class' => 'table table-striped border-secondary table-bordered',
                 ],
             ],
         ]);
