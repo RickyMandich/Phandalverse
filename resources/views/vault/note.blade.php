@@ -8,6 +8,7 @@
             <h1 class="display-5 mb-4 border-bottom pb-2 text-warning {{ $masterFile ? 'master-block' : '' }}">{{ $title }}</h1>
             @php
                 \App\Services\CustomLogger::note($note, "master: $masterFile");
+                \App\Services\CustomLogger::note($note, $masterFile ? 'master-block' : 'not master-block');
             @endphp
             <div class="vault-note typography">
                 {!! $html !!}
