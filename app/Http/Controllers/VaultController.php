@@ -533,6 +533,7 @@ class VaultController extends Controller
             'path' => $realPath,
             'graphConfig' => $graphConfig,
             'masterFile' => $masterFile,
+            'note' => $note,
         ]);
     }
 

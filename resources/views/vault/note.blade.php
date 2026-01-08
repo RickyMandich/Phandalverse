@@ -6,6 +6,9 @@
 
         <main class="flex-grow-1 p-4" style="min-width: 0;">
             <h1 class="display-5 mb-4 border-bottom pb-2 text-warning {{ $masterFile ? 'master-block' : '' }}">{{ $title }}</h1>
+            @php
+                \App\Services\CustomLogger::note($note, "master: $masterFile");
+            @endphp
             <div class="vault-note typography">
                 {!! $html !!}
             </div>
