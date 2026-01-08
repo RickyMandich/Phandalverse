@@ -112,7 +112,7 @@
 
                     $files = $items['_files'] ?? [];
                     foreach ($files as $file) {
-                        $isActiveFile = $currentFileName !== null && strcasecmp($file['name'], $currentFileName) === 0;
+                        $isActiveFile = $currentFileName !== null && strcasecmp(end($file['path']), $currentFileName) === 0;
 
                         $activeClass = $isActiveFile ? ' active bg-white bg-opacity-10 text-white rounded fw-semibold px-2 py-1' : ' text-info';
 
