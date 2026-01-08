@@ -44,7 +44,7 @@
 
 @section('content')
     <div class="d-flex gap-0 h-100 w-100">
-        @include('vault._sidebar', ['tree' => $tree])
+        @include('vault._sidebar', ['tree' => $tree, 'note' => $note])
 
         <!-- Area principale con grafo -->
         <main class="flex-grow-1 p-3" style="min-width: 0;">

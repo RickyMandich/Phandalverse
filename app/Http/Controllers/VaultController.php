@@ -425,6 +425,7 @@ class VaultController extends Controller
         // Se non viene passato il parametro note, mostra la home del vault
         // con pannello laterale (albero) e vista a grafo nella stessa pagina.
         if ($note === null || $note === '') {
+            $note = "graph";
             $tree = $this->buildFileTree();
             $graphData = $this->buildGraphData();
             $graphConfig = $this->loadGraphConfig();
@@ -433,6 +434,7 @@ class VaultController extends Controller
                 'tree' => $tree,
                 'graphData' => $graphData,
                 'graphConfig' => $graphConfig,
+                'note' => $note,
             ]);
         }
 
