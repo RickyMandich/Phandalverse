@@ -11,7 +11,7 @@
                 <div class="master-block tag">Master</div>
                 @endif
             </div>
-                <div class="vault-note typography">
+            <div class="vault-note typography">
                 {!! $html !!}
             </div>
         </main>
