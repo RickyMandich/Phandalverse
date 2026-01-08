@@ -117,7 +117,7 @@
                         $activeClass = $isActiveFile ? ' active bg-white bg-opacity-10 text-white rounded fw-semibold px-2 py-1' : ' text-info';
 
                         $html .= '<li class="my-1">';
-                        $html .= '<a href="/vault/' . $file['url'] . '" class="file text-decoration-none d-inline-block' . $activeClass . ' hover-underline">📄&nbsp;' . e($file['name']) . '</a>' . ((isset($masterFile) ? $masterFile : false) ? '<span class="master-block tag">Master</span>' : '');
+                        $html .= '<a href="/vault/' . $file['url'] . '" class="file text-decoration-none d-inline-block' . $activeClass . ' hover-underline">📄&nbsp;' . e($file['name']) . '</a>' . ((isset($masterFile) ? $masterFile : false) && $isActiveFile ? '<span class="master-block tag">Master</span>' : '');
                         $html .= '</li>';
                         \App\Services\CustomLogger::note($note, "(working on $currentFileName)" . $file["name"] . "\t=>\tmaster: $masterFile");
                     }
