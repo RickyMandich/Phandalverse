@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
+use League\CommonMark\Extension\Table\Table;
 use League\CommonMark\Extension\Table\TableExtension;
 use League\CommonMark\Extension\TaskList\TaskListExtension;
 use League\CommonMark\Extension\Strikethrough\StrikethroughExtension;
@@ -413,7 +414,7 @@ class MarkdownPreprocessor
             'renderer' => ['soft_break' => "<br />"],
             'html_input' => 'allow',
             'default_attributes' => [
-                \League\CommonMark\Extension\Table\Table::class => [
+                Table::class => [
                     'class' => 'table table-striped border-secondary table-bordered',
                 ],
             ],
