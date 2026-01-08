@@ -1,6 +1,10 @@
 @extends('layouts.app')
 @section('title', $title)
 @section('content')
+
+    @php
+        \App\Services\CustomLogger::note($note, print_r($path, true));
+    @endphp
     <div class="d-flex gap-0 h-100 w-100">
         @include('vault._sidebar', ['tree' => $tree ?? [], 'path' => $path ?? [], 'masterFile' => $masterFile ?? false, 'note' => $note ?? null])
 
