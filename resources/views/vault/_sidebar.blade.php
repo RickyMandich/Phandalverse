@@ -7,39 +7,62 @@
     /* Specific sidebar behaviors not covered by Bootstrap */
     #vault-sidebar {
         width: 300px;
-        min-width: 44px; /* Collapsed width */
+        min-width: 44px;
+        /* Collapsed width */
         flex-shrink: 0;
         transition: width 0.2s ease, transform 0.25s ease;
     }
-    #vault-sidebar.collapsed { width: 44px; }
-    #vault-sidebar.collapsed .sidebar-content { display: none; }
-    
+
+    #vault-sidebar.collapsed {
+        width: 44px;
+    }
+
+    #vault-sidebar.collapsed .sidebar-content {
+        display: none;
+    }
+
     @media (max-width: 768px) {
         #vault-sidebar {
-            position: fixed; left: 0; top: 0; bottom: 0; height: 100%;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            height: 100%;
             transform: translateX(-100%);
             box-shadow: var(--bs-box-shadow-lg);
             border-right: none !important;
         }
-        #vault-sidebar.open { transform: translateX(0); }
-        #vault-sidebar.collapsed { transform: translateX(-100%); }
+
+        #vault-sidebar.open {
+            transform: translateX(0);
+        }
+
+        #vault-sidebar.collapsed {
+            transform: translateX(-100%);
+        }
     }
 
     /* Custom cursor for folder items as Bootstrap doesn't have a utility for it */
-    .cursor-pointer { cursor: pointer; }
+    .cursor-pointer {
+        cursor: pointer;
+    }
 </style>
 
-<aside class="bg-body-secondary border-end border-secondary-subtle d-flex flex-column position-relative z-1" id="vault-sidebar">
-    <button class="btn btn-sm btn-dark position-absolute top-0 end-0 m-2 z-2 lh-1" id="sidebar-toggle" title="Toggle Sidebar">
+<aside
+    class="bg-body-secondary border-end border-secondary-subtle border-rounded-4 d-flex flex-column position-relative z-1"
+    id="vault-sidebar">
+    <button class="btn btn-sm btn-dark position-absolute top-0 end-0 m-2 z-2 lh-1" id="sidebar-toggle"
+        title="Toggle Sidebar">
         <span id="toggle-icon">◀</span>
     </button>
-    
+
     <div class="sidebar-content p-3 pt-5 overflow-auto h-100">
         <h5 class="text-warning mb-3 fw-bold"><i class="bi bi-book me-2"></i>Vault</h5>
         <div class="vault-tree font-monospace small">
             @php
                 // Renderer that auto-expands folders matching the current path
-                function renderTreeIndexPartial($items, $deep, $currentPath) {
+                function renderTreeIndexPartial($items, $deep, $currentPath)
+                {
                     // Check if current folder matches the path at this depth
                     $pathSegment = $currentPath[$deep] ?? null;
                     $isOnPath = $pathSegment !== null;
@@ -58,7 +81,7 @@
                             $openClass = $folderMatchesPath ? ' open' : '';
                             // Icon toggle logic relies on 'open' class
                             $icon = $folderMatchesPath ? '📂' : '📁';
-                            
+
                             $displayName = $value['_label'] ?? $key;
 
                             $html .= '<li class="my-1">';
@@ -84,7 +107,7 @@
                     $files = $items['_files'] ?? [];
                     foreach ($files as $file) {
                         $isActiveFile = $currentFileName !== null && strcasecmp($file['name'], $currentFileName) === 0;
-                        
+
                         $activeClass = $isActiveFile ? ' active bg-white bg-opacity-10 text-white rounded fw-semibold px-2 py-1' : ' text-info';
 
                         $html .= '<li class="my-1">';
@@ -98,53 +121,58 @@
             @endphp
 
             {!! renderTreeIndexPartial($tree, 0, $currentPath) !!}
-            
+
         </div>
         <hr class="border-secondary">
         <h5 class="text-warning mb-3 fw-bold">📣 Legenda</h5>
         <div class="legenda bg-dark-subtle p-3 rounded small font-monospace">
             <ul class="list-unstyled m-0">
-                <li class="mb-1"><span class="text-danger fw-bold">#dm</span> : <span class="master-block">esclusivo master</span></li>
-                <li class="mb-1"><span class="text-info">[[link]]</span> : <span class="wikilink">collegamenti</span></li>
+                <li class="mb-1"><span class="text-danger fw-bold">#dm</span> : <span class="master-block">esclusivo
+                        master</span></li>
+                <li class="mb-1"><span class="text-info">[[link]]</span> : <span class="wikilink">collegamenti</span>
+                </li>
             </ul>
         </div>
     </div>
-    
+
     <style>
-        .hover-underline:hover { text-decoration: underline !important; color: white !important; }
+        .hover-underline:hover {
+            text-decoration: underline !important;
+            color: white !important;
+        }
     </style>
 
     <script>
-        (function(){
+        (function () {
             const toggleBtn = document.getElementById('sidebar-toggle');
             const sidebar = document.getElementById('vault-sidebar');
             // Create mobile open button
             let mobileOpenBtn = null;
 
-            function ensureMobileButton(){
-                    if(!mobileOpenBtn){
-                        mobileOpenBtn = document.createElement('button');
-                        mobileOpenBtn.className = 'btn btn-dark border-secondary position-fixed start-0 top-0 mt-3 ms-2 z-3';
-                        mobileOpenBtn.innerHTML = '☰';
-                        mobileOpenBtn.onclick = () => {
-                            // Use the same toggle logic to ensure classes are consistent
-                            toggleSidebar();
-                        };
-                        document.body.appendChild(mobileOpenBtn);
-                    }
+            function ensureMobileButton() {
+                if (!mobileOpenBtn) {
+                    mobileOpenBtn = document.createElement('button');
+                    mobileOpenBtn.className = 'btn btn-dark border-secondary position-fixed start-0 top-0 mt-3 ms-2 z-3';
+                    mobileOpenBtn.innerHTML = '☰';
+                    mobileOpenBtn.onclick = () => {
+                        // Use the same toggle logic to ensure classes are consistent
+                        toggleSidebar();
+                    };
+                    document.body.appendChild(mobileOpenBtn);
+                }
             }
 
-            function removeMobileButton(){
-                if(mobileOpenBtn){
+            function removeMobileButton() {
+                if (mobileOpenBtn) {
                     mobileOpenBtn.remove();
                     mobileOpenBtn = null;
                 }
             }
 
-            function updateMobileUI(){
-                if(window.innerWidth <= 768){
+            function updateMobileUI() {
+                if (window.innerWidth <= 768) {
                     // closed by default on mobile
-                    if(!sidebar.classList.contains('open')){
+                    if (!sidebar.classList.contains('open')) {
                         sidebar.classList.add('collapsed');
                     }
                     ensureMobileButton();
@@ -155,11 +183,11 @@
                 }
             }
 
-            function toggleSidebar(){
-                if(window.innerWidth <= 768){
+            function toggleSidebar() {
+                if (window.innerWidth <= 768) {
                     // Mobile: toggle open class
                     const isOpen = sidebar.classList.contains('open');
-                    if(isOpen){
+                    if (isOpen) {
                         sidebar.classList.remove('open');
                         sidebar.classList.add('collapsed');
                     } else {
@@ -179,26 +207,26 @@
 
                 // Update toggle icon
                 const icon = document.getElementById('toggle-icon');
-                if(window.innerWidth <= 768){
+                if (window.innerWidth <= 768) {
                     icon.textContent = sidebar.classList.contains('open') ? '✖' : '☰';
                 } else {
                     icon.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
                 }
 
                 // trigger resize for graphs
-                setTimeout(()=>window.dispatchEvent(new Event('resize')), 250);
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 250);
             }
 
             // Close sidebar on mobile when clicking outside
-            document.addEventListener('click', function(e){
+            document.addEventListener('click', function (e) {
                 try {
-                    if(window.innerWidth <= 768 && sidebar.classList.contains('open')){
+                    if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
                         const path = e.composedPath ? e.composedPath() : (e.path || []);
-                        if(!path.includes(sidebar) && !path.includes(mobileOpenBtn)){
+                        if (!path.includes(sidebar) && !path.includes(mobileOpenBtn)) {
                             toggleSidebar();
                         }
                     }
-                } catch(err) {
+                } catch (err) {
                     // ignore
                 }
             });
@@ -206,7 +234,7 @@
             window.addEventListener('resize', updateMobileUI);
             document.addEventListener('DOMContentLoaded', updateMobileUI);
 
-            if(toggleBtn){
+            if (toggleBtn) {
                 toggleBtn.addEventListener('click', toggleSidebar);
             }
         })();
