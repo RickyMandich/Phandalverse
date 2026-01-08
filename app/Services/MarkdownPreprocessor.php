@@ -136,7 +136,15 @@ class MarkdownPreprocessor
      */
     public static function stripDmMarker(string $text): string
     {
-        return preg_replace('/(?<=^|\s)#dm(?=\s|$)/i', '', $text);
+        return preg_replace(
+            '/(?<=^|\s)#dm(?=\s|$)/i',
+            '',
+            preg_replace(
+                '/<h1 class=".*?">.*?<\/h1>/m',
+                '<h1 class="$1 master-block">',
+                $text
+            )
+        );
     }
 
     public static function convertTags(string $text): string

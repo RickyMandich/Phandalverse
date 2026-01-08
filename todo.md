@@ -11,3 +11,4 @@
 # da fare
 - creare un sistema di ricerca note
 - sistemare generazione wikilink
+- pagina di fallback in caso la nota non esista
