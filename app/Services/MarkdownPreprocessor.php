@@ -413,9 +413,6 @@ class MarkdownPreprocessor
         $environment = new Environment([
             'renderer' => ['soft_break' => "<br />"],
             'html_input' => 'allow',
-            'table' => [
-                'class' => 'table table-striped border-secondary table-bordered',
-            ],
         ]);
 
         $environment->addExtension(new CommonMarkCoreExtension());
@@ -427,6 +424,12 @@ class MarkdownPreprocessor
 
         // Convert the main text (with master placeholders)
         $html = $converter->convert($text)->getContent();
+
+        $html = preg_replace(
+            '/^<table>/',
+            '<table class="table table-striped border-secondary table-bordered">',
+            $html
+        );
 
         // Convert each master block separately and insert the rendered HTML
         foreach ($masterBlocks as $i => $innerMarkdown) {
