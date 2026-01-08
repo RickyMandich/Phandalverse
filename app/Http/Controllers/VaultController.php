@@ -136,7 +136,7 @@ class VaultController extends Controller
 
     /**
      * Converte il parametro dell'URL nel path reale.
-     * Dato che l'URL usa già il path normalizzato, verifichiamo solo l'esistenza.
+     * Dato che l'URL usa già il path normalizzato, puliamo solo l'estensione se presente.
      */
     public static function camelCaseToPath(string $camelPath): ?string
     {
@@ -145,12 +145,7 @@ class VaultController extends Controller
             $camelPath = substr($camelPath, 0, -3);
         }
 
-        // Se il file esiste direttamente nel Vault (aggiungendo .md)
-        if (File::exists(base_path('Vault/' . $camelPath . '.md'))) {
-            return $camelPath;
-        }
-
-        return null;
+        return $camelPath;
     }
 
     /**
@@ -477,13 +472,8 @@ class VaultController extends Controller
             ]);
         }
 
-        // Converti il parametro dell'URL nel path reale
+        // Converti il parametro dell'URL nel path reale (senza estensione)
         $filePath = self::camelCaseToPath($note);
-
-        if ($filePath === null) {
-            // Fallback: prova con il path originale (per retrocompatibilità)
-            $filePath = $note;
-        }
 
         $fullSystemPath = base_path("Vault/" . $filePath . ".md");
 
