@@ -490,21 +490,21 @@ class VaultController extends Controller
         CustomLogger::note($note, "ora controllo se è il master: " . Auth::isMaster() . "(master=" . Auth::getMaster() . ") e l'utente è " . Auth::getName());
         // Gestione blocchi master e DM
         // If file is DM-only and user is not master, act as if file doesn't exist
+        $masterFile = true;
         if (!Auth::isMaster() && preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
             CustomLogger::note($note, "Accesso negato: file DM per non-master");
+            $masterFile = false;
             abort(504, 'Nota non trovata');
         }
 
         if (!Auth::isMaster()) {
             CustomLogger::note($note, "Filtro i blocchi master");
             $content = MarkdownPreprocessor::filterMasterBlocks($content);
-            $masterFile = false;
         } else {
             CustomLogger::note($note, "Mostro i blocchi master");
             // Non rimuoviamo qui i marker: il renderizer li gestirà correttamente.
             // Rimuovi solo il marker #dm per i master (se presente)
             $content = MarkdownPreprocessor::stripDmMarker($content);
-            $masterFile = true;
         }
 
         CustomLogger::note($note, "Contenuto dopo filtro: " . $content);
