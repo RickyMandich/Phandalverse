@@ -46,12 +46,14 @@ class MarkdownPreprocessor
                 }
                 $name = strtolower($file->getFilenameWithoutExtension());
                 $relativePath = str_replace('\\', '/', $file->getRelativePath());
+                $fullPath = $relativePath ? $relativePath . '/' . $file->getFilenameWithoutExtension() : $file->getFilenameWithoutExtension();
 
-                if ($relativePath) {
-                    self::$fileIndex[$name] = $relativePath . '/' . $name;
-                } else {
-                    self::$fileIndex[$name] = $name;
+                // Index by name (lowercase)
+                if (!isset(self::$fileIndex[$name])) {
+                    self::$fileIndex[$name] = $fullPath;
                 }
+                // Index by full path (lowercase)
+                self::$fileIndex[strtolower($fullPath)] = $fullPath;
             }
         }
 
@@ -62,6 +64,11 @@ class MarkdownPreprocessor
     {
         $index = self::buildFileIndex();
         $cleanName = strtolower(trim($noteName));
+
+        // Rimuovi estensione se presente per il lookup nell'indice
+        if (str_ends_with($cleanName, '.md')) {
+            $cleanName = substr($cleanName, 0, -3);
+        }
 
         if (isset($index[$cleanName])) {
             return $index[$cleanName];

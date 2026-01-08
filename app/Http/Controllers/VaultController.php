@@ -472,8 +472,8 @@ class VaultController extends Controller
             ]);
         }
 
-        // Converti il parametro dell'URL nel path reale (senza estensione)
-        $filePath = self::camelCaseToPath($note);
+        // Risolve il path reale della nota (gestendo il case-sensitivity del server)
+        $filePath = MarkdownPreprocessor::findNotePath($note);
 
         $fullSystemPath = base_path("Vault/" . $filePath . ".md");
 
