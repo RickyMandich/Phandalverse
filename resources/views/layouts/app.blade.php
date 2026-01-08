@@ -14,6 +14,7 @@
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/scss/app.scss', 'resources/js/app.js'])
@@ -61,7 +62,7 @@
                             <input class="form-control bg-dark text-white border-secondary" type="search" name="q"
                                 placeholder="Cerca nel Vault..." aria-label="Search" value="{{ request('q') }}">
                             <button class="btn btn-outline-warning" type="submit">
-                                <i class="bi bi-search"></i>
+                                <i class="bi-search"></i>
                             </button>
                         </div>
                     </form>
@@ -114,7 +115,7 @@
                                     </a>
 
                                     <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault();
-                                                         document.getElementById('logout-form').submit();">
+                                                                 document.getElementById('logout-form').submit();">
                                         {{ __('Logout') }}
                                     </a>
 
