@@ -28,6 +28,10 @@ th {
     @extend .text-center;
 }
 
+.title-container {
+    position: relative;
+}
+
 .tag {
     position: absolute;
     right: 0;
