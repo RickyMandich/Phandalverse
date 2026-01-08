@@ -464,6 +464,7 @@ class VaultController extends Controller
                 'currentView' => 'tree',
                 'folderPath' => $folderPath,
                 'graphConfig' => $graphConfig,
+                'note' => $note,
             ]);
         }
 
