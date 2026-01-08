@@ -2,7 +2,7 @@
 @section('title', $title)
 @section('content')
     <div class="d-flex gap-0 h-100 w-100">
-        @include('vault._sidebar', ['tree' => $tree ?? [], 'path' => $path ?? []])
+        @include('vault._sidebar', ['tree' => $tree ?? [], 'path' => $path ?? [], 'masterFile' => $masterFile ?? false, 'note' => $note ?? null])
 
         <main class="flex-grow-1 p-4" style="min-width: 0;">
             <div class="title-container">
