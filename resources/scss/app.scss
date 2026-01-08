@@ -23,3 +23,7 @@ table {
     @extend .border-secondary;
     @extend .table-bordered;
 }
+
+table>tr>* {
+    @extend .text-center;
+}
