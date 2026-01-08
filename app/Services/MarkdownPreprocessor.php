@@ -413,7 +413,7 @@ class MarkdownPreprocessor
             'renderer' => ['soft_break' => "<br />"],
             'html_input' => 'allow',
             'default_attributes' => [
-                \League\CommonMark\Extension\Table\Table::class => [
+                'table' => [
                     'class' => ['table', 'table-striped', 'border-secondary', 'table-bordered'],
                 ],
             ],

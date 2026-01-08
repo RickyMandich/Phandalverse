@@ -10,3 +10,4 @@
 - sistemare l'elaborazione del css delle sezioni master
 # da fare
 - creare un sistema di ricerca note
+- sistemare generazione wikilink
