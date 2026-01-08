@@ -86,6 +86,48 @@ class VaultHelper
         return $currentNode['original'] ?? self::prettify(end($parts));
     }
 
+    /**
+     * Search for notes by their original title.
+     * Returns an array of results: [['original' => '...', 'path' => '...'], ...]
+     */
+    public static function searchNotes($query)
+    {
+        self::loadMap();
+        $results = [];
+        $query = strtolower($query);
+
+        if (empty($query)) {
+            return $results;
+        }
+
+        self::recursiveSearch(self::$map, '', $query, $results);
+
+        return $results;
+    }
+
+    protected static function recursiveSearch($node, $currentPath, $query, &$results)
+    {
+        // Search files in current directory
+        if (isset($node['files'])) {
+            foreach ($node['files'] as $normalizedName => $originalName) {
+                if (str_contains(strtolower($originalName), $query)) {
+                    $results[] = [
+                        'original' => $originalName,
+                        'path' => $currentPath ? $currentPath . '/' . $normalizedName : $normalizedName,
+                    ];
+                }
+            }
+        }
+
+        // Recursively search directories
+        if (isset($node['directories'])) {
+            foreach ($node['directories'] as $dirName => $dirNode) {
+                $newPath = $currentPath ? $currentPath . '/' . $dirName : $dirName;
+                self::recursiveSearch($dirNode, $newPath, $query, $results);
+            }
+        }
+    }
+
     protected static function prettify($slug)
     {
         $name = basename($slug, '.md');

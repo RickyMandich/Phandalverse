@@ -52,8 +52,7 @@
     }
 </style>
 
-<aside
-    class="bg-body-secondary border-end border-secondary-subtle rounded-4 d-flex flex-column position-relative z-1"
+<aside class="bg-body-secondary border-end border-secondary-subtle rounded-4 d-flex flex-column position-relative z-1"
     id="vault-sidebar">
     <button class="btn btn-sm btn-dark position-absolute top-0 end-0 m-2 z-2 lh-1" id="sidebar-toggle"
         title="Toggle Sidebar">
@@ -254,5 +253,5 @@
     </script>
 </aside>
 @php
-\App\Services\CustomLogger::note($note, "-------------------fine view _sidebar-------------------");
+    \App\Services\CustomLogger::note($note, "-------------------fine view _sidebar-------------------");
 @endphp

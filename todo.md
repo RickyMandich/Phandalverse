@@ -8,7 +8,7 @@
 - creare un sistema di notifiche (preferibilmente mail, alternativamente bot telegram, nel mio server non posso mettere SMTP)
 - sistemare visualizzazione foto
 - sistemare l'elaborazione del css delle sezioni master
-# da fare
 - creare un sistema di ricerca note
+# da fare
 - sistemare generazione wikilink
 - pagina di fallback in caso la nota non esista

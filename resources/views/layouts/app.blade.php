@@ -1,5 +1,6 @@
 <!doctype html>
 <html data-bs-theme="dark" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,7 +14,7 @@
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
-    
+
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/scss/app.scss', 'resources/js/app.js'])
 
@@ -22,13 +23,14 @@
 </head>
 
 <style>
-    a{
+    a {
         text-decoration: none;
         color: inherit;
     }
 </style>
 
 @yield('style')
+
 <body>
     <div id="app" class="d-flex flex-column justify-content-between min-vh-100">
         <nav class="navbar navbar-expand-md shadow-sm bg-secondary">
@@ -36,7 +38,9 @@
                 <a class="navbar-brand" href="{{ url('/') }}">
                     {{ config('app.name', 'Laravel') }}
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
@@ -49,6 +53,18 @@
                             </a>
                         </li>
                     </ul>
+
+                    <!-- Search Form -->
+                    <form class="d-flex mx-auto col-12 col-lg-6 my-2 my-lg-0" action="{{ route('vault.search') }}"
+                        method="GET">
+                        <div class="input-group">
+                            <input class="form-control bg-dark text-white border-secondary" type="search" name="q"
+                                placeholder="Cerca nel Vault..." aria-label="Search" value="{{ request('q') }}">
+                            <button class="btn btn-outline-warning" type="submit">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </form>
 
                     <!-- Right Side Of Navbar -->
                     <ul class="navbar-nav ms-auto">
@@ -67,7 +83,8 @@
                             @endif
                         @else
                             <li class="nav-item dropdown">
-                                <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
+                                <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button"
+                                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
                                     {{ Auth::user()->name }}
                                 </a>
 
@@ -96,9 +113,8 @@
                                         <i class="bi bi-person-circle"></i> Il mio Profilo
                                     </a>
 
-                                    <a class="dropdown-item" href="{{ route('logout') }}"
-                                       onclick="event.preventDefault();
-                                                     document.getElementById('logout-form').submit();">
+                                    <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault();
+                                                         document.getElementById('logout-form').submit();">
                                         {{ __('Logout') }}
                                     </a>
 
@@ -136,12 +152,14 @@
                             {{ env('APP_VERSION') }}
                             Created by
                             <small class="text-muted text-uppercase">
-                                <a href="https://github.com/RickyMandich" target="_blank" rel="author noopener noreferrer">Mandich Riccardo</a>
+                                <a href="https://github.com/RickyMandich" target="_blank"
+                                    rel="author noopener noreferrer">Mandich Riccardo</a>
                             </small>
                             <br>
                             with
                             <small class="text-muted text-uppercase">
-                                <a href="https://laravel.com/docs/12.x" target="_blank" rel="noopener noreferrer">laravel</a>
+                                <a href="https://laravel.com/docs/12.x" target="_blank"
+                                    rel="noopener noreferrer">laravel</a>
                             </small>
                         </p>
                     </div>
@@ -151,4 +169,5 @@
     </div>
     @yield('script')
 </body>
+
 </html>

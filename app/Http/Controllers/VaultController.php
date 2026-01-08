@@ -15,25 +15,12 @@ use App\Helpers\VaultHelper;
 class VaultController extends Controller
 {
     /**
-     * Converte un path reale in camelCase per l'URL
-     * Es: "Personaggi/La Ruota" -> "personaggi/laRuota"
+     * Prepara il path per l'URL.
+     * Dato che i file sono già normalizzati, restituiamo il path così com'è.
      */
     public static function pathToCamelCase(string $path): string
     {
-        $parts = explode('/', $path);
-        $result = [];
-
-        foreach ($parts as $part) {
-            // Rimuove spazi extra e converte in camelCase
-            $words = preg_split('/\s+/', trim($part));
-            $camelPart = Str::lower(array_shift($words));
-            foreach ($words as $word) {
-                $camelPart .= Str::ucfirst(Str::lower($word));
-            }
-            $result[] = $camelPart;
-        }
-
-        return implode('/', $result);
+        return str_replace('\\', '/', $path);
     }
 
     /**
@@ -148,19 +135,19 @@ class VaultController extends Controller
     }
 
     /**
-     * Converte un path camelCase in path reale cercando nel file index
-     * Es: "personaggi/laRuota" -> "Personaggi/La Ruota"
+     * Converte il parametro dell'URL nel path reale.
+     * Dato che l'URL usa già il path normalizzato, verifichiamo solo l'esistenza.
      */
     public static function camelCaseToPath(string $camelPath): ?string
     {
-        $index = MarkdownPreprocessor::buildFileIndex();
+        // Rimuovi estensione .md se presente per uniformità
+        if (str_ends_with(strtolower($camelPath), '.md')) {
+            $camelPath = substr($camelPath, 0, -3);
+        }
 
-        // Cerca nel file index un match (case-insensitive)
-        $camelPathLower = strtolower($camelPath);
-        foreach ($index as $name => $realPath) {
-            if (strtolower(self::pathToCamelCase($realPath)) === $camelPathLower) {
-                return $realPath;
-            }
+        // Se il file esiste direttamente nel Vault (aggiungendo .md)
+        if (File::exists(base_path('Vault/' . $camelPath . '.md'))) {
+            return $camelPath;
         }
 
         return null;
@@ -244,7 +231,7 @@ class VaultController extends Controller
             $current['_files'][] = [
                 'name' => VaultHelper::getOriginalName($fullRelativePath . '.md'), // Use original name for display (append extension for lookup)
                 'path' => $fullRelativePath,
-                'url' => self::pathToCamelCase($originalFullPath),
+                'url' => self::pathToCamelCase($originalFullPath . '.md'),
                 'dm' => $isDmFile, // Boolean indicating if file is DM-only
             ];
         }
@@ -280,7 +267,7 @@ class VaultController extends Controller
                 $relativePath = mb_convert_encoding($relativePath, 'UTF-8', 'ISO-8859-1');
             }
 
-            $fullPath = $relativePath ? $relativePath . '/' . $name : $name;
+            $fullPath = $relativePath ? $relativePath . '/' . $name . '.md' : $name . '.md';
             $content = File::get($file->getPathname());
 
             // Estrai i tag
@@ -360,41 +347,59 @@ class VaultController extends Controller
     }
 
     /**
-     * Converte un path camelCase in path reale cercando cartelle
-     * Es: "personaggi/giocanti" -> "Personaggi/Giocanti"
+     * Converte il parametro dell'URL nel path reale di una cartella.
      */
     public static function camelCaseToFolderPath(string $camelPath): ?string
     {
-        $vaultPath = base_path('Vault');
+        if (is_dir(base_path('Vault/' . $camelPath))) {
+            return $camelPath;
+        }
 
-        // Crea un indice di tutte le cartelle (ricorsivamente)
-        $folderIndex = [];
-        $stack = [$vaultPath];
+        return null;
+    }
 
-        while (!empty($stack)) {
-            $currentDir = array_pop($stack);
-            $subDirs = File::directories($currentDir);
+    public function search(Request $request)
+    {
+        $query = $request->query('q');
+        $note = "search";
+        $tree = $this->buildFileTree();
+        $results = [];
 
-            foreach ($subDirs as $dir) {
-                $relativePath = str_replace('\\', '/', substr($dir, strlen($vaultPath) + 1));
+        if ($query) {
+            $results = VaultHelper::searchNotes($query);
 
-                // Fix encoding
-                if (!mb_check_encoding($relativePath, 'UTF-8')) {
-                    $relativePath = mb_convert_encoding($relativePath, 'UTF-8', 'ISO-8859-1');
+            // Filter out DM-only files for non-masters
+            if (!Auth::check() || !Auth::isMaster()) {
+                $results = array_filter($results, function ($result) {
+                    $path = base_path('Vault/' . $result['path'] . '.md');
+                    if (File::exists($path)) {
+                        $content = File::get($path);
+                        return !preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content);
+                    }
+                    return true;
+                });
+            }
+
+            // Convert paths to URLs and format results
+            foreach ($results as &$result) {
+                $result['url'] = self::pathToCamelCase($result['path']);
+                // result['path'] in map is normalized (la-ruota.md), we want to show the directory path
+                $result['directory'] = dirname($result['path']);
+                if ($result['directory'] === '.') {
+                    $result['directory'] = '';
                 }
-
-                // Salta le cartelle nascoste (come .obsidian)
-                if (str_starts_with(basename($relativePath), '.')) {
-                    continue;
-                }
-
-                $folderIndex[strtolower(self::pathToCamelCase($relativePath))] = $relativePath;
-                $stack[] = $dir;
             }
         }
 
-        $camelPathLower = strtolower($camelPath);
-        return $folderIndex[$camelPathLower] ?? null;
+        $graphConfig = $this->loadGraphConfig();
+
+        return view('vault.search', [
+            'query' => $query,
+            'results' => $results,
+            'tree' => $tree,
+            'note' => $note,
+            'graphConfig' => $graphConfig,
+        ]);
     }
 
     public function show(Request $request, $note = null)
@@ -410,7 +415,8 @@ class VaultController extends Controller
             }
             $decoded = ltrim($decoded, '/\\');
             $candidate = base_path('Vault' . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $decoded));
-            if (File::exists($candidate) && is_file($candidate)) {
+            $ext = strtolower(pathinfo($candidate, PATHINFO_EXTENSION));
+            if (File::exists($candidate) && is_file($candidate) && $ext !== 'md') {
                 return response()->file($candidate);
             } else {
                 // If the decoded segment looks like an image path/name but the file
@@ -471,28 +477,28 @@ class VaultController extends Controller
             ]);
         }
 
-        // Converti il path camelCase in path reale
-        $realPath = self::camelCaseToPath($note);
+        // Converti il parametro dell'URL nel path reale
+        $filePath = self::camelCaseToPath($note);
 
-        if ($realPath === null) {
+        if ($filePath === null) {
             // Fallback: prova con il path originale (per retrocompatibilità)
-            $realPath = $note;
+            $filePath = $note;
         }
 
-        $path = base_path("Vault/" . $realPath . ".md");
+        $fullSystemPath = base_path("Vault/" . $filePath . ".md");
 
-        $realPath = preg_split('#[\\\\/]#', $realPath);
+        $pathSegments = preg_split('#[\\\\/]#', $filePath);
 
-        Log::info("Il path reale della nota è: " . print_r($realPath, true));
+        Log::info("Il path reale della nota è: " . print_r($pathSegments, true));
 
 
-        CustomLogger::note($note, "cerco la nota: $path");
-        if (!File::exists($path)) {
-            CustomLogger::note($note, "Nota non trovata: $path", 'error');
+        CustomLogger::note($note, "cerco la nota: $fullSystemPath");
+        if (!File::exists($fullSystemPath)) {
+            CustomLogger::note($note, "Nota non trovata: $fullSystemPath", 'error');
             abort(504, "Nota non trovata");
         }
 
-        $content = File::get($path);
+        $content = File::get($fullSystemPath);
         CustomLogger::note($note, "Contenuto ORIGINALE dal file: " . $content);
 
         CustomLogger::note($note, "ora controllo se è il master: " . Auth::isMaster() . "(master=" . Auth::getMaster() . ") e l'utente è " . Auth::getName());
@@ -518,15 +524,15 @@ class VaultController extends Controller
 
         CustomLogger::note($note, "Contenuto dopo filtro: " . $content);
 
-        if (preg_match('/(?<=^|[\\\\\\/])[^\\\\\\/]+(?=\\.md$)/', $path, $matches)) {
+        if (preg_match('/(?<=^|[\\\\\\/])[^\\\\\\/]+(?=\\.md$)/', $fullSystemPath, $matches)) {
             // Use VaultHelper to get the original displayed title if possible
-            // $path is absolute here. We need relative path to look up in map.
-            $relativePathForHelper = str_replace(base_path('Vault/'), '', $path);
+            // $fullSystemPath is absolute here. We need relative path to look up in map.
+            $relativePathForHelper = str_replace(base_path('Vault/'), '', $fullSystemPath);
             // Fix slashes
             $relativePathForHelper = str_replace('\\', '/', $relativePathForHelper);
 
             $title = VaultHelper::getOriginalName($relativePathForHelper);
-            Log::info("il path del file è: $path e il titolo del file è: $title");
+            Log::info("il path del file è: $fullSystemPath e il titolo del file è: $title");
         }
 
 
@@ -539,7 +545,7 @@ class VaultController extends Controller
             'title' => $title,
             'html' => $html,
             'tree' => $tree,
-            'path' => $realPath,
+            'path' => $pathSegments,
             'graphConfig' => $graphConfig,
             'masterFile' => $masterFile,
             'note' => $note,

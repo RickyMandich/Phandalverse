@@ -44,16 +44,8 @@ class MarkdownPreprocessor
                         continue;
                     }
                 }
-                $name = $file->getFilenameWithoutExtension();
+                $name = strtolower($file->getFilenameWithoutExtension());
                 $relativePath = str_replace('\\', '/', $file->getRelativePath());
-
-                // Fix encoding per caratteri speciali (es. à, è, ò, ù)
-                if (!mb_check_encoding($name, 'UTF-8')) {
-                    $name = mb_convert_encoding($name, 'UTF-8', 'ISO-8859-1');
-                }
-                if (!mb_check_encoding($relativePath, 'UTF-8')) {
-                    $relativePath = mb_convert_encoding($relativePath, 'UTF-8', 'ISO-8859-1');
-                }
 
                 if ($relativePath) {
                     self::$fileIndex[$name] = $relativePath . '/' . $name;
@@ -69,7 +61,7 @@ class MarkdownPreprocessor
     public static function findNotePath(string $noteName): string
     {
         $index = self::buildFileIndex();
-        $cleanName = trim($noteName);
+        $cleanName = strtolower(trim($noteName));
 
         if (isset($index[$cleanName])) {
             return $index[$cleanName];
@@ -164,8 +156,8 @@ class MarkdownPreprocessor
                 $label = $matches[2] ?? $matches[0];
                 $label = trim($label, '[]');
                 $path = self::findNotePath($nota);
-                // Converti il path in camelCase per l'URL
-                $camelPath = VaultController::pathToCamelCase($path);
+                // Converti il path in camelCase per l'URL (usiamo il path normalizzato con .md)
+                $camelPath = VaultController::pathToCamelCase($path . '.md');
                 $url = '/vault/' . $camelPath;
                 return '<a href="' . $url . '" class="wikilink">' . htmlspecialchars($label) . '</a>';
             },
@@ -254,7 +246,7 @@ class MarkdownPreprocessor
         $fullPath = base_path('Vault/' . $relativePath . '.md');
 
         if (!File::exists($fullPath)) {
-            $camelPath = VaultController::pathToCamelCase($relativePath);
+            $camelPath = VaultController::pathToCamelCase($relativePath . '.md');
             $url = '/vault/' . $camelPath;
             return '<div class="embed-note embed-missing"><a href="' . $url . '" class="wikilink"> ' . htmlspecialchars($noteName) . ' (non trovato)</a></div>';
         }
@@ -278,7 +270,7 @@ class MarkdownPreprocessor
         $html = self::toHtml($content);
         self::$embedDepth--;
 
-        $camelPath = VaultController::pathToCamelCase($relativePath);
+        $camelPath = VaultController::pathToCamelCase($relativePath . '.md');
         $url = '/vault/' . $camelPath;
         $embedDepth = self::$embedDepth;
         $ret = "<div class='embed-note border-primary ps-4 border-start embed-depth-$embedDepth'>";

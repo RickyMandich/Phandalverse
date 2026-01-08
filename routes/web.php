@@ -15,6 +15,8 @@ Route::get('/', function () {
     return view('welcome');
 })->name('index');
 
+Route::get('/vault/search', [VaultController::class, 'search'])->name('vault.search');
+
 Route::get('/vault/{note?}', [VaultController::class, 'show'])
     ->where('note', '.*')
     ->name('vault.show');
