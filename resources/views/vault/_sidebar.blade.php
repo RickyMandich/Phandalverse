@@ -112,7 +112,10 @@
 
                     $files = $items['_files'] ?? [];
                     foreach ($files as $file) {
-                        $isActiveFile = $currentFileName !== null && strcasecmp(end(explode($file['path'], '/')), $currentFileName) === 0;
+                        // Extract normalized filename from path (last segment after splitting by '/')
+                        $pathSegments = explode('/', $file['path']);
+                        $normalizedFileName = end($pathSegments);
+                        $isActiveFile = $currentFileName !== null && strcasecmp($normalizedFileName, $currentFileName) === 0;
 
                         $activeClass = $isActiveFile ? ' active bg-white bg-opacity-10 text-white rounded fw-semibold px-2 py-1' : ' text-info';
 
