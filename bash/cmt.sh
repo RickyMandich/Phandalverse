@@ -39,7 +39,10 @@ if [ -f .env ]; then
 
     # Componi la versione
     if [ -n "$APP_VERSION_PRIMARY" ] && [ -n "$APP_VERSION_SECONDARY" ] && [ -n "$APP_VERSION_TERTIARY" ]; then
-        APP_VERSION=$(grep "^APP_VERSION=" .env | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
+        if [ -n "$APP_VERSION_TYPE" ]; then
+            APP_VERSION="$APP_VERSION_TYPE"
+        fi
+        APP_VERSION="$APP_VERSION $APP_VERSION_PRIMARY.$APP_VERSION_SECONDARY.$APP_VERSION_TERTIARY"
     else
         APP_VERSION="unknown"
     fi
