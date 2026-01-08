@@ -445,6 +445,7 @@ class VaultController extends Controller
         if ($folderPath !== null) {
             Log::info("È una cartella: $folderPath");
 
+
             // Determina quale vista mostrare
             $defaultView = SystemSetting::getVaultDefaultView();
             $requestedView = $request->query('view');
@@ -457,6 +458,7 @@ class VaultController extends Controller
 
             // Per le cartelle mostriamo solo la vista albero
             $tree = $this->buildFileTree($folderPath);
+            $fullTree = $this->buildFileTree();
             $graphConfig = $this->loadGraphConfig();
             return view('vault.tree', [
                 'title' => 'Vault - ' . basename($folderPath),
