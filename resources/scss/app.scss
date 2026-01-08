@@ -24,6 +24,6 @@ table {
     @extend .table-bordered;
 }
 
-table>tr>* {
+th {
     @extend .text-center;
 }
