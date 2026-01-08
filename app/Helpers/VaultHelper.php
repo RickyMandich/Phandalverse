@@ -115,10 +115,12 @@ class VaultHelper
                     CustomLogger::note("search=>$query", "originalName=>" . $originalName);
                     CustomLogger::note("search=>$query", "normalizedName=>" . $normalizedName);
                     CustomLogger::note("search=>$query", "currentPath=>" . $currentPath);
-                    $results[] = [
-                        'original' => $originalName,
-                        'path' => $currentPath ? $currentPath . '/' . $normalizedName : $normalizedName,
-                    ];
+                    if (str_ends_with($normalizedName, "md")) {
+                        $results[] = [
+                            'original' => $originalName,
+                            'path' => $currentPath ? $currentPath . '/' . $normalizedName : $normalizedName,
+                        ];
+                    }
                 }
             }
         }
