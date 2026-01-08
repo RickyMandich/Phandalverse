@@ -1,8 +1,8 @@
 @extends('layouts.app')
 @section('title', $title)
 @section('content')
-
     @php
+        \App\Services\CustomLogger::note($note, "-------------------inizio view nota-------------------");
         \App\Services\CustomLogger::note($note, print_r($path, true));
     @endphp
     <div class="d-flex gap-0 h-100 w-100">
