@@ -104,7 +104,9 @@
                     }
 
                     // Check if current file matches (last element of path)
+                    \App\Services\CustomLogger::note($note, "currentPath: " . print_r($currentPath, true));
                     $currentFileName = count($currentPath) > 0 ? end($currentPath) : null;
+                    \App\Services\CustomLogger::note($note, "currentFileName: $currentFileName");
 
                     $files = $items['_files'] ?? [];
                     foreach ($files as $file) {
@@ -115,7 +117,7 @@
                         $html .= '<li class="my-1">';
                         $html .= '<a href="/vault/' . $file['url'] . '" class="file text-decoration-none d-inline-block' . $activeClass . ' hover-underline">📄&nbsp;' . e($file['name']) . '</a>' . ((isset($masterFile) ? $masterFile : false) ? '<span class="master-block tag">Master</span>' : '');
                         $html .= '</li>';
-                        \App\Services\CustomLogger::note($note, $file["name"] . "(working on $currentFileName)\t=>\tmaster: $masterFile");
+                        \App\Services\CustomLogger::note($note, "(working on $currentFileName)" . $file["name"] . "\t=>\tmaster: $masterFile");
                     }
 
                     $html .= '</ul>';
