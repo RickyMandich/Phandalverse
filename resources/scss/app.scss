@@ -16,3 +16,10 @@
     @extend .pe-1;
     @extend .me-1;
 }
+
+table {
+    @extend .table;
+    @extend .table-striped;
+    @extend .border-secondary;
+    @extend .table-bordered;
+}
