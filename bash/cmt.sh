@@ -38,8 +38,8 @@ if [ -f .env ]; then
     APP_VERSION_TERTIARY=$(grep "^APP_VERSION_TERTIARY=" .env | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
 
     # Componi la versione
-    if [ -n "$APP_VERSION_TYPE" ] && [ -n "$APP_VERSION_PRIMARY" ] && [ -n "$APP_VERSION_SECONDARY" ] && [ -n "$APP_VERSION_TERTIARY" ]; then
-        APP_VERSION="$APP_VERSION_TYPE $APP_VERSION_PRIMARY.$APP_VERSION_SECONDARY.$APP_VERSION_TERTIARY"
+    if [ -n "$APP_VERSION_PRIMARY" ] && [ -n "$APP_VERSION_SECONDARY" ] && [ -n "$APP_VERSION_TERTIARY" ]; then
+        APP_VERSION=$(grep "^APP_VERSION=" .env | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
     else
         APP_VERSION="unknown"
     fi
