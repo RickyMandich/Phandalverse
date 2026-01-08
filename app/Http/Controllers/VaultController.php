@@ -463,6 +463,7 @@ class VaultController extends Controller
             return view('vault.tree', [
                 'title' => 'Vault - ' . basename($folderPath),
                 'tree' => $tree,
+                'fullTree' => $fullTree,
                 'currentView' => 'tree',
                 'folderPath' => $folderPath,
                 'graphConfig' => $graphConfig,
