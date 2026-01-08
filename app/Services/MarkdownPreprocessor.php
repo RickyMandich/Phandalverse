@@ -414,24 +414,7 @@ class MarkdownPreprocessor
             'renderer' => ['soft_break' => "<br />"],
             'html_input' => 'allow',
             'table' => [
-                'attributes' => [
-                    'class' => 'table table-striped table-bordered border-secondary',
-                ],
-                'thead' => [
-                    'attributes' => [
-                        'class' => 'table-secondary',
-                    ],
-                ],
-                'th' => [
-                    'attributes' => [
-                        'class' => 'text-center',
-                    ],
-                ],
-                'td' => [
-                    'attributes' => [
-                        'class' => 'align-middle',
-                    ],
-                ],
+                'class' => 'table table-striped border-secondary table-bordered',
             ],
         ]);
 
