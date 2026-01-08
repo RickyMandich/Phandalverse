@@ -498,11 +498,13 @@ class VaultController extends Controller
         if (!Auth::isMaster()) {
             CustomLogger::note($note, "Filtro i blocchi master");
             $content = MarkdownPreprocessor::filterMasterBlocks($content);
+            $masterFile = false;
         } else {
             CustomLogger::note($note, "Mostro i blocchi master");
             // Non rimuoviamo qui i marker: il renderizer li gestirà correttamente.
             // Rimuovi solo il marker #dm per i master (se presente)
             $content = MarkdownPreprocessor::stripDmMarker($content);
+            $masterFile = true;
         }
 
         CustomLogger::note($note, "Contenuto dopo filtro: " . $content);
@@ -530,6 +532,7 @@ class VaultController extends Controller
             'tree' => $tree,
             'path' => $realPath,
             'graphConfig' => $graphConfig,
+            'masterFile' => $masterFile,
         ]);
     }
 
