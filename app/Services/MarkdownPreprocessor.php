@@ -134,17 +134,12 @@ class MarkdownPreprocessor
     /**
      * Remove the #dm marker so masters don't see the tag in the rendered output
      */
-    public static function stripDmMarker($note, $text): string
+    public static function stripDmMarker($text): string
     {
-        CustomLogger::note($note, "rimuovo il tag #dm e aggiungo la classe master-block");
         return preg_replace(
             '/(?<=^|\s)#dm(?=\s|$)/i',
             '',
-            preg_replace(
-                '/<h1 class=".*?">.*?<\/h1>/m',
-                '<h1 class="\${1} master-block">',
-                $text
-            )
+            $text
         );
     }
 

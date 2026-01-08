@@ -502,7 +502,7 @@ class VaultController extends Controller
             CustomLogger::note($note, "Mostro i blocchi master");
             // Non rimuoviamo qui i marker: il renderizer li gestirà correttamente.
             // Rimuovi solo il marker #dm per i master (se presente)
-            $content = MarkdownPreprocessor::stripDmMarker($note, $content);
+            $content = MarkdownPreprocessor::stripDmMarker($content);
         }
 
         CustomLogger::note($note, "Contenuto dopo filtro: " . $content);
