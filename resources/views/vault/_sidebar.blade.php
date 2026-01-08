@@ -91,8 +91,9 @@
                             // Use d-bock/d-none toggling
                             $html .= '<span class="folder' . $openClass . ' fw-bold text-warning cursor-pointer" onclick="this.classList.toggle(\'open\'); const ul = this.nextElementSibling; ul.classList.toggle(\'d-none\'); this.innerText = this.classList.contains(\'open\') ? \'📂\u00a0\' + this.dataset.name : \'📁\u00a0\' + this.dataset.name;" data-name="' . e($displayName) . '">' . $icon . '&nbsp;' . e($displayName) . '</span>';
 
-                            // Render children, passing updated path context
-                            $childHtml = renderTreeIndexPartial($value['_dirs'] ?? [], $deep + 1, $folderMatchesPath ? $currentPath : [], $note, $masterFile);
+                            // Render children, always passing the current path (for file highlighting)
+                            // but only increment depth if this folder matches the path (for auto-expansion)
+                            $childHtml = renderTreeIndexPartial($value['_dirs'] ?? [], $deep + 1, $currentPath, $note, $masterFile);
 
                             // If folder matches path, show only its immediate child <ul> (remove d-none)
                             if ($folderMatchesPath) {
@@ -120,7 +121,6 @@
                         $html .= '</li>';
                         \App\Services\CustomLogger::note($note, "(working on $currentFileName)" . $file["name"] . "\t=>\tmaster: $masterFile");
                     }
-
                     $html .= '</ul>';
                     return $html;
                 }
