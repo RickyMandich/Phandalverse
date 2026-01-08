@@ -426,7 +426,7 @@ class MarkdownPreprocessor
         $html = $converter->convert($text)->getContent();
 
         $html = preg_replace(
-            '/^<table>/',
+            '/^<table>/m',
             '<table class="table table-striped border-secondary table-bordered">',
             $html
         );
