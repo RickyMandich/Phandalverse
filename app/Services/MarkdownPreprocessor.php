@@ -425,12 +425,6 @@ class MarkdownPreprocessor
         // Convert the main text (with master placeholders)
         $html = $converter->convert($text)->getContent();
 
-        // $html = preg_replace(
-        //     '/^<table>/m',
-        //     '<table class="table table-striped border-secondary table-bordered">',
-        //     $html
-        // );
-
         // Convert each master block separately and insert the rendered HTML
         foreach ($masterBlocks as $i => $innerMarkdown) {
             $innerHtml = $converter->convert($innerMarkdown)->getContent();
