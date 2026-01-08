@@ -30,7 +30,7 @@ class LogsController extends Controller
         $breadcrumbs = $this->generateBreadcrumbs($currentPath);
 
         if (is_dir($fullPath)) {
-            $contents = $this->getDirectoryContents($fullPath, $currentPath);
+            $contents = array_reverse($this->getDirectoryContents($fullPath, $currentPath));
             return view('admin.logs', [
                 'contents' => $contents,
                 'currentPath' => $currentPath,
@@ -62,8 +62,8 @@ class LogsController extends Controller
         $sessions = $this->parseLogSessions($fullPath);
 
         // Se è richiesta una sessione specifica
-        if ($sessionIndex !== null && isset($sessions[(int)$sessionIndex])) {
-            $session = $sessions[(int)$sessionIndex];
+        if ($sessionIndex !== null && isset($sessions[(int) $sessionIndex])) {
+            $session = $sessions[(int) $sessionIndex];
             return view('admin.logs', [
                 'contents' => [],
                 'currentPath' => $currentPath,
@@ -220,17 +220,17 @@ class LogsController extends Controller
         if (empty($relativePath)) {
             return $basePath;
         }
-        
+
         // Rimuovi caratteri pericolosi
         $relativePath = str_replace(['..', "\0"], '', $relativePath);
         $fullPath = $basePath . DIRECTORY_SEPARATOR . $relativePath;
         $realPath = realpath($fullPath);
-        
+
         // Verifica che il path reale sia dentro la cartella logs
         if ($realPath === false || strpos($realPath, realpath($basePath)) !== 0) {
             return null;
         }
-        
+
         return $realPath;
     }
 
@@ -240,21 +240,21 @@ class LogsController extends Controller
     private function generateBreadcrumbs(string $currentPath): array
     {
         $breadcrumbs = [['name' => 'logs', 'path' => '']];
-        
+
         if (empty($currentPath)) {
             return $breadcrumbs;
         }
-        
+
         $parts = explode(DIRECTORY_SEPARATOR, $currentPath);
         $accumulatedPath = '';
-        
+
         foreach ($parts as $part) {
             if (!empty($part)) {
                 $accumulatedPath .= ($accumulatedPath ? DIRECTORY_SEPARATOR : '') . $part;
                 $breadcrumbs[] = ['name' => $part, 'path' => $accumulatedPath];
             }
         }
-        
+
         return $breadcrumbs;
     }
 
@@ -266,7 +266,7 @@ class LogsController extends Controller
         $contents = [];
         $items = File::files($path);
         $directories = File::directories($path);
-        
+
         // Prima le directory
         foreach ($directories as $dir) {
             $name = basename($dir);
@@ -279,7 +279,7 @@ class LogsController extends Controller
                 'modified' => File::lastModified($dir),
             ];
         }
-        
+
         // Poi i file
         foreach ($items as $file) {
             $name = $file->getFilename();
@@ -292,7 +292,7 @@ class LogsController extends Controller
                 'modified' => $file->getMTime(),
             ];
         }
-        
+
         return $contents;
     }
 
