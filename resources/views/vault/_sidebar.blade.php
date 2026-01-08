@@ -3,6 +3,7 @@
     // $tree expected, $path is the current note path array (e.g. ["Personaggi", "Giocanti", "Vargas (Paladino Nano, 65)"])
     $tree = $tree ?? [];
     $currentPath = $path ?? [];
+    $masterFile = $masterFile ?? null;
     $note = $note ?? "note not found";
     \App\Services\CustomLogger::note($note, print_r($currentPath, true));
 @endphp
