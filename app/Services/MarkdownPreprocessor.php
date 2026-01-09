@@ -394,12 +394,23 @@ class MarkdownPreprocessor
         return $html;
     }
 
+    public static function convertRomanNumbers(string $text): string
+    {
+        $text = preg_replace(
+            '/\bM{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})\b/',
+            "<span class=\"roman-number\">$0</span>",
+            $text
+        );
+        return $text;
+    }
+
     public static function toHtml(string $text): string
     {
         $embeds = [];
         $text = self::replaceEmbedsWithPlaceholders($text, $embeds);
         $text = self::convertTags($text);
         $text = self::convertWikilinks($text);
+        $text = self::convertRomanNumbers($text);
         // Extract master sections and replace them with placeholders so we can
         // convert the surrounding markdown as a whole, then convert each
         // master section separately to ensure inner markdown (headings, lists,

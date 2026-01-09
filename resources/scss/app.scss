@@ -43,3 +43,9 @@ li .tag {
     right: 0;
     bottom: 24%;
 }
+
+.roman-number {
+    @extend .text-uppercase;
+    @extend .text-decoration-underline;
+    @extend .text-decoration-overline;
+}
