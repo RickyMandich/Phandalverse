@@ -491,7 +491,7 @@ class VaultController extends Controller
         CustomLogger::note($note, "cerco la nota: $fullSystemPath");
         if (!File::exists($fullSystemPath)) {
             CustomLogger::note($note, "Nota non trovata: $fullSystemPath", 'error');
-            abort(504, "Nota non trovata");
+            return view('errors.504');
         }
 
         $content = File::get($fullSystemPath);
