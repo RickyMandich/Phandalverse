@@ -1,9 +1,9 @@
 @use "bootstrap/scss/bootstrap" as *;
 
 .wikilink {
-    @extend .text-muted;
+    // @extend .text-muted;
     @extend .text-uppercase;
-    @extend .text-info !important;
+    @extend .text-info;
 }
 
 .master-block {
