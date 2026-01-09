@@ -226,7 +226,7 @@ class VaultController extends Controller
             $current['_files'][] = [
                 'name' => VaultHelper::getOriginalName($fullRelativePath . '.md'), // Use original name for display (append extension for lookup)
                 'path' => $fullRelativePath,
-                'url' => self::pathToCamelCase($originalFullPath . '.md'),
+                'url' => self::pathToCamelCase($originalFullPath),
                 'dm' => $isDmFile, // Boolean indicating if file is DM-only
             ];
         }
