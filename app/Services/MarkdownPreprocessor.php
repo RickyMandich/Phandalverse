@@ -164,7 +164,7 @@ class MarkdownPreprocessor
                 $label = trim($label, '[]');
                 $path = self::findNotePath($nota);
                 // Converti il path in camelCase per l'URL (usiamo il path normalizzato con .md)
-                $camelPath = VaultController::pathToCamelCase($path . '.md');
+                $camelPath = VaultController::pathToCamelCase($path);
                 $url = '/vault/' . $camelPath;
                 return '<a href="' . $url . '" class="wikilink">' . htmlspecialchars($label) . '</a>';
             },
