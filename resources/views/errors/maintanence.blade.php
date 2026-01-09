@@ -1,7 +1,7 @@
 @extends('layouts.error')
-@section('code', @yield('code', '500'))
+@section('code', $__env->yieldContent('code') ?: '503')
 @section('message')
-    @if(Auth::isAdmin())
+    @if(Auth::check() && Auth::user()->isAdmin())
         @yield('specificMessage')
     @endif
     <br>
