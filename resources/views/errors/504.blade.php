@@ -1,4 +1,5 @@
 @extends('errors.maintanence')
+@section('code', '504')
 @section('specificMessage')
     Questa Nota non esiste
     <div class="mt-4">

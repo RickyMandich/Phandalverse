@@ -1,5 +1,5 @@
 @extends('layouts.error')
-@section('code', '500')
+@section('code', @yield('code', '500'))
 @section('message')
     @if(Auth::isAdmin())
         @yield('specificMessage')
