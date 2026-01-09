@@ -397,10 +397,11 @@ class MarkdownPreprocessor
     public static function convertRomanNumbers(string $text): string
     {
         $text = preg_replace(
-            '/\bM{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})\b/',
-            "<span class=\"roman-number\">$0</span>",
+            '/\bM{0,3}(CM|CD|D?C{1,3})?(XC|XL|L?X{1,3})?(IX|IV|V?I{1,3})?\b/',
+            '<span class="roman-number">$0</span>',
             $text
         );
+
         return $text;
     }
 
