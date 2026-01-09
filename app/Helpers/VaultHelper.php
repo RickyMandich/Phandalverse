@@ -91,7 +91,7 @@ class VaultHelper
      * Search for notes by their original title.
      * Returns an array of results: [['original' => '...', 'path' => '...'], ...]
      */
-    public static function searchNotes($query)
+    public static function searchNotes($query, $note)
     {
         self::loadMap();
         $results = [];
@@ -101,20 +101,20 @@ class VaultHelper
             return $results;
         }
 
-        self::recursiveSearch(self::$map, '', $query, $results);
+        self::recursiveSearch(self::$map, '', $query, $results, $note);
 
         return $results;
     }
 
-    protected static function recursiveSearch($node, $currentPath, $query, &$results)
+    protected static function recursiveSearch($node, $currentPath, $query, &$results, $note)
     {
         // Search files in current directory
         if (isset($node['files'])) {
             foreach ($node['files'] as $normalizedName => $originalName) {
                 if (str_contains(strtolower($originalName), $query)) {
-                    CustomLogger::note("search=>$query", "originalName=>" . $originalName);
-                    CustomLogger::note("search=>$query", "normalizedName=>" . $normalizedName);
-                    CustomLogger::note("search=>$query", "currentPath=>" . $currentPath);
+                    CustomLogger::note($note, "originalName=>" . $originalName);
+                    CustomLogger::note($note, "normalizedName=>" . $normalizedName);
+                    CustomLogger::note($note, "currentPath=>" . $currentPath);
                     if (str_ends_with($normalizedName, "md")) {
                         $results[] = [
                             'original' => $originalName,
@@ -129,7 +129,7 @@ class VaultHelper
         if (isset($node['directories'])) {
             foreach ($node['directories'] as $dirName => $dirNode) {
                 $newPath = $currentPath ? $currentPath . '/' . $dirName : $dirName;
-                self::recursiveSearch($dirNode, $newPath, $query, $results);
+                self::recursiveSearch($dirNode, $newPath, $query, $results, $note);
             }
         }
     }

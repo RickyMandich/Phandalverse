@@ -356,12 +356,12 @@ class VaultController extends Controller
     public function search(Request $request)
     {
         $query = $request->query('q');
-        $note = "search";
+        $note = "search=>$query";
         $tree = $this->buildFileTree();
         $results = [];
 
         if ($query) {
-            $results = VaultHelper::searchNotes($query);
+            $results = VaultHelper::searchNotes($query, $note);
 
             // Filter out DM-only files for non-masters
             if (!Auth::check() || !Auth::isMaster()) {
@@ -384,6 +384,8 @@ class VaultController extends Controller
                     $result['directory'] = '';
                 }
             }
+
+            CustomLogger::note($note, print_r($results, true));
 
             if (count($results) == 1) {
                 return redirect()->route('vault.show', ['note' => $results[0]['url']]);
