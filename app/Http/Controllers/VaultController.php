@@ -377,7 +377,7 @@ class VaultController extends Controller
 
             // Convert paths to URLs and format results
             foreach ($results as &$result) {
-                $result['url'] = self::pathToCamelCase($result['path']);
+                $result['url'] = str_replace('.md', '', self::pathToCamelCase($result['path']));
                 // result['path'] in map is normalized (la-ruota.md), we want to show the directory path
                 $result['directory'] = dirname($result['path']);
                 if ($result['directory'] === '.') {
