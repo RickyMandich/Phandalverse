@@ -45,8 +45,25 @@ li .tag {
 }
 
 .roman-number {
-    text-decoration: underline;
-    border-top: 1px solid currentColor;
+    position: relative;
     display: inline-block;
-    padding-top: 2px; // Adjust spacing as needed
+    padding: 3px 0; // Adjust spacing between lines and text
+
+    &::before,
+    &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: currentColor;
+    }
+
+    &::before {
+        top: 0;
+    }
+
+    &::after {
+        bottom: 0;
+    }
 }
