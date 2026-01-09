@@ -398,13 +398,10 @@ class MarkdownPreprocessor
     {
         CustomLogger::note($note, "text:\n$text", "debug");
         $text = preg_replace(
-            '/\b(M{1,3})?(CM|CD|D?C{1,3})?(XC|XL|L?X{1,3})?(IX|IV|V?I{1,3})?\b/g',
-            function ($matches) {
-                return $matches[0] !== '' ? "<span class='roman-number'>{$matches[0]}</span>" : '';
-            },
+            '/\b[MDCLXVI]+\b/i',
+            "<span class='roman-number'>$0</span>",
             $text
         );
-
         return $text;
     }
 
