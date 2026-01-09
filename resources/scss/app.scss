@@ -45,6 +45,5 @@ li .tag {
 }
 
 .roman-number {
-    @extend .text-decoration-underline;
-    text-decoration: overline;
+    text-decoration: underline overline;
 }
