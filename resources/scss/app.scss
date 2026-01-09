@@ -46,15 +46,7 @@ li .tag {
 
 .roman-number {
     text-decoration: underline;
-    position: relative;
+    border-top: 1px solid currentColor;
     display: inline-block;
-
-    &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        border-top: 1px solid currentColor;
-    }
+    padding-top: 2px; // Adjust spacing as needed
 }
