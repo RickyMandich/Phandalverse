@@ -3,7 +3,7 @@
 .wikilink {
     @extend .text-muted;
     @extend .text-uppercase;
-    @extend .text-info;
+    @extend .text-info !important;
 }
 
 .master-block {
