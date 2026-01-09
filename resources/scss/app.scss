@@ -45,7 +45,16 @@ li .tag {
 }
 
 .roman-number {
-    text-decoration: underline overline;
-    text-underline-offset: 2px;
-    text-decoration-thickness: 1px;
+    text-decoration: underline;
+    position: relative;
+    display: inline-block;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        border-top: 1px solid currentColor;
+    }
 }
