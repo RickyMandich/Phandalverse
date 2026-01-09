@@ -47,7 +47,6 @@ li .tag {
 .roman-number {
     position: relative;
     display: inline-block;
-    padding: 3px 0; // Adjust spacing between lines and text
 
     &::before,
     &::after {
@@ -60,10 +59,10 @@ li .tag {
     }
 
     &::before {
-        top: 0;
+        top: 2px; // Adjust this - lower number = closer to text
     }
 
     &::after {
-        bottom: 0;
+        bottom: 2px; // Adjust this - lower number = closer to text
     }
 }
