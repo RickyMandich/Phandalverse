@@ -533,7 +533,7 @@ class VaultController extends Controller
 
 
         // Converte Markdown → HTML con supporto wikilink/embed
-        $html = MarkdownPreprocessor::toHtml($content);
+        $html = MarkdownPreprocessor::toHtml($content, $note);
         CustomLogger::note($note, "HTML generato: " . $html);
         $tree = $this->buildFileTree();
         $graphConfig = $this->loadGraphConfig();

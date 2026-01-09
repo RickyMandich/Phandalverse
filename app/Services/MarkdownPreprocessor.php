@@ -236,7 +236,7 @@ class MarkdownPreprocessor
     /**
      * Carica e renderizza il contenuto di un embed
      */
-    public static function loadEmbedContent(string $embedRef): string
+    public static function loadEmbedContent(string $embedRef, string $note): string
     {
         // Previeni ricorsione infinita
         if (self::$embedDepth >= self::$maxEmbedDepth) {
@@ -274,7 +274,7 @@ class MarkdownPreprocessor
 
         // Renderizza il contenuto (con protezione ricorsione)
         self::$embedDepth++;
-        $html = self::toHtml($content);
+        $html = self::toHtml($content, $note);
         self::$embedDepth--;
 
         $camelPath = VaultController::pathToCamelCase($relativePath . '.md');
@@ -302,7 +302,7 @@ class MarkdownPreprocessor
         );
     }
 
-    public static function restoreEmbeds(string $html, array $embeds): string
+    public static function restoreEmbeds(string $html, array $embeds, string $note): string
     {
         foreach ($embeds as $index => $content) {
             $imageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'];
@@ -385,7 +385,7 @@ class MarkdownPreprocessor
                     $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image" style="max-width: 100%; height: auto;">';
                 } else {
                     // No extension or non-image extension → try as note embed
-                    $replacement = self::loadEmbedContent($content);
+                    $replacement = self::loadEmbedContent($content, $note);
                 }
             }
 
@@ -394,8 +394,9 @@ class MarkdownPreprocessor
         return $html;
     }
 
-    public static function convertRomanNumbers(string $text): string
+    public static function convertRomanNumbers(string $text, string $note): string
     {
+        CustomLogger::note($note, "text:\n$text", "debug");
         $text = preg_replace(
             '/\b(M{1,3})?(CM|CD|D?C{1,3})?(XC|XL|L?X{1,3})?(IX|IV|V?I{1,3})?\b/',
             '<span class="roman-number">$0</span>',
@@ -405,13 +406,13 @@ class MarkdownPreprocessor
         return $text;
     }
 
-    public static function toHtml(string $text): string
+    public static function toHtml(string $text, string $note): string
     {
         $embeds = [];
         $text = self::replaceEmbedsWithPlaceholders($text, $embeds);
         $text = self::convertTags($text);
         $text = self::convertWikilinks($text);
-        $text = self::convertRomanNumbers($text);
+        $text = self::convertRomanNumbers($text, $note);
         // Extract master sections and replace them with placeholders so we can
         // convert the surrounding markdown as a whole, then convert each
         // master section separately to ensure inner markdown (headings, lists,
@@ -448,7 +449,7 @@ class MarkdownPreprocessor
         }
 
         // Finally, restore embeds (placeholders -> actual embed HTML)
-        $html = self::restoreEmbeds($html, $embeds);
+        $html = self::restoreEmbeds($html, $embeds, $note);
 
         return $html;
     }
