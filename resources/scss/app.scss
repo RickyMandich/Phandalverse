@@ -45,7 +45,6 @@ li .tag {
 }
 
 .roman-number {
-    @extend .text-uppercase;
     @extend .text-decoration-underline;
-    @extend .text-decoration-overline;
+    text-decoration: overline;
 }
