@@ -1,6 +1,6 @@
 @extends('errors.maintanence')
 @section('code', '504')
-@section('specificMessage')
+@section('message')
     Questa Nota non esiste
     <div class="mt-4">
         <a href="{{ route('vault.show') }}" class="btn btn-primary btn-lg">
