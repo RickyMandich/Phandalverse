@@ -10,5 +10,6 @@
 - sistemare l'elaborazione del css delle sezioni master
 - creare un sistema di ricerca note
 # da fare
+- aggiungere la renderizzazione dei numeri romaniq
 - sistemare generazione wikilink
 - pagina di fallback in caso la nota non esista
