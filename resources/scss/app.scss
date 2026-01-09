@@ -59,10 +59,10 @@ li .tag {
     }
 
     &::before {
-        top: 10%; // Adjust this - lower number = closer to text
+        top: 23%; // Adjust this - lower number = closer to text
     }
 
     &::after {
-        bottom: 10%; // Adjust this - lower number = closer to text
+        bottom: 17%; // Adjust this - lower number = closer to text
     }
 }
