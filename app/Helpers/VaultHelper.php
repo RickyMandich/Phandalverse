@@ -21,7 +21,9 @@ class VaultHelper
         if (File::exists(self::$mapPath)) {
             CustomLogger::note($note, "File exists: " . self::$mapPath, "VaultHelper:22");
             self::$map = json_decode(File::get(self::$mapPath), true);
+            CustomLogger::note($note, "Map loaded: " . print_r(self::$map, true), "VaultHelper:24");
         } else {
+            CustomLogger::note($note, "File does not exist: " . self::$mapPath, "VaultHelper:26");
             self::$map = [];
         }
     }
