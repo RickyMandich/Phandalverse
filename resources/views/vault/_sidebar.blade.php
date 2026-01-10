@@ -66,7 +66,7 @@
                 // Renderer that auto-expands folders matching the current path
                 function renderTreeIndexPartial($items, $deep, $currentPath, $note, $masterFile)
                 {
-                    // \App\Services\CustomLogger::note($note, "renderTreeIndexPartial(\$items(" . print_r($items, true) . "), \$deep(" . print_r($deep, true) . "), \$currentPath(" . print_r($currentPath, true) . "), \$note(" . print_r($note, true) . "), \$masterFile(" . print_r($masterFile, true) . "))");
+                    \App\Services\CustomLogger::note($note, "renderTreeIndexPartial(\$items(" . print_r($items, true) . "), \$deep(" . print_r($deep, true) . "), \$currentPath(" . print_r($currentPath, true) . "), \$note(" . print_r($note, true) . "), \$masterFile(" . print_r($masterFile, true) . "))", "debug");
                     // Check if current folder matches the path at this depth
                     $pathSegment = $currentPath[$deep] ?? null;
                     $isOnPath = $pathSegment !== null;
