@@ -358,7 +358,7 @@ class VaultController extends Controller
     {
         $query = $request->query('q');
         $note = "search=>$query";
-        $tree = $this->buildFileTree(note: $note);
+        $tree = $this->buildFileTree(null, note: $note);
         $results = [];
 
         if ($query) {
@@ -434,7 +434,7 @@ class VaultController extends Controller
         // con pannello laterale (albero) e vista a grafo nella stessa pagina.
         if ($note === null || $note === '') {
             $note = "graph";
-            $tree = $this->buildFileTree(note: $note);
+            $tree = $this->buildFileTree(null, note: $note);
             $graphData = $this->buildGraphData();
             $graphConfig = $this->loadGraphConfig();
             return view('vault.index', [
@@ -466,7 +466,7 @@ class VaultController extends Controller
 
             // Per le cartelle mostriamo solo la vista albero
             $tree = $this->buildFileTree($folderPath, $note);
-            $fullTree = $this->buildFileTree(note: $note);
+            $fullTree = $this->buildFileTree(null, note: $note);
             $graphConfig = $this->loadGraphConfig();
             return view('vault.tree', [
                 'title' => 'Vault - ' . basename($folderPath),
@@ -536,7 +536,7 @@ class VaultController extends Controller
         // Converte Markdown → HTML con supporto wikilink/embed
         $html = MarkdownPreprocessor::toHtml($content, $note);
         CustomLogger::note($note, "HTML generato: " . $html);
-        $tree = $this->buildFileTree(note: $note);
+        $tree = $this->buildFileTree(null, note: $note);
         $graphConfig = $this->loadGraphConfig();
         return view('vault.note', [
             'title' => $title,
