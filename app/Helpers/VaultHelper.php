@@ -82,13 +82,15 @@ class VaultHelper
         foreach ($parts as $part) {
             $lowerPart = strtolower($part);
             if (isset($currentNode['directories'][$lowerPart])) {
+                CustomLogger::note($note, "lowerPart: " . $lowerPart, "VaultHelper:85");
+                CustomLogger::note($note, "currentNode: " . print_r($currentNode, true) . "\ndiventa " . print_r($currentNode['directories'][$lowerPart], true), "VaultHelper:86");
                 $currentNode = $currentNode['directories'][$lowerPart];
             } else {
-                CustomLogger::note($note, "Path not found in map: " . $part, "debug");
+                CustomLogger::note($note, "Path not found in map: " . $part, "VaultHelper:88");
                 return self::prettify($part);
             }
         }
-
+        CustomLogger::note($note, "ritorno di getOriginalDirectoryName($dirPath): " . $currentNode['original'] ?? self::prettify(end($parts)), "VaultHelper:93");
         return $currentNode['original'] ?? self::prettify(end($parts));
     }
 
