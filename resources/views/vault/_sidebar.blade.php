@@ -139,8 +139,16 @@
         <h5 class="text-warning mb-3 fw-bold">📣 Legenda</h5>
         <div class="legenda bg-dark-subtle p-3 rounded small font-monospace">
             <ul class="list-unstyled m-0">
-                <li class="mb-1"><span class="text-danger fw-bold">#dm</span> : <span class="master-block">esclusivo
-                        master</span></li>
+                @if (Auth::user()->isMaster())
+                <li class="mb-1">
+                    <span class="text-danger fw-bold">
+                        #dm
+                    </span> : 
+                    <span class="master-block">
+                        esclusivo master
+                    </span>
+                </li>
+                @endif
                 <li class="mb-1"><span class="text-info">[[link]]</span> : <span class="wikilink">collegamenti</span>
                 </li>
             </ul>

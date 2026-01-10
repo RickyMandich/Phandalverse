@@ -6,15 +6,15 @@
 }
 
 .master-block {
-    @extend .border;
-    @extend .border-2;
-    @extend .border-info;
-    @extend .bg-secondary;
-    @extend .rounded-2;
-    // @extend .d-inline;
-    @extend .ps-1;
-    @extend .pe-1;
-    @extend .me-1;
+    @extend .border; // attivo il bordo
+    @extend .border-2; // spessore del bordo
+    @extend .border-info; // colore del bordo
+    @extend .bg-secondary; // colore di sfondo
+    @extend .rounded-2; // arrotondamento
+    // @extend .d-inline; // display inline
+    @extend .ps-1; // padding sinistro
+    @extend .pe-1; // padding destro
+    @extend .me-1; // margin destro
 }
 
 table {

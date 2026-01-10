@@ -13,3 +13,4 @@
 - sistemare generazione wikilink
 - pagina di fallback in caso la nota non esista
 # da fare
+attiva redirect login
