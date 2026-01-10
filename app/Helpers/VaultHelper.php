@@ -69,17 +69,22 @@ class VaultHelper
     /**
      * Get the original name of a directory itself.
      */
-    public static function getOriginalDirectoryName($dirPath)
+    public static function getOriginalDirectoryName($dirPath, $note)
     {
         self::loadMap();
         $parts = explode('/', $dirPath);
         $currentNode = self::$map;
+
+        CustomLogger::note($note, "dirPath: " . $dirPath, "debug");
+        CustomLogger::note($note, "parts: " . print_r($parts, true), "debug");
+        CustomLogger::note($note, "currentNode: " . print_r($currentNode, true), "debug");
 
         foreach ($parts as $part) {
             $lowerPart = strtolower($part);
             if (isset($currentNode['directories'][$lowerPart])) {
                 $currentNode = $currentNode['directories'][$lowerPart];
             } else {
+                CustomLogger::note($note, "Path not found in map: " . $part, "debug");
                 return self::prettify($part);
             }
         }
