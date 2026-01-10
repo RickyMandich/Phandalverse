@@ -10,7 +10,7 @@ class VaultHelper
     protected static $map = null;
     protected static $mapPath;
 
-    protected static function loadMap()
+    protected static function loadMap($note)
     {
         if (self::$map !== null) {
             return;
@@ -19,6 +19,7 @@ class VaultHelper
         self::$mapPath = base_path('/Vault/.normalize/map.json');
 
         if (File::exists(self::$mapPath)) {
+            CustomLogger::note($note, "File exists: " . self::$mapPath, "VaultHelper:22");
             self::$map = json_decode(File::get(self::$mapPath), true);
         } else {
             self::$map = [];
@@ -29,9 +30,9 @@ class VaultHelper
      * Get the original display name for a normalized path.
      * Path should be relative to vault root, e.g. "dungeon/level-1/room.md"
      */
-    public static function getOriginalName($normalizedPath)
+    public static function getOriginalName($normalizedPath, $note)
     {
-        self::loadMap();
+        self::loadMap($note);
 
         $parts = explode('/', $normalizedPath);
         $currentNode = self::$map;
@@ -71,7 +72,7 @@ class VaultHelper
      */
     public static function getOriginalDirectoryName($dirPath, $note)
     {
-        self::loadMap();
+        self::loadMap($note);
         $parts = explode('/', $dirPath);
         $currentNode = self::$map;
 
@@ -101,7 +102,7 @@ class VaultHelper
      */
     public static function searchNotes($query, $note)
     {
-        self::loadMap();
+        self::loadMap($note);
         $results = [];
         $query = strtolower($query);
 
