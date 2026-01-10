@@ -225,7 +225,7 @@ class VaultController extends Controller
             $originalFullPath = $basePath ? $basePath . '/' . $fullRelativePath : $fullRelativePath;
 
             $current['_files'][] = [
-                'name' => VaultHelper::getOriginalName($fullRelativePath . '.md'), // Use original name for display (append extension for lookup)
+                'name' => VaultHelper::getOriginalName($fullRelativePath . '.md', $note), // Use original name for display (append extension for lookup)
                 'path' => $fullRelativePath,
                 'url' => self::pathToCamelCase($originalFullPath),
                 'dm' => $isDmFile, // Boolean indicating if file is DM-only
@@ -528,7 +528,7 @@ class VaultController extends Controller
             // Fix slashes
             $relativePathForHelper = str_replace('\\', '/', $relativePathForHelper);
 
-            $title = VaultHelper::getOriginalName($relativePathForHelper);
+            $title = VaultHelper::getOriginalName($relativePathForHelper, $note);
             Log::info("il path del file è: $fullSystemPath e il titolo del file è: $title");
         }
 
