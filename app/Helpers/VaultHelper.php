@@ -87,10 +87,11 @@ class VaultHelper
                 $currentNode = $currentNode['directories'][$lowerPart];
             } else {
                 CustomLogger::note($note, "Path not found in map: " . $part, "VaultHelper:88");
+                CustomLogger::note($note, "ritorno di getOriginalDirectoryName($dirPath): " . self::prettify($part), "VaultHelper:90");
                 return self::prettify($part);
             }
         }
-        CustomLogger::note($note, "ritorno di getOriginalDirectoryName($dirPath): " . $currentNode['original'] ?? self::prettify(end($parts)), "VaultHelper:93");
+        CustomLogger::note($note, "ritorno di getOriginalDirectoryName($dirPath): " . $currentNode['original'] ?? self::prettify(end($parts)), "VaultHelper:94");
         return $currentNode['original'] ?? self::prettify(end($parts));
     }
 
