@@ -75,9 +75,9 @@ class VaultHelper
         $parts = explode('/', $dirPath);
         $currentNode = self::$map;
 
-        CustomLogger::note($note, "dirPath: " . $dirPath, "debug");
-        CustomLogger::note($note, "parts: " . print_r($parts, true), "debug");
-        CustomLogger::note($note, "currentNode: " . print_r($currentNode, true), "debug");
+        CustomLogger::note($note, "dirPath: " . $dirPath, "VaultHelper:78");
+        CustomLogger::note($note, "parts: " . print_r($parts, true), "VaultHelper:79");
+        CustomLogger::note($note, "currentNode: " . print_r($currentNode, true), "VaultHelper:80");
 
         foreach ($parts as $part) {
             $lowerPart = strtolower($part);

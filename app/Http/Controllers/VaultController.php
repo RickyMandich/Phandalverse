@@ -211,7 +211,7 @@ class VaultController extends Controller
                 $currentDirPath = $currentDirPath ? $currentDirPath . '/' . $part : $part;
 
                 if (!isset($current[$part])) {
-                    CustomLogger::note($note, "currentDirPath=>" . $currentDirPath, "debug");
+                    CustomLogger::note($note, "currentDirPath=>" . $currentDirPath, "VaultController:214");
                     $current[$part] = [
                         '_files' => [],
                         '_dirs' => [],
