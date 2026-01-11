@@ -236,7 +236,7 @@ class MarkdownPreprocessor
     /**
      * Carica e renderizza il contenuto di un embed
      */
-    public static function loadEmbedContent(string $embedRef, string $note): string
+    public static function loadEmbedContent(string $embedRef, string $note, int $index): string
     {
         // Previeni ricorsione infinita
         if (self::$embedDepth >= self::$maxEmbedDepth) {
@@ -282,13 +282,13 @@ class MarkdownPreprocessor
         $embedDepth = self::$embedDepth;
         $ret = "<div class='embed-note border-primary ps-4 border-start embed-depth-$embedDepth'>";
         if (Auth::check() && Auth::user()->showEmbedLink) {
-            $ret = "$ret<div class='embed-header'><i class='bi-caret-right-square collapse-icon' data-bs-toggle='collapse' data-bs-target='#embed-$embedDepth'></i><a href='$url' class='wikilink'> " . htmlspecialchars($embedRef) . '</a></div>';
+            $ret = "$ret<div class='embed-header'><i class='bi-caret-right-square collapse-icon' data-bs-toggle='collapse' data-bs-target='#embed-$index-$embedDepth'></i><a href='$url' class='wikilink'> " . htmlspecialchars($embedRef) . '</a></div>';
         }
         $ret = "$ret<div class='embed-content collapse";
         if ((Auth::check() && !Auth::user()->showEmbedLink) || !Auth::check()) {
             $ret = "$ret show";
         }
-        $ret = "$ret' id='embed-$embedDepth'>" . $html . '</div></div>';
+        $ret = "$ret' id='embed-$index-$embedDepth'>" . $html . '</div></div>';
         return $ret;
     }
 
@@ -389,7 +389,7 @@ class MarkdownPreprocessor
                     $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image" style="max-width: 100%; height: auto;">';
                 } else {
                     // No extension or non-image extension → try as note embed
-                    $replacement = self::loadEmbedContent($content, $note);
+                    $replacement = self::loadEmbedContent($content, $note, $index);
                 }
             }
 
