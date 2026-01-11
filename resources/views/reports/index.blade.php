@@ -61,13 +61,15 @@
                             🧠
                         @elseif($report->category === 'display')
                             👁️
-                        @else
+                        @elseif($report->category === 'content')
                             📝
+                        @else
+                            ❓
                         @endif
                         {{ $report->category_label }}
                     </td>
                     <td>{{ Str::limit($report->description, 50) }}</td>
-                    <td>{{ $report->user?->name ?? 'Anonimo' }}</td>
+                    <td>{{ $report->user?->name ?? $report->email }}</td>
                     <td>
                         @php
                             $statusColors = [

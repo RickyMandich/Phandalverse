@@ -44,7 +44,7 @@
 
                 <div class="row text-muted small">
                     <div class="col-md-6">
-                        <strong>Segnalato da:</strong> {{ $report->user?->name ?? 'Anonimo' }}
+                        <strong>Segnalato da:</strong> {{ $report->user?->name ?? $report->email }}
                     </div>
                     <div class="col-md-6">
                         <strong>Data:</strong> {{ $report->created_at->format('d/m/Y H:i') }}
