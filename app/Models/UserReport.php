@@ -14,6 +14,7 @@ class UserReport extends Model
         'user_id',
         'status',
         'admin_notes',
+        'email',
     ];
 
     protected $casts = [
