@@ -21,11 +21,20 @@ class LoginController extends Controller
     use AuthenticatesUsers;
 
     /**
-     * Where to redirect users after login.
+     * Get the post-login redirect path.
      *
-     * @var string
+     * @return string
      */
-    protected $redirectTo = '/home';
+    protected function redirectTo()
+    {
+        // Check if there's a redirect parameter in the request
+        if (request()->has('redirect')) {
+            return request()->get('redirect');
+        }
+
+        // Otherwise use Laravel's intended (for middleware redirects)
+        return session('url.intended', '/home');
+    }
 
     /**
      * Create a new controller instance.
