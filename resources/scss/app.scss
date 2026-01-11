@@ -3,6 +3,7 @@
 .wikilink {
     @extend .text-uppercase;
     @extend .text-info;
+    @extend .d-inline-block;
 }
 
 .master-block {
@@ -11,7 +12,7 @@
     @extend .border-info; // colore del bordo
     @extend .bg-secondary; // colore di sfondo
     @extend .rounded-2; // arrotondamento
-    // @extend .d-inline; // display inline
+    @extend .d-inline-block; // display inline-block
     @extend .ps-1; // padding sinistro
     @extend .pe-1; // padding destro
     @extend .me-1; // margin destro
