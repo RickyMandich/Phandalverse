@@ -28,7 +28,7 @@ class LoginController extends Controller
     protected function redirectTo()
     {
         // Check if there's a redirect parameter in the request
-        if (request()->has('redirect')) {
+        if (request()->has('from')) {
             return request()->get('redirect');
         }
 
