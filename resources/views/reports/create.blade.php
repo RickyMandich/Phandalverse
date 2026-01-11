@@ -140,7 +140,7 @@
                 </div>
                 <small class="text-muted">
                     <i class="bi bi-person-x"></i> Stai inviando una segnalazione come ospite. 
-                    <a href="{{ route('login') }}">Accedi</a> per associare la segnalazione al tuo account.
+                    <a href="{{ route('login') }}" class="wikilink">Accedi</a> per associare la segnalazione al tuo account.
                 </small>
             @endauth
         </div>

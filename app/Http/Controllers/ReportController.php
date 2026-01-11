@@ -14,7 +14,7 @@ class ReportController extends Controller
     public function create(Request $request)
     {
         $referrerUrl = $request->query('from', '');
-        
+
         return view('reports.create', [
             'categories' => UserReport::CATEGORIES,
             'referrerUrl' => $referrerUrl,
@@ -30,6 +30,7 @@ class ReportController extends Controller
             'category' => 'required|in:logic,display,other',
             'description' => 'required|string|min:10|max:2000',
             'page_urls' => 'nullable|string|max:1000',
+            'email' => 'nullable|email',
         ]);
 
         // Converti le URL in array (separate da newline)
@@ -45,16 +46,17 @@ class ReportController extends Controller
             'description' => $validated['description'],
             'page_urls' => $pageUrls,
             'user_id' => Auth::id(), // null se non loggato
+            'email' => $validated['email'],
         ]);
 
         // Notifica Telegram per nuova segnalazione
         try {
             if (env('TELEGRAM_BOT_TOKEN')) {
-                $from = Auth::check() ? (Auth::user()->email ?? Auth::user()->name) : null;
+                $from = Auth::check() ? (Auth::user()->email ?? Auth::user()->name) : $report->email;
                 \App\Services\TelegramService::notifyNewReport(
                     'Segnalazione - ' . $report->category,
                     $report->description,
-                    $from
+                    $from,
                 );
             }
         } catch (\Exception $ex) {
