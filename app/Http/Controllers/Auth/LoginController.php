@@ -23,7 +23,7 @@ class LoginController extends Controller
             session(['url.intended' => $request->get('from')]);
         }
 
-        return view('auth.login');
+        return response(view('auth.login'));
     }
 
     /**

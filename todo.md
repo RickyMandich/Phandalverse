@@ -14,5 +14,5 @@
 - pagina di fallback in caso la nota non esista
 aggiungere il topic `contenuto` alle segnalazioni
 - sistemare autore segnalazione
-# da fare
 - attiva redirect login
+# da fare
