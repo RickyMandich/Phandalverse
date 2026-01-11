@@ -32,6 +32,11 @@ class UserReport extends Model
         'content' => 'Contenuto',
     ];
 
+    public const function getCategoriesKeysForValidate()
+    {
+        return implode(',', array_keys(self::CATEGORIES));
+    }
+
     /**
      * Stati disponibili
      */
