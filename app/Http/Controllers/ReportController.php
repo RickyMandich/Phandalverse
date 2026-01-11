@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\UserReport;
+use App\Services\CustomLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ReportResponseMail;
+use Log;
 
 class ReportController extends Controller
 {
@@ -28,6 +30,11 @@ class ReportController extends Controller
      */
     public function store(Request $request)
     {
+        Log::debug('cerco di creare una segnalazione con questi dati:\n' .
+            "category: " . print_r($request->category, true) . "\n" .
+            "description: " . print_r($request->description, true) . "\n" .
+            "page_urls: " . print_r($request->page_urls, true) . "\n" .
+            "email: " . print_r($request->email, true));
         $validated = $request->validate([
             'category' => 'required|in:logic,display,other',
             'description' => 'required|string|min:10|max:2000',

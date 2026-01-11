@@ -13,6 +13,6 @@
 - sistemare generazione wikilink
 - pagina di fallback in caso la nota non esista
 aggiungere il topic `contenuto` alle segnalazioni
-# da fare
 - sistemare autore segnalazione
+# da fare
 - attiva redirect login
