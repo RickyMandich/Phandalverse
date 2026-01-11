@@ -282,7 +282,7 @@ class MarkdownPreprocessor
         $embedDepth = self::$embedDepth;
         $ret = "<div class='embed-note border-primary ps-4 border-start embed-depth-$embedDepth'>";
         if (Auth::check() && Auth::user()->showEmbedLink) {
-            $ret = "$ret<div class='embed-header'><i class='bi-caret-down-square collapse-icon' data-bs-toggle='collapse' data-bs-target='#embed-$embedDepth'></i><a href='$url' class='wikilink'> " . htmlspecialchars($embedRef) . '</a></div>';
+            $ret = "$ret<div class='embed-header'><i class='bi-caret-right-square collapse-icon' data-bs-toggle='collapse' data-bs-target='#embed-$embedDepth'></i><a href='$url' class='wikilink'> " . htmlspecialchars($embedRef) . '</a></div>';
         }
         $ret = $ret . "<div class='embed-content collapse' id='embed-$embedDepth'>" . $html . '</div></div>';
         return $ret;
