@@ -67,3 +67,7 @@ li .tag {
         bottom: 24%; // Adjust this - lower number = closer to text
     }
 }
+
+i {
+    @extend .pe-1;
+}
