@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\UserReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ReportResponseMail;
 
 class ReportController extends Controller
 {
@@ -118,9 +120,22 @@ class ReportController extends Controller
         $validated = $request->validate([
             'status' => 'required|in:pending,in_progress,resolved,rejected',
             'admin_notes' => 'nullable|string|max:2000',
+            'response' => 'nullable|string|max:2000',
         ]);
 
         $report->update($validated);
+
+        if ($report->wasChanged('response') && !empty($report->response)) {
+            $email = $report->user ? $report->user->email : $report->email;
+
+            if ($email) {
+                try {
+                    Mail::to($email)->send(new ReportResponseMail($report, $report->response));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Errore invio mail risposta segnalazione: ' . $e->getMessage());
+                }
+            }
+        }
 
         return redirect()
             ->route('admin.reports.show', $report)

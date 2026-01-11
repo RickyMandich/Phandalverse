@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->enum('status', ['pending', 'in_progress', 'resolved', 'rejected'])->default('pending');
             $table->text('admin_notes')->nullable();
+            $table->text('response')->nullable();
             $table->string('email')->nullable();
             $table->timestamps();
         });
