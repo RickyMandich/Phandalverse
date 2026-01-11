@@ -12,9 +12,11 @@ class EventServiceProvider extends ServiceProvider
      * @var array
      */
     protected $listen = [
+        /*
         \Illuminate\Mail\Events\MessageSent::class => [
             \App\Listeners\ForwardMailToTelegram::class,
         ],
+        */
         // aggiungi qui altri eventi se serve
     ];
 

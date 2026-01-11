@@ -28,8 +28,8 @@ class UserReport extends Model
     public const CATEGORIES = [
         'logic' => 'Problema logico',
         'display' => 'Problema di visualizzazione',
-        'other' => 'Altro',
         'content' => 'Contenuto',
+        'other' => 'Altro',
     ];
 
     public static function getCategoriesKeysForValidate()

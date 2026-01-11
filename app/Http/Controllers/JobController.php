@@ -13,7 +13,8 @@ class JobController extends Controller
      * Esegue una richiesta GET "fire-and-forget" senza aspettare la risposta
      * Usa socket raw per inviare la richiesta e chiudere subito la connessione
      */
-    public static function fireAndForgetGet($url, $data = []) {
+    public static function fireAndForgetGet($url, $data = [])
+    {
         $query = http_build_query($data);
         $parts = parse_url($url);
 
@@ -62,23 +63,10 @@ class JobController extends Controller
         $processedCount = 0;
 
         try {
-            // Recupera i job email dalla tabella jobs
-            $pendingJobs = \DB::table('jobs')
-                ->where('queue', 'emails')
-                ->orderBy('available_at', 'asc')
-                ->limit(50)
-                ->get();
-
-            EmailLogService::logProcessor("Job trovati: {$pendingJobs->count()}", 'INFO', $logFile);
-
-            if ($pendingJobs->isEmpty()) {
-                return;
-            }
-
-            foreach ($pendingJobs as $jobRecord) {
-                // Controlla timeout
+            // Elabora i job uno alla volta per evitare race conditions tra processi paralleli
+            while (true) {
+                // Controlla timeout globale del processore
                 if ((time() - $startTime) > $maxExecutionTime) {
-                    // Riavvia il processore per i job rimanenti
                     $remainingJobs = \DB::table('jobs')->where('queue', 'emails')->count();
                     if ($remainingJobs > 0) {
                         self::fireAndForgetGet(route('job.processEmailQueue'), [
@@ -88,8 +76,31 @@ class JobController extends Controller
                     return;
                 }
 
-                // Rate limiting: 1 secondo tra ogni email
-                sleep(1);
+                // Cerca il prossimo job disponibile (non riservato o riservato da troppo tempo)
+                $jobRecord = \DB::table('jobs')
+                    ->where('queue', 'emails')
+                    ->where(function ($q) {
+                        $q->whereNull('reserved_at')
+                            ->orWhere('reserved_at', '<=', time() - 300); // Retry se bloccato da > 5 min
+                    })
+                    ->where('available_at', '<=', time())
+                    ->orderBy('available_at', 'asc')
+                    ->first();
+
+                if (!$jobRecord) {
+                    break; // Nessun job rimasto
+                }
+
+                // Riserva il job immediatamente
+                \DB::table('jobs')->where('id', $jobRecord->id)->update([
+                    'reserved_at' => time(),
+                    'attempts' => $jobRecord->attempts + 1
+                ]);
+
+                // Rate limiting: 1 secondo tra ogni email (per non saturare Telegram/Mail)
+                if ($processedCount > 0) {
+                    sleep(1);
+                }
 
                 try {
                     $payload = json_decode($jobRecord->payload, true);
@@ -98,27 +109,34 @@ class JobController extends Controller
                     if ($jobClass === 'App\\Jobs\\SendQueuedEmail') {
                         $jobData = unserialize($payload['data']['command']);
 
-                        // Esegui l'invio email
+                        // Esegui l'invio email (o il forward su Telegram se configurato)
                         $jobData->handle();
 
-                        // Rimuovi dalla coda
+                        // Rimuovi dalla coda dopo successo
                         \DB::table('jobs')->where('id', $jobRecord->id)->delete();
                         $processedCount++;
+                    } else {
+                        // Job ignoto, rimuovi per sicurezza o segna come fallito
+                        \DB::table('jobs')->where('id', $jobRecord->id)->delete();
                     }
 
                 } catch (\Exception $e) {
-                    // Gestisci errore: sposta in failed_jobs
+                    // Sposta in failed_jobs
                     \DB::table('jobs')->where('id', $jobRecord->id)->delete();
                     \DB::table('failed_jobs')->insert([
-                        'uuid' => Str::uuid(),
+                        'uuid' => (string) Str::uuid(),
                         'connection' => 'database',
                         'queue' => 'emails',
                         'payload' => $jobRecord->payload,
-                        'exception' => $e->getMessage(),
+                        'exception' => (string) $e,
                         'failed_at' => now()
                     ]);
+                    EmailLogService::logError('Email Job Error', $e, ['job_id' => $jobRecord->id]);
                 }
             }
+
+            EmailLogService::logProcessor("Processati {$processedCount} job in questa sessione.");
+
 
             // Controlla se ci sono altri job
             $remainingJobs = \DB::table('jobs')->where('queue', 'emails')->count();
