@@ -134,8 +134,12 @@
                     <i class="bi bi-person-check"></i> Segnalazione da: <strong>{{ Auth::user()->name }}</strong>
                 </small>
             @else
+                <div class="mb-3">
+                    <label for="email" class="form-label fw-bold">La tua email *</label>
+                    <input type="email" name="email" id="email" class="form-control" value="{{ old('email') }}" placeholder="Inserisci la tua email" required>
+                </div>
                 <small class="text-muted">
-                    <i class="bi bi-person-x"></i> Stai inviando una segnalazione anonima. 
+                    <i class="bi bi-person-x"></i> Stai inviando una segnalazione come ospite. 
                     <a href="{{ route('login') }}">Accedi</a> per associare la segnalazione al tuo account.
                 </small>
             @endauth
