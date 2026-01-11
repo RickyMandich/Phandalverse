@@ -284,7 +284,11 @@ class MarkdownPreprocessor
         if (Auth::check() && Auth::user()->showEmbedLink) {
             $ret = "$ret<div class='embed-header'><i class='bi-caret-right-square collapse-icon' data-bs-toggle='collapse' data-bs-target='#embed-$embedDepth'></i><a href='$url' class='wikilink'> " . htmlspecialchars($embedRef) . '</a></div>';
         }
-        $ret = $ret . "<div class='embed-content collapse' id='embed-$embedDepth'>" . $html . '</div></div>';
+        $ret = "$ret<div class='embed-content collapse";
+        if (Auth::check() && !Auth::user()->showEmbedLink) {
+            $ret = "$ret show";
+        }
+        $ret = "$ret' id='embed-$embedDepth'>" . $html . '</div></div>';
         return $ret;
     }
 
