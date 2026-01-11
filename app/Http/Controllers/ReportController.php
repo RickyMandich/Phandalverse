@@ -30,15 +30,17 @@ class ReportController extends Controller
      */
     public function store(Request $request)
     {
+        $categoriesValidator = 'required|in:' . UserReport::getCategoriesKeysForValidate();
         Log::debug("cerco di creare una segnalazione con questi dati:\n" .
-            "category: " . print_r($request->category, true) . "\n" .
-            "description: " . print_r($request->description, true) . "\n" .
-            "page_urls: " . print_r($request->page_urls, true) . "\n" .
-            "email: " . print_r($request->email, true));
+            "\tcategory: " . print_r($request->category, true) . "\n" .
+            "\tdescription: " . print_r($request->description, true) . "\n" .
+            "\tpage_urls: " . print_r($request->page_urls, true) . "\n" .
+            "\temail: " . print_r($request->email, true) . "\n" .
+            "categories validator: |$categoriesValidator|");
 
 
         $validated = $request->validate([
-            'category' => 'required|in:' . UserReport::getCategoriesKeysForValidate(),
+            'category' => $categoriesValidator,
             'description' => 'required|string|min:10|max:2000',
             'page_urls' => 'nullable|string|max:1000',
             'email' => 'nullable|email',
