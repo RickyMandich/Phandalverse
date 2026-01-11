@@ -32,7 +32,7 @@ class UserReport extends Model
         'content' => 'Contenuto',
     ];
 
-    public const function getCategoriesKeysForValidate()
+    public static function getCategoriesKeysForValidate()
     {
         return implode(',', array_keys(self::CATEGORIES));
     }

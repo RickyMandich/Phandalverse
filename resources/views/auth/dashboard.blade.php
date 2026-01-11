@@ -37,13 +37,13 @@
                     <div class="row mb-3">
                         <div class="col-md-4 text-muted">Ruoli:</div>
                         <div class="col-md-8">
-                            @if(Auth::user()->admin)
+                            @if(Auth::isAdmin())
                                 <span class="badge bg-danger">Amministratore</span>
                             @endif
-                            @if(Auth::user()->master)
+                            @if(Auth::isMaster())
                                 <span class="badge bg-warning">Master</span>
                             @endif
-                            @if(!Auth::user()->admin && !Auth::user()->master)
+                            @if(!Auth::isAdmin() && !Auth::isMaster())
                                 <span class="badge bg-secondary">Utente</span>
                             @endif
                         </div>
