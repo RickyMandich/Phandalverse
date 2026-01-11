@@ -29,7 +29,7 @@ class LoginController extends Controller
     {
         // Check if there's a redirect parameter in the request
         if (request()->has('from')) {
-            return request()->get('redirect');
+            return request()->get('from');
         }
 
         // Otherwise use Laravel's intended (for middleware redirects)
