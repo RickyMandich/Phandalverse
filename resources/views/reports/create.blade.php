@@ -64,7 +64,7 @@
         <div class="mb-4">
             <label class="form-label fw-bold">Tipo di problema</label>
             <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="category-card card h-100 text-center p-3 {{ old('category') === 'logic' ? 'selected' : '' }}">
                         <input type="radio" name="category" value="logic" {{ old('category') === 'logic' ? 'checked' : '' }} required>
                         <div class="category-icon">🧠</div>
@@ -72,7 +72,7 @@
                         <small class="text-muted">Contenuti che non hanno senso</small>
                     </label>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="category-card card h-100 text-center p-3 {{ old('category') === 'display' ? 'selected' : '' }}">
                         <input type="radio" name="category" value="display" {{ old('category') === 'display' ? 'checked' : '' }}>
                         <div class="category-icon">👁️</div>
@@ -80,10 +80,18 @@
                         <small class="text-muted">Pagine mal formattate o poco pratiche</small>
                     </label>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <label class="category-card card h-100 text-center p-3 {{ old('category') === 'content' ? 'selected' : '' }}">
+                        <input type="radio" name="category" value="content" {{ old('category') === 'content' ? 'checked' : '' }}>
+                        <div class="category-icon">📝</div>
+                        <div class="fw-bold">Contenuto</div>
+                        <small class="text-muted">Contenuti incompleti o sbagliati</small>
+                    </label>
+                </div>
+                <div class="col-md-3">
                     <label class="category-card card h-100 text-center p-3 {{ old('category', 'other') === 'other' ? 'selected' : '' }}">
                         <input type="radio" name="category" value="other" {{ old('category', 'other') === 'other' ? 'checked' : '' }}>
-                        <div class="category-icon">📝</div>
+                        <div class="category-icon">❓</div>
                         <div class="fw-bold">Altro</div>
                         <small class="text-muted">Qualsiasi altra segnalazione</small>
                     </label>
