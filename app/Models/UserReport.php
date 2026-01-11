@@ -27,6 +27,7 @@ class UserReport extends Model
         'logic' => 'Problema logico',
         'display' => 'Problema di visualizzazione',
         'other' => 'Altro',
+        'content' => 'Contenuto',
     ];
 
     /**

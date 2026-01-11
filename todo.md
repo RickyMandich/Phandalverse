@@ -13,4 +13,5 @@
 - sistemare generazione wikilink
 - pagina di fallback in caso la nota non esista
 # da fare
+aggiungere il topic `contenuto` alle segnalazioni
 attiva redirect login
