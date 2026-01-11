@@ -4,21 +4,27 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
 
 class LoginController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Login Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles authenticating users for the application and
-    | redirecting them to your home screen. The controller uses a trait
-    | to conveniently provide its functionality to your applications.
-    |
-    */
-
     use AuthenticatesUsers;
+
+    /**
+     * Show the application's login form.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function showLoginForm(Request $request)
+    {
+        // Store the 'from' URL in session if provided
+        if ($request->has('from')) {
+            session(['url.intended' => $request->get('from')]);
+        }
+
+        return view('auth.login');
+    }
 
     /**
      * Get the post-login redirect path.
@@ -27,12 +33,7 @@ class LoginController extends Controller
      */
     protected function redirectTo()
     {
-        // Check if there's a redirect parameter in the request
-        if (request()->has('from')) {
-            return request()->get('from');
-        }
-
-        // Otherwise use Laravel's intended (for middleware redirects)
+        // Use Laravel's intended (works for both middleware and manual redirects now)
         return session('url.intended', '/home');
     }
 
