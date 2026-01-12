@@ -529,7 +529,7 @@ class VaultController extends Controller
             $relativePathForHelper = str_replace('\\', '/', $relativePathForHelper);
 
             $title = VaultHelper::getOriginalName($relativePathForHelper, $note);
-            Log::info("il path del file è: $fullSystemPath e il titolo del file è: $title");
+            CustomLogger::note($note, "il path del file è: $fullSystemPath e il titolo del file è: $title", "VaultController:532(show)");
         }
 
 
