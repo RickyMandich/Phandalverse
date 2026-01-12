@@ -402,7 +402,7 @@ class MarkdownPreprocessor
     {
         CustomLogger::note($note, "text:\n$text", "debug");
         $text = preg_replace(
-            '/\bR|([MDCLXVI]+)|\b/',
+            '/\bR\|([MDCLXVI]+)\|\b/',
             "<span class='roman-number'>$1</span>",
             $text
         );
