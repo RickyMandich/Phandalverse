@@ -36,7 +36,7 @@ class VaultHelper
      */
     public static function getOriginalName($normalizedPath, $note)
     {
-        self::loadMap($note, false);
+        self::loadMap($note);
 
         $parts = explode('/', $normalizedPath);
         $currentNode = self::$map;
