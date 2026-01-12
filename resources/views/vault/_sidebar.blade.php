@@ -14,6 +14,7 @@
         min-width: 44px;
         /* Collapsed width */
         flex-shrink: 0;
+        position: relative;
         transition: width 0.2s ease, transform 0.25s ease;
     }
 
@@ -27,11 +28,12 @@
 
     @media (max-width: 768px) {
         #vault-sidebar {
-            position: fixed;
+            position: fixed !important;
             left: 0;
             top: 0;
             bottom: 0;
             height: 100%;
+            z-index: 1050;
             transform: translateX(-100%);
             box-shadow: var(--bs-box-shadow-lg);
             border-right: none !important;
@@ -50,10 +52,13 @@
     .cursor-pointer {
         cursor: pointer;
     }
+
+    .sidebar-content {
+        overflow-wrap: anywhere;
+    }
 </style>
 
-<aside class="bg-body-secondary border-end border-secondary-subtle rounded-4 d-flex flex-column position-relative z-1"
-    id="vault-sidebar">
+<aside class="bg-body-secondary border-end border-secondary-subtle rounded-4 d-flex flex-column z-1" id="vault-sidebar">
     <button class="btn btn-sm btn-dark position-absolute top-0 end-0 m-2 z-2 lh-1" id="sidebar-toggle"
         title="Toggle Sidebar">
         <span id="toggle-icon">◀</span>
@@ -140,14 +145,14 @@
         <div class="legenda bg-dark-subtle p-3 rounded small font-monospace">
             <ul class="list-unstyled m-0">
                 @if (Auth::isMaster())
-                <li class="mb-1">
-                    <span class="text-danger fw-bold">
-                        #dm
-                    </span> : 
-                    <span class="master-block">
-                        esclusivo master
-                    </span>
-                </li>
+                    <li class="mb-1">
+                        <span class="text-danger fw-bold">
+                            #dm
+                        </span> :
+                        <span class="master-block">
+                            esclusivo master
+                        </span>
+                    </li>
                 @endif
                 <li class="mb-1"><span class="text-info">[[link]]</span> : <span class="wikilink">collegamenti</span>
                 </li>

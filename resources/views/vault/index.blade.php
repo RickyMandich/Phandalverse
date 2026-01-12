@@ -47,7 +47,7 @@
         @include('vault._sidebar', ['tree' => $tree, 'note' => $note])
 
         <!-- Area principale con grafo -->
-        <main class="flex-grow-1 p-3" style="min-width: 0;">
+        <section class="flex-grow-1 p-3" style="min-width: 0;">
             <div class="graph-container position-relative w-100 overflow-hidden bg-dark rounded-3 border border-secondary">
                 <div class="position-absolute top-0 end-0 m-2 z-2 d-flex gap-2">
                     <button class="btn btn-sm btn-dark bg-opacity-75 border-secondary text-white" onclick="resetZoom()"
@@ -78,7 +78,7 @@
                     @endforeach
                 </div>
             </div>
-        </main>
+        </section>
     </div>
 @endsection
 

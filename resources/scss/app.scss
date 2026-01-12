@@ -3,7 +3,6 @@
 .wikilink {
     @extend .text-uppercase;
     @extend .text-info;
-    @extend .d-inline-block;
 }
 
 .master-block {
@@ -23,6 +22,11 @@ table {
     @extend .table-striped;
     @extend .border-secondary;
     @extend .table-bordered;
+}
+
+.typography {
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 th {
