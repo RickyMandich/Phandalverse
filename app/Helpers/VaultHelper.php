@@ -123,23 +123,23 @@ class VaultHelper
         $parts = explode('/', $dirPath);
         $currentNode = self::$map;
 
-        CustomLogger::note($note, "dirPath: " . $dirPath, "VaultHelper:78");
-        CustomLogger::note($note, "parts: " . print_r($parts, true), "VaultHelper:79");
-        CustomLogger::note($note, "currentNode: " . print_r($currentNode, true), "VaultHelper:80");
+        // CustomLogger::note($note, "dirPath: " . $dirPath, "VaultHelper:126");
+        // CustomLogger::note($note, "parts: " . print_r($parts, true), "VaultHelper:127");
+        // CustomLogger::note($note, "currentNode: " . print_r($currentNode, true), "VaultHelper:128");
 
         foreach ($parts as $part) {
             $lowerPart = strtolower($part);
             if (isset($currentNode['directories'][$lowerPart])) {
-                CustomLogger::note($note, "lowerPart: " . $lowerPart, "VaultHelper:88");
+                CustomLogger::note($note, "lowerPart: " . $lowerPart, "VaultHelper:133");
                 // CustomLogger::note($note, "currentNode: " . print_r($currentNode, true) . "\ndiventa " . print_r($currentNode['directories'][$lowerPart], true), "VaultHelper:89");
                 $currentNode = $currentNode['directories'][$lowerPart];
             } else {
-                CustomLogger::note($note, "Path not found in map: " . $part, "VaultHelper:92");
-                CustomLogger::note($note, "ritorno di getOriginalDirectoryName($dirPath): " . self::prettify($part), "VaultHelper:94");
+                CustomLogger::note($note, "Path not found in map: " . $part, "VaultHelper:137");
+                CustomLogger::note($note, "ritorno di getOriginalDirectoryName($dirPath): " . self::prettify($part), "VaultHelper:138");
                 return self::prettify($part);
             }
         }
-        CustomLogger::note($note, "ritorno di getOriginalDirectoryName($dirPath): " . $currentNode['original'] ?? self::prettify(end($parts)), "VaultHelper:97");
+        CustomLogger::note($note, "ritorno di getOriginalDirectoryName($dirPath): " . $currentNode['original'] ?? self::prettify(end($parts)), "VaultHelper:142");
         return $currentNode['original'] ?? self::prettify(end($parts));
     }
 
