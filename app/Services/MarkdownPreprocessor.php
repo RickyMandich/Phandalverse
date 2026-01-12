@@ -402,8 +402,8 @@ class MarkdownPreprocessor
     {
         CustomLogger::note($note, "text:\n$text", "debug");
         $text = preg_replace(
-            '/\b[MDCLXVI]+\b/',
-            "<span class='roman-number'>$0</span>",
+            '/\bR|([MDCLXVI]+)|\b/',
+            "<span class='roman-number'>$1</span>",
             $text
         );
         return $text;
