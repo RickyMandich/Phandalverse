@@ -10,7 +10,7 @@ class VaultHelper
     protected static $map = null;
     protected static $mapPath;
 
-    protected static function loadMap($note)
+    protected static function loadMap($note, $showPrint_r = false)
     {
         if (self::$map !== null) {
             return;
@@ -21,7 +21,9 @@ class VaultHelper
         if (File::exists(self::$mapPath)) {
             CustomLogger::note($note, "File exists: " . self::$mapPath, "VaultHelper:22");
             self::$map = json_decode(File::get(self::$mapPath), true);
-            CustomLogger::note($note, "Map loaded: " . print_r(self::$map, true), "VaultHelper:24");
+            if ($showPrint_r) {
+                CustomLogger::note($note, "Map loaded: " . print_r(self::$map, true), "VaultHelper:24");
+            }
         } else {
             CustomLogger::note($note, "File does not exist: " . self::$mapPath, "VaultHelper:26");
             self::$map = [];
@@ -34,7 +36,7 @@ class VaultHelper
      */
     public static function getOriginalName($normalizedPath, $note)
     {
-        self::loadMap($note);
+        self::loadMap($note, false);
 
         $parts = explode('/', $normalizedPath);
         $currentNode = self::$map;
