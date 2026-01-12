@@ -53,6 +53,51 @@ class VaultHelper
             if ($isLast) {
                 // Look in 'files'
                 if (isset($currentNode['files'][$lowerPart])) {
+                    CustomLogger::note($note, 'trovato file/lowerPart: ' . $lowerPart, "VaultHelper:56");
+                    return $currentNode['files'][$lowerPart];
+                }
+            } else {
+                CustomLogger::note($note, "cerco di entrare in directory/lowerPart: " . $lowerPart, "VaultHelper:59");
+                // Look in 'directories'
+                if (isset($currentNode['directories'][$lowerPart])) {
+                    CustomLogger::note($note, "trovata directory/lowerPart: " . $lowerPart, "VaultHelper:62");
+                    $currentNode = $currentNode['directories'][$lowerPart];
+                } else {
+                    // Path not found in map
+                    CustomLogger::note($note, 'non trovata directory/lowerPart: ' . $lowerPart, "VaultHelper:66");
+                    return self::prettify($originalName);
+                }
+            }
+        }
+
+        return self::prettify($originalName);
+    }
+
+    /**
+     * Get the original display name for a normalized path.
+     * Path should be relative to vault root, e.g. "dungeon/level-1/room.md"
+     */
+    public static function getNormalizedName($normalizedPath, $note)
+    {
+        self::loadMap($note);
+
+        $parts = explode('/', $normalizedPath);
+        $currentNode = self::$map;
+        $originalName = basename($normalizedPath); // Fallback
+
+        // Traverse the tree
+        // The tree structure:
+        // { "directories": { "subdir": { ... } }, "files": { "file.md": "Original" } }
+
+        $count = count($parts);
+        for ($i = 0; $i < $count; $i++) {
+            $part = $parts[$i];
+            $lowerPart = strtolower($part);
+            $isLast = ($i === $count - 1);
+
+            if ($isLast) {
+                // Look in 'files'
+                if (isset($currentNode['files'][$lowerPart])) {
                     return $currentNode['files'][$lowerPart];
                 }
             } else {

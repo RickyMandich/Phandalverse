@@ -225,7 +225,7 @@ class VaultController extends Controller
             $originalFullPath = $basePath ? $basePath . '/' . $fullRelativePath : $fullRelativePath;
 
             $current['_files'][] = [
-                'name' => VaultHelper::getOriginalName($fullRelativePath . '.md', $note), // Use original name for display (append extension for lookup)
+                'name' => VaultHelper::getNormalizedName($fullRelativePath . '.md', $note), // Use original name for display (append extension for lookup)
                 'path' => $fullRelativePath,
                 'url' => self::pathToCamelCase($originalFullPath),
                 'dm' => $isDmFile, // Boolean indicating if file is DM-only
