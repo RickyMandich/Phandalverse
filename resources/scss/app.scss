@@ -71,3 +71,7 @@ li .tag {
 i {
     @extend .pe-1;
 }
+
+a {
+    @extend .wikilink;
+}
