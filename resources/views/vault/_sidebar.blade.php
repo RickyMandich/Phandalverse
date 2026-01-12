@@ -194,8 +194,12 @@
                 }
             }
 
+            let wasMobile = window.innerWidth <= 768;
+
             function updateMobileUI() {
-                if (window.innerWidth <= 768) {
+                const isMobile = window.innerWidth <= 768;
+
+                if (isMobile) {
                     // closed by default on mobile
                     if (!sidebar.classList.contains('open')) {
                         sidebar.classList.add('collapsed');
@@ -203,9 +207,12 @@
                     ensureMobileButton();
                 } else {
                     sidebar.classList.remove('open');
-                    sidebar.classList.remove('collapsed');
+                    if (wasMobile) {
+                        sidebar.classList.remove('collapsed');
+                    }
                     removeMobileButton();
                 }
+                wasMobile = isMobile;
             }
 
             function toggleSidebar() {
