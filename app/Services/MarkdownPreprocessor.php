@@ -409,6 +409,35 @@ class MarkdownPreprocessor
         return $text;
     }
 
+    public static function processExternalLinks(string $html): string
+    {
+        $appUrl = config('app.url');
+        $appHost = parse_url($appUrl, PHP_URL_HOST);
+
+        return preg_replace_callback(
+            '/<a\s+([^>]*href=["\'](https?:\/\/[^"\']+)["\'][^>]*)>/i',
+            function ($matches) use ($appHost) {
+                $tag = $matches[0];
+                $url = $matches[2];
+
+                // Check if it already has target="_blank"
+                if (stripos($tag, 'target=') !== false) {
+                    return $tag;
+                }
+
+                // If it's the same host as the app, don't add target="_blank"
+                $urlHost = parse_url($url, PHP_URL_HOST);
+                if ($appHost && $urlHost === $appHost) {
+                    return $tag;
+                }
+
+                // Add target="_blank" and rel="noopener noreferrer"
+                return preg_replace('/<a\s+/i', '<a target="_blank" rel="noopener noreferrer" ', $tag, 1);
+            },
+            $html
+        );
+    }
+
     public static function toHtml(string $text, string $note): string
     {
         $embeds = [];
@@ -453,6 +482,9 @@ class MarkdownPreprocessor
 
         // Finally, restore embeds (placeholders -> actual embed HTML)
         $html = self::restoreEmbeds($html, $embeds, $note);
+
+        // Process external links to add target="_blank"
+        $html = self::processExternalLinks($html);
 
         return $html;
     }
