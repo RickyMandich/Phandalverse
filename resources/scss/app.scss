@@ -76,8 +76,8 @@ i {
     @extend .pe-1;
 }
 
-main .container a {
-    // @extend .wikilink;
+.vault-note a {
+    @extend .wikilink;
 }
 
 @function headings($from: 1, $to: 6) {
