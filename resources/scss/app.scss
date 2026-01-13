@@ -77,7 +77,7 @@ i {
 }
 
 main .container a {
-    @extend .wikilink;
+    // @extend .wikilink;
 }
 
 @function headings($from: 1, $to: 6) {
