@@ -345,26 +345,39 @@ class MarkdownPreprocessor
                 try {
                     $all = File::allFiles(base_path('Vault'));
                     $needleName = strtolower($content);
+                    $needleNoExt = strtolower(pathinfo($content, PATHINFO_FILENAME));
+
+                    $exactMatch = null;
+                    $fuzzyMatch = null;
+
                     foreach ($all as $f) {
                         $extFound = strtolower($f->getExtension());
                         if (!in_array($extFound, $imageExt)) {
                             continue;
                         }
 
-                        // Exact filename match (case-insensitive)
-                        if (strtolower($f->getFilename()) === $needleName) {
-                            $foundImagePath = str_replace($vaultBase, '', $f->getPathname());
-                            $foundImagePath = str_replace(DIRECTORY_SEPARATOR, '/', $foundImagePath);
-                            break;
+                        $filenameLower = strtolower($f->getFilename());
+
+                        // 1. Priorità: Corrispondenza ESATTA del nome file (es. Kokytos.png)
+                        if ($filenameLower === $needleName) {
+                            $exactMatch = $f->getPathname();
+                            break; // Trovato quello esatto, usciamo subito
                         }
 
-                        // If content has no extension, match by basename (without ext)
-                        $needleNoExt = strtolower(pathinfo($content, PATHINFO_FILENAME));
-                        if ($needleNoExt !== '' && strtolower($f->getBasename('.' . $f->getExtension())) === $needleNoExt) {
-                            $foundImagePath = str_replace($vaultBase, '', $f->getPathname());
-                            $foundImagePath = str_replace(DIRECTORY_SEPARATOR, '/', $foundImagePath);
-                            break;
+                        // 2. Secondaria: Corrispondenza del solo nome (es. Kokytos)
+                        // Memorizziamo il primo che troviamo come fallback
+                        if ($fuzzyMatch === null && $needleNoExt !== '') {
+                            if (strtolower($f->getBasename('.' . $f->getExtension())) === $needleNoExt) {
+                                $fuzzyMatch = $f->getPathname();
+                            }
                         }
+                    }
+
+                    $finalPath = $exactMatch ?? $fuzzyMatch;
+
+                    if ($finalPath) {
+                        $foundImagePath = str_replace($vaultBase, '', $finalPath);
+                        $foundImagePath = str_replace(DIRECTORY_SEPARATOR, '/', $foundImagePath);
                     }
                 } catch (\Throwable $e) {
                     // ignore search errors and fall back
