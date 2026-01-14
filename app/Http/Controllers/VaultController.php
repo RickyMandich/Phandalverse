@@ -154,7 +154,7 @@ class VaultController extends Controller
      */
     private function buildFileTree(?string $basePath = null, $note): array
     {
-        $vaultPath = base_path('Vault');
+        $vaultPath = base_path('Vault/' . $basePath);
         $files = File::allFiles($vaultPath);
         $tree = [];
 
@@ -189,15 +189,15 @@ class VaultController extends Controller
                 $relativePath = mb_convert_encoding($relativePath, 'UTF-8', 'ISO-8859-1');
             }
 
-            // Se abbiamo un basePath, filtra solo i file che iniziano con quel path
-            if ($basePath !== null) {
-                if (!str_starts_with($relativePath, $basePath)) {
-                    continue;
-                }
-                // Rimuovi il basePath dal relativePath per costruire l'albero relativo
-                $relativePath = substr($relativePath, strlen($basePath));
-                $relativePath = ltrim($relativePath, '/');
-            }
+            // // Se abbiamo un basePath, filtra solo i file che iniziano con quel path
+            // if ($basePath !== null) {
+            //     if (!str_starts_with($relativePath, $basePath)) {
+            //         continue;
+            //     }
+            //     // Rimuovi il basePath dal relativePath per costruire l'albero relativo
+            //     $relativePath = substr($relativePath, strlen($basePath));
+            //     $relativePath = ltrim($relativePath, '/');
+            // }
 
             $fullRelativePath = $relativePath ? $relativePath . '/' . $name : $name;
 
