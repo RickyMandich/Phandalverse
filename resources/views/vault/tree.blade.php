@@ -14,7 +14,6 @@
 @section('content')
     @php
         \App\Services\CustomLogger::note($note, "-------------------inizio view tree-------------------");
-        \App\Services\CustomLogger::note($note, print_r($path, true));
     @endphp
     <div class="d-flex gap-0 h-100 w-100">
         @include('vault._sidebar', ['tree' => $fullTree, 'note' => $note])
@@ -70,7 +69,7 @@
                                     $html .= '<li class="my-1">';
                                     // Toggle logic: toggle 'open' on span, toggle 'd-none' on next UL
                                     $html .= '<span class="folder fw-bold text-warning cursor-pointer" onclick="this.classList.toggle(\'open\'); this.nextElementSibling.classList.toggle(\'d-none\'); this.innerText = this.classList.contains(\'open\') ? \'📂\u00a0\' + this.dataset.name : \'📁\u00a0\' + this.dataset.name;" data-name="' . e($displayName) . '">📁&nbsp;' . e($displayName) . '</span>';
-                                    $html .= renderTree($value['_dirs'] ?? [], $deep + 1);
+                                    $html .= renderTree($value['_dirs'] ?? [], $deep + 1, $note);
                                     $html .= '</li>';
                                 }
                             }
@@ -88,12 +87,12 @@
                         }
                     @endphp
 
-                    {!! renderTree($tree) !!}
+                    {!! renderTree($tree, note: $note) !!}
                 </div>
             </div>
         </main>
     </div>
 @php
-    \App\Services\CustomLogger::note($note, "-------------------fine view nota-------------------");
+    \App\Services\CustomLogger::note($note, "-------------------fine view tree-------------------");
 @endphp
 @endsection
