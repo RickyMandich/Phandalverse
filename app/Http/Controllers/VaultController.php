@@ -424,7 +424,7 @@ class VaultController extends Controller
                 // If the decoded segment looks like an image path/name but the file
                 // does not exist, log a warning to aid debugging.
                 $ext = strtolower(pathinfo($decoded, PATHINFO_EXTENSION));
-                $imageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'];
+                $imageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'avif'];
                 if (in_array($ext, $imageExt) || $ext === '') {
                     Log::warning('Requested vault file not found: ' . $candidate . ' (decoded from: ' . $note . ')');
                 }
