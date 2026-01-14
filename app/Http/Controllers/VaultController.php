@@ -465,7 +465,9 @@ class VaultController extends Controller
             }
 
             // Per le cartelle mostriamo solo la vista albero
+            CustomLogger::note($note, "inizio a generare il tree", "VaultController:468");
             $tree = $this->buildFileTree($folderPath, $note);
+            CustomLogger::note($note, "inizio a generare il fulltree", "VaultController:470");
             $fullTree = $this->buildFileTree(null, note: $note);
             $graphConfig = $this->loadGraphConfig();
             return view('vault.tree', [
