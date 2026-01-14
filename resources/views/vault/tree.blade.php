@@ -12,6 +12,10 @@
 @endsection
 
 @section('content')
+    @php
+        \App\Services\CustomLogger::note($note, "-------------------inizio view tree-------------------");
+        \App\Services\CustomLogger::note($note, print_r($path, true));
+    @endphp
     <div class="d-flex gap-0 h-100 w-100">
         @include('vault._sidebar', ['tree' => $fullTree, 'note' => $note])
 
@@ -45,8 +49,11 @@
                         <h2 class="display-6 mb-4 border-bottom border-secondary pb-2">📚 Vault - File Disponibili</h2>
                     @endif
                     @php
-                        function renderTree($items, $deep = 0)
+                        function renderTree($items, $deep = 0, $note)
                         {
+                            if($deep == 0){
+                                \App\Services\CustomLogger::note($note, "\nitems:\n\t" . print_r($items, true));
+                            }
                             // Determine UL class based on depth
                             if ($deep == 0) {
                                 $ulClass = 'list-unstyled m-0 font-monospace';
@@ -86,4 +93,7 @@
             </div>
         </main>
     </div>
+@php
+    \App\Services\CustomLogger::note($note, "-------------------fine view nota-------------------");
+@endphp
 @endsection

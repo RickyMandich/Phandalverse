@@ -20,7 +20,7 @@
             </div>
         </section>
     </div>
+    @php
+        \App\Services\CustomLogger::note($note, "-------------------fine view nota-------------------");
+    @endphp
 @endsection
-@php
-    \App\Services\CustomLogger::note($note, "-------------------fine view nota-------------------");
-@endphp
