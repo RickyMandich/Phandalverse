@@ -87,7 +87,7 @@
                         }
                     @endphp
 
-                    {!! renderTree($tree, note: $note) !!}
+                    {!! renderTree($tree, 0, $note) !!}
                 </div>
             </div>
         </main>
