@@ -309,7 +309,7 @@ class MarkdownPreprocessor
     public static function restoreEmbeds(string $html, array $embeds, string $note): string
     {
         foreach ($embeds as $index => $content) {
-            $imageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'];
+            $imageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'avif'];
 
             // Prefer to resolve the embed target on disk inside Vault.
             // This allows embeds to point to images placed anywhere in the Vault.
