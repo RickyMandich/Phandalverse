@@ -334,7 +334,7 @@ class MarkdownPreprocessor
                 $ret .= "<a href='$url' class='wikilink'> $title</a>";
             } else {
                 // Titolo come toggle (fallback icona)
-                $ret .= "<span style='cursor: pointer;' data-bs-toggle='collapse' data-bs-target='#embed-$index-$embedDepth' class='title-2'> $title</span>";
+                $ret .= "<span style='cursor: pointer;' data-bs-toggle='collapse' data-bs-target='#embed-$index-$embedDepth' class='embed-title'> $title</span>";
             }
             $ret .= "</div>";
         }
