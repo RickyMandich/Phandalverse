@@ -118,10 +118,44 @@
 
                     $files = $items['_files'] ?? [];
                     foreach ($files as $file) {
-                        // Extract normalized filename from path (last segment after splitting by '/')
-                        $pathSegments = explode('/', $file['path']);
-                        $normalizedFileName = end($pathSegments);
-                        $isActiveFile = $currentFileName !== null && strcasecmp($normalizedFileName, $currentFileName) === 0;
+                        // Determine if this file is the active one by comparing the full relative path
+                        // $file['url'] is like "incantesimi/artefice/dardoincantato" (camelCase/normalized)
+                        // $currentPath is array ["incantesimi", "artefice", "dardoincantato"]
+
+                        // We need to compare specific unique paths. 
+                        // Let's rely on the URL property which is unique for the file location.
+
+                        // Reconstruct current URL-like path from $currentPath
+                        // But wait, $currentPath comes from the controller parsing the URL.
+                        // The 'url' in $file is exactly what we expect in the browser address bar.
+
+                        // The easiest valid comparison is to see if the file's URL ends with the current path sequence?
+                        // No, simpler: 
+                        // Does "vault/{$file['url']}" match the current request URI? 
+                        // OR: compare the reconstructed string.
+
+                        // Let's normalize $currentPath into a string similar to $file['url']
+                        // Note: $file['url'] uses forward slashes.
+
+                        // We can just verify if the start of the file structure matches the current path?
+                        // No, we want EXACT match.
+
+                        // Let's use the file['url'] which is the unique ID relative to vault root.
+                        // We need to know the "current active note URL" passed from controller?
+                        // The global $note variable passed to view contains the raw request param!
+                        // e.g. "incantesimi/artefice/dardoincantato"
+
+                        // So we can compare $file['url'] directly with $note (normalized)
+
+                        $isActiveFile = false;
+                        // Decode both just in case one is encoded
+                        $fileUrlDecoded = rawurldecode($file['url']);
+                        $currentNoteDecoded = rawurldecode($note);
+
+                        // Case-insensitive comparison
+                        if (strcasecmp($fileUrlDecoded, $currentNoteDecoded) === 0) {
+                            $isActiveFile = true;
+                        }
 
                         $activeClass = $isActiveFile ? ' active bg-white bg-opacity-10 text-white rounded fw-semibold px-2 py-1' : ' text-info';
 
