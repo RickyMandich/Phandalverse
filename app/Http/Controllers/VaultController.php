@@ -289,7 +289,7 @@ class VaultController extends Controller
                     } else {
                         // Really missing
                         if (count($missing) < 5) {
-                            Log::error("VaultTree Missing: '$fullPath' (Key: $fileName)");
+                            CustomLogger::note($note, "VaultTree Missing: '$fullPath' (Key: $fileName)", "debug tree");
                         }
                         $missing[] = $checkPath;
                         continue;
