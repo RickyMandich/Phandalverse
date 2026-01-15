@@ -237,7 +237,7 @@ class MarkdownPreprocessor
     /**
      * Carica e renderizza il contenuto di un embed
      */
-    public static function loadEmbedContent(string $embedRef, string $note, int $index): string
+    public static function loadEmbedContent(string $embedRef, string $note, int $index, bool $debug = false): string
     {
         // Previeni ricorsione infinita
         if (self::$embedDepth >= self::$maxEmbedDepth) {
@@ -284,13 +284,17 @@ class MarkdownPreprocessor
         $user = Auth::check() ? Auth::user() : null;
         $showEmbedLink = $user ? $user->showEmbedLink : false;
         $collapseEmbed = $user ? $user->collapseEmbed : false;
-        CustomLogger::note($note, "inizio log titolo:\t$embedRef");
+        if ($debug)
+            CustomLogger::note($note, "inizio log titolo:\t$embedRef");
         $title = VaultHelper::getOriginalName($embedRef, $note);
-        CustomLogger::note($note, "dopo get original name:\t$title");
+        if ($debug)
+            CustomLogger::note($note, "dopo get original name:\t$title");
         $title = explode('#', $title);
-        CustomLogger::note($note, "dopo explode:\t" . print_r($title, true));
+        if ($debug)
+            CustomLogger::note($note, "dopo explode:\t" . print_r($title, true));
         $title = htmlspecialchars(end($title));
-        CustomLogger::note($note, "dopo htmlspecialchars(end):\t$title");
+        if ($debug)
+            CustomLogger::note($note, "dopo htmlspecialchars(end):\t$title");
 
         // Header sempre visibile per permettere il collapse a tutti
         $showHeader = true;
@@ -330,7 +334,7 @@ class MarkdownPreprocessor
                 $ret .= "<a href='$url' class='wikilink'> $title</a>";
             } else {
                 // Titolo come toggle (fallback icona)
-                $ret .= "<span style='cursor: pointer;' data-bs-toggle='collapse' data-bs-target='#embed-$index-$embedDepth'> $title</span>";
+                $ret .= "<span style='cursor: pointer;' data-bs-toggle='collapse' data-bs-target='#embed-$index-$embedDepth' class='title'> $title</span>";
             }
             $ret .= "</div>";
         }
