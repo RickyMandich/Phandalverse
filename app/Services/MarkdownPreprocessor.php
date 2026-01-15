@@ -278,7 +278,7 @@ class MarkdownPreprocessor
         $html = self::toHtml($content, $note);
         self::$embedDepth--;
 
-        $camelPath = VaultController::pathToCamelCase($relativePath . '.md');
+        $camelPath = VaultController::pathToCamelCase($relativePath);
         $url = '/vault/' . $camelPath;
         $embedDepth = self::$embedDepth;
         $ret = "<div class='embed-note border-primary ps-4 border-start embed-depth-$embedDepth'>";
