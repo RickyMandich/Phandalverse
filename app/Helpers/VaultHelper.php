@@ -34,7 +34,7 @@ class VaultHelper
      * Get the original display name for a normalized path.
      * Path should be relative to vault root, e.g. "dungeon/level-1/room.md"
      */
-    public static function getOriginalName($normalizedPath, $note)
+    public static function getOriginalName($normalizedPath, $note, $debug = false)
     {
         self::loadMap($note);
 
@@ -55,18 +55,22 @@ class VaultHelper
             if ($isLast) {
                 // Look in 'files'
                 if (isset($currentNode['files'][$lowerPart])) {
-                    CustomLogger::note($note, 'trovato file/lowerPart: ' . $lowerPart, "VaultHelper:56");
+                    if ($debug)
+                        CustomLogger::note($note, 'trovato file/lowerPart: ' . $lowerPart, "VaultHelper:56");
                     return $currentNode['files'][$lowerPart];
                 }
             } else {
-                CustomLogger::note($note, "cerco di entrare in directory/lowerPart: " . $lowerPart, "VaultHelper:59");
+                if ($debug)
+                    CustomLogger::note($note, "cerco di entrare in directory/lowerPart: " . $lowerPart, "VaultHelper:59");
                 // Look in 'directories'
                 if (isset($currentNode['directories'][$lowerPart])) {
-                    CustomLogger::note($note, "trovata directory/lowerPart: " . $lowerPart, "VaultHelper:62");
+                    if ($debug)
+                        CustomLogger::note($note, "trovata directory/lowerPart: " . $lowerPart, "VaultHelper:62");
                     $currentNode = $currentNode['directories'][$lowerPart];
                 } else {
                     // Path not found in map
-                    CustomLogger::note($note, 'non trovata directory/lowerPart: ' . $lowerPart, "VaultHelper:66");
+                    if ($debug)
+                        CustomLogger::note($note, 'non trovata directory/lowerPart: ' . $lowerPart, "VaultHelper:66");
                     return self::prettify($originalName);
                 }
             }
