@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -20,6 +19,7 @@ return new class extends Migration
             $table->boolean('admin')->default(false);
             $table->boolean('master')->default(false);
             $table->boolean('showEmbedLink')->default(false);
+            $table->boolean('collapseEmbed')->default(false);
             $table->rememberToken();
             $table->timestamps();
         });

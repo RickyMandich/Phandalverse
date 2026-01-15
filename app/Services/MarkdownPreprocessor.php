@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\VaultHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use League\CommonMark\Environment\Environment;
@@ -282,7 +283,7 @@ class MarkdownPreprocessor
         $embedDepth = self::$embedDepth;
         $ret = "<div class='embed-note border-primary ps-4 border-start embed-depth-$embedDepth'>";
         if (Auth::check() && Auth::user()->showEmbedLink) {
-            $ret = "$ret<div class='embed-header'><i class='bi-caret-right-square collapse-icon' data-bs-toggle='collapse' data-bs-target='#embed-$index-$embedDepth'></i><a href='$url' class='wikilink'> " . htmlspecialchars($embedRef) . '</a></div>';
+            $ret = "$ret<div class='embed-header'><i class='bi-caret-right-square collapse-icon' data-bs-toggle='collapse' data-bs-target='#embed-$index-$embedDepth'></i><a href='$url' class='wikilink'> " . htmlspecialchars(VaultHelper::getOriginalName($embedRef, $note)) . '</a></div>';
         }
         $ret = "$ret<div class='embed-content collapse";
         if ((Auth::check() && !Auth::user()->showEmbedLink) || !Auth::check()) {
