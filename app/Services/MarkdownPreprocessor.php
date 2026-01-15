@@ -284,7 +284,8 @@ class MarkdownPreprocessor
         $user = Auth::check() ? Auth::user() : null;
         $showEmbedLink = $user ? $user->showEmbedLink : false;
         $collapseEmbed = $user ? $user->collapseEmbed : false;
-        $title = htmlspecialchars(end(explode(VaultHelper::getOriginalName($embedRef, $note), ' ')));
+        $title = explode(VaultHelper::getOriginalName($embedRef, $note), ' ')
+        $title = htmlspecialchars(end($title));
 
         // Header sempre visibile per permettere il collapse a tutti
         $showHeader = true;
