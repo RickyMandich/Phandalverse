@@ -209,62 +209,57 @@ class VaultController extends Controller
         return $tree;
     }
 
-    private function traverseMapAndBuildTree($mapNode, $currentPath, $note): array
+    private function traverseMapAndBuildTree($mapNode, $currentPath, $note, $currentRealPath = ''): array
     {
-        // resulting structure for this level (mixed dirs and _files key)
+        // resulting structure for this level
         $branch = ['_files' => []];
         $missing = [];
+
+        // Scan current real directory to handle case-insensitive matching on Linux
+        $fullDirPath = base_path('Vault/' . $currentRealPath);
+        $realDirectoryContents = [];
+        $realFileContents = [];
+
+        if (File::isDirectory($fullDirPath)) {
+            $items = scandir($fullDirPath);
+            foreach ($items as $item) {
+                if ($item === '.' || $item === '..')
+                    continue;
+                $low = strtolower($item);
+                $isDir = is_dir($fullDirPath . '/' . $item);
+                if ($isDir) {
+                    $realDirectoryContents[$low] = $item;
+                } else {
+                    $realFileContents[$low] = $item;
+                }
+            }
+        }
 
         // 1. Process Directories
         if (isset($mapNode['directories'])) {
             foreach ($mapNode['directories'] as $dirKey => $dirData) {
-                $dirPath = $currentPath ? $currentPath . '/' . $dirKey : $dirKey;
-                $fullPath = base_path('Vault/' . $dirPath);
+                // Determine real directory name
+                $dirKeyLower = strtolower($dirKey);
+                $realDirName = $realDirectoryContents[$dirKeyLower] ?? null;
 
-                if (File::isDirectory($fullPath)) {
-                    $subResult = $this->traverseMapAndBuildTree($dirData, $dirPath, $note);
+                $dirPathDisplay = $currentPath ? $currentPath . '/' . $dirKey : $dirKey;
 
-                    // The structure required by the view seems to be:
-                    // $tree['dirName'] = [ '_label' => ..., '_files' => ..., '_dirs' => ... ]
-                    // But wait, my branch currently has $branch['dirName']?
-                    // Previous code: $current['subdir'] = [ '_label', '_files', '_dirs' ]
-                    // And $current IS the equivalent of $branch here.
+                if ($realDirName) {
+                    $nextRealPath = $currentRealPath ? $currentRealPath . '/' . $realDirName : $realDirName;
 
-                    // Note: subResult['tree'] contains the children of the subdirectory.
-                    // The children of the subdirectory are mixed (files and sub-sub-dirs),
-                    // but the view expects them separated in _files and _dirs?
+                    $subResult = $this->traverseMapAndBuildTree($dirData, $dirPathDisplay, $note, $nextRealPath);
 
-                    // Let's re-read the previous output structure construction:
-                    // $current[$part] = [ '_files'=>[], '_dirs'=>[], '_label'=>... ]
-                    // The $subResult['tree'] is effectively the content of that '_dirs' key?
-                    // AND the content of '_files'.
-
-                    // Wait, previous code:
-                    // $current = &$current[$part]['_dirs'];
-                    // So the recursion puts things into `_dirs`.
-                    // But `_files` is NOT inside `_dirs`. `_files` is sibling of `_dirs`.
-
-                    // So:
-                    // $branch[$dirKey] = [
-                    //    '_label' => ...,
-                    //    '_files' => $subResult['tree']['_files'], // Extract files from result
-                    //    '_dirs' => $subResult['tree'] // Put the rest (dirs) here?
-                    // ]
-                    // We need to remove `_files` from `_dirs` array?
-
-                    $files = $subResult['tree']['_files'] ?? [];
-                    $dirs = $subResult['tree'];
-                    unset($dirs['_files']);
-
+                    // The view renderTreeIndexPartial recurses on $value['_dirs'].
+                    // It expects the recursive content (files + subdirs) to be IN _dirs.
                     $branch[$dirKey] = [
                         '_label' => $dirData['original'] ?? ucfirst($dirKey),
-                        '_files' => $files,
-                        '_dirs' => $dirs
+                        '_dirs' => $subResult['tree'] // Put the entire sub-tree (including _files) here
                     ];
 
                     $missing = array_merge($missing, $subResult['missing']);
                 } else {
-                    $missing[] = $dirPath . " (Directory)";
+                    // Directory missing on disk
+                    $missing[] = $dirPathDisplay . " (Directory)";
                 }
             }
         }
@@ -272,48 +267,58 @@ class VaultController extends Controller
         // 2. Process Files
         if (isset($mapNode['files'])) {
             foreach ($mapNode['files'] as $fileName => $originalName) {
-                // Determine normalized filename (ensure .md for disk check)
-                $hasExtension = str_ends_with(strtolower($fileName), '.md');
-                $nameNoExt = $hasExtension ? substr($fileName, 0, -3) : $fileName;
+                // fileName in map usually has extension, e.g. "foo.md".
+                // But sometimes keys in map might be messy.
+                // We check if we can find a matching file in the scan.
 
-                $relPathNoExt = $currentPath ? $currentPath . '/' . $nameNoExt : $nameNoExt;
-                $checkPath = $relPathNoExt . '.md';
-                $fullPath = base_path('Vault/' . $checkPath);
+                $fileNameLower = strtolower($fileName);
+                $cleanNameLower = $fileNameLower;
+                if (str_ends_with($fileNameLower, '.md')) {
+                    $cleanNameLower = substr($fileNameLower, 0, -3);
+                }
 
-                if (!File::exists($fullPath)) {
-                    // Fallback: try checking exactly as matches in key (in case it's not a standard md file or map has weird name)
-                    $fallbackPath = base_path('Vault/' . ($currentPath ? $currentPath . '/' . $fileName : $fileName));
-                    if (File::exists($fallbackPath) && !is_dir($fallbackPath)) {
-                        $fullPath = $fallbackPath;
-                        // update checkPath for later reference if needed, though we rely on relPathNoExt for logic
-                    } else {
-                        // Really missing
-                        if (count($missing) < 5) {
-                            CustomLogger::note($note, "VaultTree Missing: '$fullPath' (Key: $fileName)", "debug tree");
-                        }
-                        $missing[] = $checkPath;
-                        continue;
+                // Try to find exact match first (normalized key)
+                $realFileName = $realFileContents[$fileNameLower] ?? null;
+
+                // If not found, try adding/removing .md
+                if (!$realFileName) {
+                    if (isset($realFileContents[$cleanNameLower . '.md'])) {
+                        $realFileName = $realFileContents[$cleanNameLower . '.md'];
                     }
                 }
 
-                // Check DM Status
-                $isDm = false;
-                try {
-                    $content = File::get($fullPath);
-                    $isDm = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content) ? true : false;
-                } catch (\Throwable $e) {
-                }
+                // Calculate display paths
+                $relPathNoExt = $currentPath ? $currentPath . '/' . $cleanNameLower : $cleanNameLower;
+                $checkPathForLog = $relPathNoExt . '.md';
 
-                if (($isDm && !Auth::check()) || ($isDm && !Auth::isMaster())) {
-                    continue;
-                }
+                if ($realFileName) {
+                    $fullPath = base_path('Vault/' . ($currentRealPath ? $currentRealPath . '/' . $realFileName : $realFileName));
 
-                $branch['_files'][] = [
-                    'name' => $originalName,
-                    'path' => $relPathNoExt, // view expects path without extension
-                    'url' => self::pathToCamelCase($relPathNoExt),
-                    'dm' => $isDm
-                ];
+                    // Check DM Status
+                    $isDm = false;
+                    try {
+                        $content = File::get($fullPath);
+                        $isDm = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content) ? true : false;
+                    } catch (\Throwable $e) {
+                    }
+
+                    if (($isDm && !Auth::check()) || ($isDm && !Auth::isMaster())) {
+                        continue;
+                    }
+
+                    $branch['_files'][] = [
+                        'name' => $originalName,
+                        'path' => $relPathNoExt,
+                        'url' => self::pathToCamelCase($relPathNoExt),
+                        'dm' => $isDm
+                    ];
+                } else {
+                    // Really missing
+                    if (count($missing) < 5) {
+                        CustomLogger::note($note, "VaultTree Missing: '$checkPathForLog' (Key: $fileName)", "debug tree");
+                    }
+                    $missing[] = $checkPathForLog;
+                }
             }
         }
 
