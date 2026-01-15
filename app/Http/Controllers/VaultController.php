@@ -581,7 +581,8 @@ class VaultController extends Controller
         }
 
         $content = File::get($fullSystemPath);
-        CustomLogger::note($note, "Contenuto ORIGINALE dal file: " . $content);
+        if (env('DEBUG_HTML', false))
+            CustomLogger::note($note, "Contenuto ORIGINALE dal file: " . $content);
 
         CustomLogger::note($note, "ora controllo se è il master: " . Auth::isMaster() . "(master=" . Auth::getMaster() . ") e l'utente è " . Auth::getName());
         // Gestione blocchi master e DM
@@ -604,7 +605,8 @@ class VaultController extends Controller
             $content = MarkdownPreprocessor::stripDmMarker($content);
         }
 
-        CustomLogger::note($note, "Contenuto dopo filtro: " . $content);
+        if (env('DEBUG_HTML', false))
+            CustomLogger::note($note, "Contenuto dopo filtro: " . $content);
 
         if (preg_match('/(?<=^|[\\\\\\/])[^\\\\\\/]+(?=\\.md$)/', $fullSystemPath, $matches)) {
             // Use VaultHelper to get the original displayed title if possible
@@ -620,7 +622,8 @@ class VaultController extends Controller
 
         // Converte Markdown → HTML con supporto wikilink/embed
         $html = MarkdownPreprocessor::toHtml($content, $note);
-        CustomLogger::note($note, "HTML generato: " . $html);
+        if (env('DEBUG_HTML', false))
+            CustomLogger::note($note, "HTML generato: " . $html);
         $tree = $this->buildFileTree(null, note: $note);
         $graphConfig = $this->loadGraphConfig();
         return view('vault.note', [
