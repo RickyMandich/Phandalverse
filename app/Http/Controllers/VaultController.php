@@ -271,47 +271,49 @@ class VaultController extends Controller
 
         // 2. Process Files
         if (isset($mapNode['files'])) {
-            // Sort files by key or original name if desired? iterating map order usually.
             foreach ($mapNode['files'] as $fileName => $originalName) {
-                $filePath = $currentPath ? $currentPath . '/' . $fileName : $fileName;
-                $fullPath = base_path('Vault/' . $filePath);
+                // Determine normalized filename (ensure .md for disk check)
+                $hasExtension = str_ends_with(strtolower($fileName), '.md');
+                $nameNoExt = $hasExtension ? substr($fileName, 0, -3) : $fileName;
 
-                if (File::exists($fullPath)) {
-                    // Check DM Status
-                    $isDm = false;
-                    try {
-                        // Optimally we should maybe cache this or read first N bytes
-                        $content = File::get($fullPath);
-                        $isDm = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content) ? true : false;
-                    } catch (\Throwable $e) {
-                    }
+                $relPathNoExt = $currentPath ? $currentPath . '/' . $nameNoExt : $nameNoExt;
+                $checkPath = $relPathNoExt . '.md';
+                $fullPath = base_path('Vault/' . $checkPath);
 
-                    if (($isDm && !Auth::check()) || ($isDm && !Auth::isMaster())) {
+                if (!File::exists($fullPath)) {
+                    // Fallback: try checking exactly as matches in key (in case it's not a standard md file or map has weird name)
+                    $fallbackPath = base_path('Vault/' . ($currentPath ? $currentPath . '/' . $fileName : $fileName));
+                    if (File::exists($fallbackPath) && !is_dir($fallbackPath)) {
+                        $fullPath = $fallbackPath;
+                        // update checkPath for later reference if needed, though we rely on relPathNoExt for logic
+                    } else {
+                        // Really missing
+                        if (count($missing) < 5) {
+                            Log::error("VaultTree Missing: '$fullPath' (Key: $fileName)");
+                        }
+                        $missing[] = $checkPath;
                         continue;
                     }
-
-                    $branch['_files'][] = [
-                        'name' => $originalName,
-                        'path' => $filePath, // relative path for display/ID?
-                        'url' => self::pathToCamelCase($currentPath ? $currentPath . '/' . $fileName : $fileName), // Wait, pathToCamelCase expects path without extension?
-                        // Controller line 230: 'url' => self::pathToCamelCase($originalFullPath), 
-                        // where originalFullPath = path/to/file (without ext sometimes? no, previous code had .md sometimes)
-                        // pathToCamelCase just does str_replace.
-                        // But usually we want the url segment without .md?
-                        // previous code: $originalFullPath = base/path/file (without ext). 
-                        // Let's strip extension for URL.
-                        'dm' => $isDm
-                    ];
-
-                    // fix URL:
-                    $relativePathWithoutExt = $currentPath ? $currentPath . '/' . pathinfo($fileName, PATHINFO_FILENAME) : pathinfo($fileName, PATHINFO_FILENAME);
-                    // Update the last item
-                    $lastIdx = count($branch['_files']) - 1;
-                    $branch['_files'][$lastIdx]['url'] = self::pathToCamelCase($relativePathWithoutExt);
-
-                } else {
-                    $missing[] = $filePath;
                 }
+
+                // Check DM Status
+                $isDm = false;
+                try {
+                    $content = File::get($fullPath);
+                    $isDm = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content) ? true : false;
+                } catch (\Throwable $e) {
+                }
+
+                if (($isDm && !Auth::check()) || ($isDm && !Auth::isMaster())) {
+                    continue;
+                }
+
+                $branch['_files'][] = [
+                    'name' => $originalName,
+                    'path' => $relPathNoExt, // view expects path without extension
+                    'url' => self::pathToCamelCase($relPathNoExt),
+                    'dm' => $isDm
+                ];
             }
         }
 
