@@ -149,90 +149,173 @@ class VaultController extends Controller
     }
 
     /**
-     * Costruisce l'albero dei file del vault
-     * @param string|null $basePath Path relativo della cartella da cui partire (es. "Personaggi/Giocanti")
+     * Costruisce l'albero dei file del vault partendo dalla mappa (map.json)
+     * e verificando l'esistenza dei file su disco.
+     * 
+     * @param string|null $basePath Path relativo della cartella da cui partire
      */
-    private function buildFileTree(?string $basePath = null, $note): array
+    private function buildFileTree(?string $basePath = null, $note = ''): array
     {
-        $vaultPath = base_path('Vault/' . $basePath);
-        $files = File::allFiles($vaultPath);
+        $map = VaultHelper::getMap($note);
         $tree = [];
 
-        foreach ($files as $file) {
-            if ($file->getExtension() !== 'md') {
-                continue;
+        // Navigate to the start node in the map corresponding to $basePath
+        $startNode = $map;
+        $basePathParts = $basePath ? explode('/', $basePath) : [];
+        $validStart = true;
+
+        foreach ($basePathParts as $part) {
+            $lowerPart = strtolower($part);
+            if (isset($startNode['directories'][$lowerPart])) {
+                $startNode = $startNode['directories'][$lowerPart];
+            } else {
+                $validStart = false;
+                break;
             }
+        }
 
-            // Check if file contains #dm tag (for all users, to include in tree data)
-            $isDmFile = false;
-            try {
-                $contentPreview = File::get($file->getPathname());
-                $isDmFile = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $contentPreview) ? true : false;
-            } catch (\Throwable $e) {
-                // if file can't be read, skip it to avoid breaking the tree
-                continue;
-            }
+        if (!$validStart) {
+            return [];
+        }
 
-            // If user is not master, skip files marked with #dm so they appear nonexistent
-            if ((!Auth::check() || !Auth::isMaster()) && $isDmFile) {
-                continue;
-            }
+        // Traverse map and build tree
+        $result = $this->traverseMapAndBuildTree($startNode, $basePath ?? '', $note);
+        $tree = $result['tree'];
+        $missingFiles = $result['missing'];
 
-            $relativePath = str_replace('\\', '/', $file->getRelativePath());
-            $name = $file->getFilenameWithoutExtension();
+        // Handle missing files notification
+        if (!empty($missingFiles)) {
+            $cacheKey = 'vault_missing_files_alert';
+            if (!\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+                $msg = "⚠️ <b>Vault Integrity Warning</b>\n\n";
+                $msg .= "Found " . count($missingFiles) . " files/directories defined in map.json but missing on disk:\n\n";
 
-            // Fix encoding per caratteri speciali (es. à, è, ò, ù)
-            if (!mb_check_encoding($name, 'UTF-8')) {
-                $name = mb_convert_encoding($name, 'UTF-8', 'ISO-8859-1');
-            }
-            if (!mb_check_encoding($relativePath, 'UTF-8')) {
-                $relativePath = mb_convert_encoding($relativePath, 'UTF-8', 'ISO-8859-1');
-            }
-
-            // // Se abbiamo un basePath, filtra solo i file che iniziano con quel path
-            // if ($basePath !== null) {
-            //     if (!str_starts_with($relativePath, $basePath)) {
-            //         continue;
-            //     }
-            //     // Rimuovi il basePath dal relativePath per costruire l'albero relativo
-            //     $relativePath = substr($relativePath, strlen($basePath));
-            //     $relativePath = ltrim($relativePath, '/');
-            // }
-
-            $fullRelativePath = $relativePath ? $relativePath . '/' . $name : $name;
-
-            // Costruisce la struttura ad albero
-            $parts = $relativePath ? explode('/', $relativePath) : [];
-            $current = &$tree;
-            $currentDirPath = $basePath ?? '';
-
-            foreach ($parts as $part) {
-                // Costruisci il path della cartella corrente per cercare il nome originale nel DB/Map
-                $currentDirPath = $currentDirPath ? $currentDirPath . '/' . $part : $part;
-
-                if (!isset($current[$part])) {
-                    CustomLogger::note($note, "currentDirPath=>" . $currentDirPath, "VaultController:214");
-                    $current[$part] = [
-                        '_files' => [],
-                        '_dirs' => [],
-                        '_label' => VaultHelper::getOriginalDirectoryName($currentDirPath, $note)
-                    ];
+                // Limit the list length
+                $limit = 20;
+                foreach (array_slice($missingFiles, 0, $limit) as $file) {
+                    $msg .= "- " . htmlspecialchars($file) . "\n";
                 }
-                $current = &$current[$part]['_dirs'];
+                if (count($missingFiles) > $limit) {
+                    $msg .= "... and " . (count($missingFiles) - $limit) . " more.";
+                }
+
+                \App\Services\TelegramService::send($msg);
+
+                // Cache for 1 hour to prevent spam
+                \Illuminate\Support\Facades\Cache::put($cacheKey, true, 3600);
             }
-
-            // Mantieni l'URL originale (con basePath) per i link
-            $originalFullPath = $basePath ? $basePath . '/' . $fullRelativePath : $fullRelativePath;
-
-            $current['_files'][] = [
-                'name' => VaultHelper::getNormalizedName($originalFullPath . '.md', $note), // Use original name for display (append extension for lookup)
-                'path' => $fullRelativePath,
-                'url' => self::pathToCamelCase($originalFullPath),
-                'dm' => $isDmFile, // Boolean indicating if file is DM-only
-            ];
         }
 
         return $tree;
+    }
+
+    private function traverseMapAndBuildTree($mapNode, $currentPath, $note): array
+    {
+        // resulting structure for this level (mixed dirs and _files key)
+        $branch = ['_files' => []];
+        $missing = [];
+
+        // 1. Process Directories
+        if (isset($mapNode['directories'])) {
+            foreach ($mapNode['directories'] as $dirKey => $dirData) {
+                $dirPath = $currentPath ? $currentPath . '/' . $dirKey : $dirKey;
+                $fullPath = base_path('Vault/' . $dirPath);
+
+                if (File::isDirectory($fullPath)) {
+                    $subResult = $this->traverseMapAndBuildTree($dirData, $dirPath, $note);
+
+                    // The structure required by the view seems to be:
+                    // $tree['dirName'] = [ '_label' => ..., '_files' => ..., '_dirs' => ... ]
+                    // But wait, my branch currently has $branch['dirName']?
+                    // Previous code: $current['subdir'] = [ '_label', '_files', '_dirs' ]
+                    // And $current IS the equivalent of $branch here.
+
+                    // Note: subResult['tree'] contains the children of the subdirectory.
+                    // The children of the subdirectory are mixed (files and sub-sub-dirs),
+                    // but the view expects them separated in _files and _dirs?
+
+                    // Let's re-read the previous output structure construction:
+                    // $current[$part] = [ '_files'=>[], '_dirs'=>[], '_label'=>... ]
+                    // The $subResult['tree'] is effectively the content of that '_dirs' key?
+                    // AND the content of '_files'.
+
+                    // Wait, previous code:
+                    // $current = &$current[$part]['_dirs'];
+                    // So the recursion puts things into `_dirs`.
+                    // But `_files` is NOT inside `_dirs`. `_files` is sibling of `_dirs`.
+
+                    // So:
+                    // $branch[$dirKey] = [
+                    //    '_label' => ...,
+                    //    '_files' => $subResult['tree']['_files'], // Extract files from result
+                    //    '_dirs' => $subResult['tree'] // Put the rest (dirs) here?
+                    // ]
+                    // We need to remove `_files` from `_dirs` array?
+
+                    $files = $subResult['tree']['_files'] ?? [];
+                    $dirs = $subResult['tree'];
+                    unset($dirs['_files']);
+
+                    $branch[$dirKey] = [
+                        '_label' => $dirData['original'] ?? ucfirst($dirKey),
+                        '_files' => $files,
+                        '_dirs' => $dirs
+                    ];
+
+                    $missing = array_merge($missing, $subResult['missing']);
+                } else {
+                    $missing[] = $dirPath . " (Directory)";
+                }
+            }
+        }
+
+        // 2. Process Files
+        if (isset($mapNode['files'])) {
+            // Sort files by key or original name if desired? iterating map order usually.
+            foreach ($mapNode['files'] as $fileName => $originalName) {
+                $filePath = $currentPath ? $currentPath . '/' . $fileName : $fileName;
+                $fullPath = base_path('Vault/' . $filePath);
+
+                if (File::exists($fullPath)) {
+                    // Check DM Status
+                    $isDm = false;
+                    try {
+                        // Optimally we should maybe cache this or read first N bytes
+                        $content = File::get($fullPath);
+                        $isDm = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content) ? true : false;
+                    } catch (\Throwable $e) {
+                    }
+
+                    if (($isDm && !Auth::check()) || ($isDm && !Auth::isMaster())) {
+                        continue;
+                    }
+
+                    $branch['_files'][] = [
+                        'name' => $originalName,
+                        'path' => $filePath, // relative path for display/ID?
+                        'url' => self::pathToCamelCase($currentPath ? $currentPath . '/' . $fileName : $fileName), // Wait, pathToCamelCase expects path without extension?
+                        // Controller line 230: 'url' => self::pathToCamelCase($originalFullPath), 
+                        // where originalFullPath = path/to/file (without ext sometimes? no, previous code had .md sometimes)
+                        // pathToCamelCase just does str_replace.
+                        // But usually we want the url segment without .md?
+                        // previous code: $originalFullPath = base/path/file (without ext). 
+                        // Let's strip extension for URL.
+                        'dm' => $isDm
+                    ];
+
+                    // fix URL:
+                    $relativePathWithoutExt = $currentPath ? $currentPath . '/' . pathinfo($fileName, PATHINFO_FILENAME) : pathinfo($fileName, PATHINFO_FILENAME);
+                    // Update the last item
+                    $lastIdx = count($branch['_files']) - 1;
+                    $branch['_files'][$lastIdx]['url'] = self::pathToCamelCase($relativePathWithoutExt);
+
+                } else {
+                    $missing[] = $filePath;
+                }
+            }
+        }
+
+        return ['tree' => $branch, 'missing' => $missing];
     }
 
     /**

@@ -196,6 +196,12 @@ class VaultHelper
         }
     }
 
+    public static function getMap($note)
+    {
+        self::loadMap($note);
+        return self::$map;
+    }
+
     protected static function prettify($slug)
     {
         $name = basename($slug, '.md');
