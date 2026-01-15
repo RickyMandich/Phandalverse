@@ -287,7 +287,7 @@ class MarkdownPreprocessor
         CustomLogger::note($note, "inizio log titolo:\t$embedRef");
         $title = VaultHelper::getOriginalName($embedRef, $note);
         CustomLogger::note($note, "dopo get original name:\t$title");
-        $title = explode($title, '#');
+        $title = explode('#', $title);
         CustomLogger::note($note, "dopo explode:\t" . print_r($title, true));
         $title = htmlspecialchars(end($title));
         CustomLogger::note($note, "dopo htmlspecialchars(end):\t$title");
