@@ -323,7 +323,7 @@ class MarkdownPreprocessor
             }
         }
 
-        $ret = "<div class='embed-note border-warning ps-1 border-start embed-depth-$embedDepth'>";
+        $ret = "<div class='embed-note border-warning ps-3 border-start embed-depth-$embedDepth'>";
 
         if ($showHeader) {
             $ret .= "<div class='embed-header'>";
