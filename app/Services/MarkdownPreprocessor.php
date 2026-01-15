@@ -514,23 +514,28 @@ class MarkdownPreprocessor
 
     public static function toHtml(string $text, string $note): string
     {
-        $embeds = [];
-        $text = self::replaceEmbedsWithPlaceholders($text, $embeds);
-        $text = self::convertTags($text);
-        $text = self::convertWikilinks($text);
-        $text = self::convertRomanNumbers($text, $note);
-        // Extract master sections and replace them with placeholders so we can
-        // convert the surrounding markdown as a whole, then convert each
-        // master section separately to ensure inner markdown (headings, lists,
-        // etc.) is rendered correctly.
+        // 1. Extract master sections first so we get clean markdown for them.
+        // We replace them with placeholders and process/convert them separately.
         $masterBlocks = [];
         $text = preg_replace_callback('/#startMaster\s*(.*?)\s*#endMaster/s', function ($m) use (&$masterBlocks) {
             $idx = count($masterBlocks);
             $masterBlocks[$idx] = $m[1];
-            // Use an HTML comment placeholder so the main markdown pass won't
-            // modify the token (underscores and other chars can be mangled).
             return "<!--MASTER_BLOCK:{$idx}-->";
         }, $text);
+
+        $embeds = [];
+
+        // Helper to run pre-processing on markdown content (used for both main text and master blocks)
+        $processContent = function (string $t) use (&$embeds, $note) {
+            $t = self::replaceEmbedsWithPlaceholders($t, $embeds);
+            $t = self::convertTags($t);
+            $t = self::convertWikilinks($t);
+            $t = self::convertRomanNumbers($t, $note);
+            return $t;
+        };
+
+        // 2. Process the main text (which now has master block placeholders)
+        $text = $processContent($text);
 
         $environment = new Environment([
             'renderer' => ['soft_break' => "<br />"],
@@ -544,20 +549,23 @@ class MarkdownPreprocessor
 
         $converter = new MarkdownConverter($environment);
 
-        // Convert the main text (with master placeholders)
+        // 3. Convert the main text
         $html = $converter->convert($text)->getContent();
 
-        // Convert each master block separately and insert the rendered HTML
+        // 4. Convert each master block separately and insert the rendered HTML
         foreach ($masterBlocks as $i => $innerMarkdown) {
+            // Process tags/embeds inside the block
+            $innerMarkdown = $processContent($innerMarkdown);
+            // Convert to HTML
             $innerHtml = $converter->convert($innerMarkdown)->getContent();
             $wrapped = '<div class="master-block">' . $innerHtml . '</div>';
             $html = str_replace("<!--MASTER_BLOCK:{$i}-->", $wrapped, $html);
         }
 
-        // Finally, restore embeds (placeholders -> actual embed HTML)
+        // 5. Restore embeds (placeholders -> actual embed HTML)
         $html = self::restoreEmbeds($html, $embeds, $note);
 
-        // Process external links to add target="_blank"
+        // 6. Process external links to add target="_blank"
         $html = self::processExternalLinks($html);
 
         return $html;
