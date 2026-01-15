@@ -185,8 +185,11 @@ class VaultController extends Controller
 
         // Handle missing files notification
         if (!empty($missingFiles)) {
-            $cacheKey = 'vault_missing_files_alert';
-            if (!\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+            $currentHash = md5(json_encode($missingFiles));
+            $cacheKey = 'vault_missing_files_hash';
+            $lastHash = \Illuminate\Support\Facades\Cache::get($cacheKey);
+
+            if ($currentHash !== $lastHash) {
                 $msg = "⚠️ <b>Vault Integrity Warning</b>\n\n";
                 $msg .= "Found " . count($missingFiles) . " files/directories defined in map.json but missing on disk:\n\n";
 
@@ -201,9 +204,13 @@ class VaultController extends Controller
 
                 \App\Services\TelegramService::send($msg);
 
-                // Cache for 1 hour to prevent spam
-                \Illuminate\Support\Facades\Cache::put($cacheKey, true, 3600);
+                // Cache the hash indefinitely (or for a long time)
+                // The alert will only trigger again if the LIST of missing files changes.
+                \Illuminate\Support\Facades\Cache::put($cacheKey, $currentHash, 86400); // 1 day
             }
+        } else {
+            // clear cache if fixed so next error triggers immediately
+            \Illuminate\Support\Facades\Cache::forget('vault_missing_files_hash');
         }
 
         return $tree;
