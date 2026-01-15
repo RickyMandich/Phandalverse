@@ -33,9 +33,9 @@ class AdminController extends Controller
 
         $query = SystemError::query()->orderBy('created_at', 'desc');
 
-        if(!isset($request->status)) {
+        if (!isset($request->status)) {
             $status = 'new';
-        }else{
+        } else {
             $status = $request->status;
         }
 
@@ -119,9 +119,9 @@ class AdminController extends Controller
         // Ricerca per nome o email
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -150,6 +150,7 @@ class AdminController extends Controller
             'admin' => 'boolean',
             'master' => 'boolean',
             'showEmbedLink' => 'boolean',
+            'collapseEmbed' => 'boolean',
         ]);
 
         $newUser = User::create([
@@ -159,6 +160,7 @@ class AdminController extends Controller
             'admin' => $request->has('admin'),
             'master' => $request->has('master'),
             'showEmbedLink' => $request->has('showEmbedLink'),
+            'collapseEmbed' => $request->has('collapseEmbed'),
         ]);
 
         // Notifica su Telegram la creazione del nuovo utente
@@ -195,6 +197,7 @@ class AdminController extends Controller
             'admin' => 'boolean',
             'master' => 'boolean',
             'showEmbedLink' => 'boolean',
+            'collapseEmbed' => 'boolean',
         ]);
 
         $user->update([
@@ -203,6 +206,7 @@ class AdminController extends Controller
             'admin' => $request->has('admin'),
             'master' => $request->has('master'),
             'showEmbedLink' => $request->has('showEmbedLink'),
+            'collapseEmbed' => $request->has('collapseEmbed'),
         ]);
 
         return redirect()->route('admin.users.edit', $user)->with('success', 'Dati utente aggiornati con successo');

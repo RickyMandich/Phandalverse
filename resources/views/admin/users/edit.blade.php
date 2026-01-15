@@ -88,6 +88,17 @@
                             </div>
                         </div>
 
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="collapseEmbed" name="collapseEmbed" value="1"
+                                       {{ old('collapseEmbed', $user->collapseEmbed) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="collapseEmbed">
+                                    <span class="badge bg-secondary">Comprimi Embed di Default</span>
+                                    <small class="text-muted d-block">Il contenuto degli embed apparirà nascosto inizialmente</small>
+                                </label>
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-lg"></i> Salva Dati
                         </button>

@@ -97,6 +97,16 @@
                             </div>
                         </div>
 
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="collapseEmbed" name="collapseEmbed" value="1"
+                                       {{ old('collapseEmbed', Auth::user()->collapseEmbed) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="collapseEmbed">
+                                    Comprimi Embed di Default
+                                </label>
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-lg"></i> Salva Modifiche
                         </button>

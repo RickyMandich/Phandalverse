@@ -281,15 +281,65 @@ class MarkdownPreprocessor
         $camelPath = VaultController::pathToCamelCase($relativePath);
         $url = '/vault/' . $camelPath;
         $embedDepth = self::$embedDepth;
+        $user = Auth::check() ? Auth::user() : null;
+        $showEmbedLink = $user ? $user->showEmbedLink : false;
+        $collapseEmbed = $user ? $user->collapseEmbed : false;
+        $title = htmlspecialchars(VaultHelper::getOriginalName($embedRef, $note));
+
+        // Header sempre visibile per permettere il collapse a tutti
+        $showHeader = true;
+
+        // Lo stato iniziale dipende dalla preferenza collapseEmbed
+        // Se true -> parte chiuso. Se false -> parte aperto.
+        $startCollapsed = $collapseEmbed;
+
+        // Gestione Link e Header
+        if ($collapseEmbed) {
+            // Se modalità collapse attiva come default, ottimizziamo per il toggle facile:
+            // - Header NON ha link (per permettere click facile su titolo per toggle)
+            // - Il link passa nel contenuto (se abilitato)
+            $headerWithLink = false;
+            $contentWithLink = $showEmbedLink;
+        } else {
+            // Modalità default (espansa)
+            if ($showEmbedLink) {
+                // Se link attivo, resta nell'header (comportamento classico)
+                $headerWithLink = true;
+                $contentWithLink = false;
+            } else {
+                // Nessun link, header serve solo per toggle
+                $headerWithLink = false;
+                $contentWithLink = false;
+            }
+        }
+
         $ret = "<div class='embed-note border-primary ps-4 border-start embed-depth-$embedDepth'>";
-        if (Auth::check() && Auth::user()->showEmbedLink) {
-            $ret = "$ret<div class='embed-header'><i class='bi-caret-right-square collapse-icon' data-bs-toggle='collapse' data-bs-target='#embed-$index-$embedDepth'></i><a href='$url' class='wikilink'> " . htmlspecialchars(VaultHelper::getOriginalName($embedRef, $note)) . '</a></div>';
+
+        if ($showHeader) {
+            $ret .= "<div class='embed-header'>";
+            // Icona toggle
+            $ret .= "<i class='bi-caret-right-square collapse-icon' data-bs-toggle='collapse' data-bs-target='#embed-$index-$embedDepth'></i>";
+
+            if ($headerWithLink) {
+                $ret .= "<a href='$url' class='wikilink'> $title</a>";
+            } else {
+                // Titolo come toggle (fallback icona)
+                $ret .= "<span style='cursor: pointer;' data-bs-toggle='collapse' data-bs-target='#embed-$index-$embedDepth'> $title</span>";
+            }
+            $ret .= "</div>";
         }
-        $ret = "$ret<div class='embed-content collapse";
-        if ((Auth::check() && !Auth::user()->showEmbedLink) || !Auth::check()) {
-            $ret = "$ret show";
+
+        $ret .= "<div class='embed-content collapse";
+        if (!$startCollapsed) {
+            $ret .= " show";
         }
-        $ret = "$ret' id='embed-$index-$embedDepth'>" . $html . '</div></div>';
+        $ret .= "' id='embed-$index-$embedDepth'>";
+
+        if ($contentWithLink) {
+            $ret .= "<div class='mb-2'><a href='$url' class='wikilink'>$title</a></div>";
+        }
+
+        $ret .= $html . '</div></div>';
         return $ret;
     }
 

@@ -40,12 +40,14 @@ class HomeController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'showEmbedLink' => 'boolean',
+            'collapseEmbed' => 'boolean',
         ]);
 
         $user->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'showEmbedLink' => $request->has('showEmbedLink'),
+            'collapseEmbed' => $request->has('collapseEmbed'),
         ]);
 
         return redirect()->route('dashboard')->with('success', 'Profilo aggiornato con successo');
