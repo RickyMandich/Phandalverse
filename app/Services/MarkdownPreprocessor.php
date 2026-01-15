@@ -474,7 +474,8 @@ class MarkdownPreprocessor
 
     public static function convertRomanNumbers(string $text, string $note): string
     {
-        CustomLogger::note($note, "text:\n$text", "debug");
+        if (env('DEBUG_HTML', false))
+            CustomLogger::note($note, "text:\n$text", "debug");
         $text = preg_replace(
             '/R\|([MDCLXVI]+)\|/',
             "<span class='roman-number'>$1</span>",
