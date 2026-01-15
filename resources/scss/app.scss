@@ -93,6 +93,7 @@ i {
 // Usage
 #{headings()} {
     @extend .text-uppercase;
+    @extend .text-warning;
 }
 
 .embed-title {
