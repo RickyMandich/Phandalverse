@@ -37,7 +37,7 @@
                             <option value="">Tutti</option>
                             @foreach($users as $user)
                                 <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
-                                    {{ $user->name }}
+                                    {{ $user->email }} ({{ $user->name }})
                                 </option>
                             @endforeach
                         </select>
@@ -236,14 +236,14 @@
                             else if (item.response_status >= 500) statusClass = 'text-danger';
 
                             const row = `
-                                    <tr>
-                                        <td>${date}</td>
-                                        <td><span class="badge ${methodClass}">${item.http_method}</span></td>
-                                        <td><span class="${statusClass} fw-bold">${item.response_status}</span></td>
-                                        <td>${item.response_time}</td>
-                                        <td class="text-break"><small>${item.url}</small></td>
-                                    </tr>
-                                `;
+                                        <tr>
+                                            <td>${date}</td>
+                                            <td><span class="badge ${methodClass}">${item.http_method}</span></td>
+                                            <td><span class="${statusClass} fw-bold">${item.response_status}</span></td>
+                                            <td>${item.response_time}</td>
+                                            <td class="text-break"><small>${item.url}</small></td>
+                                        </tr>
+                                    `;
                             detailsTableBody.innerHTML += row;
                         });
                     })
