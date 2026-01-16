@@ -87,58 +87,10 @@
             </div>
         </div>
 
-        <!-- Row 1: Trends -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-header bg-transparent py-3">
-                        <h6 class="mb-0 text-primary fw-bold"><i class="bi bi-graph-up"></i> Andamento Ultima Settimana (blocchi 6h)</h6>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="weekTrendsChart" style="max-height: 250px;"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-header bg-transparent py-3">
-                        <h6 class="mb-0 text-info fw-bold"><i class="bi bi-calendar-range"></i> Andamento Ultimo Mese (giornaliero)</h6>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="monthTrendsChart" style="max-height: 250px;"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Row 2: Distributions -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-header bg-transparent py-3">
-                        <h6 class="mb-0 text-success fw-bold"><i class="bi bi-pie-chart"></i> Visitatori Ultima Settimana (tutti)</h6>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="weekDistChart" style="max-height: 300px;"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-header bg-transparent py-3">
-                        <h6 class="mb-0 text-warning fw-bold"><i class="bi bi-pie-chart-fill"></i> Visitatori Ultimo Mese (tutti)</h6>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="monthDistChart" style="max-height: 300px;"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Tabella Dati Raggruppati -->
-        <div class="card border-0 shadow-sm">
+        <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-transparent py-3">
-                <h6 class="mb-0 fw-bold">Riepilogo Dettagliato (Applica i Filtri sopra)</h6>
+                <h6 class="mb-0 fw-bold"><i class="bi bi-table"></i> Riepilogo Dettagliato (Applica i Filtri sopra)</h6>
             </div>
             <div class="card-body table-responsive">
                 <table class="table table-hover align-middle">
@@ -194,6 +146,58 @@
                 {{ $stats->links() }}
             </div>
         </div>
+
+        <!-- Row 1: Trends -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-transparent py-3">
+                        <h6 class="mb-0 text-primary fw-bold"><i class="bi bi-graph-up"></i> Andamento Ultima Settimana
+                            (blocchi 6h)</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="weekTrendsChart" style="max-height: 250px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-transparent py-3">
+                        <h6 class="mb-0 text-info fw-bold"><i class="bi bi-calendar-range"></i> Andamento Ultimo Mese
+                            (giornaliero)</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="monthTrendsChart" style="max-height: 250px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Distributions -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-transparent py-3">
+                        <h6 class="mb-0 text-success fw-bold"><i class="bi bi-pie-chart"></i> Visitatori Ultima Settimana
+                            (tutti)</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="weekDistChart" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-transparent py-3">
+                        <h6 class="mb-0 text-warning fw-bold"><i class="bi bi-pie-chart-fill"></i> Visitatori Ultimo Mese
+                            (tutti)</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="monthDistChart" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal Dettagli -->
@@ -236,7 +240,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // --- Charts Initialization ---
-            
+
             const weekTrendsData = @json($weekTrends);
             const monthTrendsData = @json($monthTrends);
             const weekDistData = @json($weekDistribution);
@@ -378,14 +382,14 @@
                             else if (item.response_status >= 500) statusClass = 'text-danger';
 
                             const row = `
-                                            <tr>
-                                                <td>${date}</td>
-                                                <td><span class="badge ${methodClass}">${item.http_method}</span></td>
-                                                <td><span class="${statusClass} fw-bold">${item.response_status}</span></td>
-                                                <td>${item.response_time}</td>
-                                                <td class="text-break"><small>${item.url}</small></td>
-                                            </tr>
-                                        `;
+                                                <tr>
+                                                    <td>${date}</td>
+                                                    <td><span class="badge ${methodClass}">${item.http_method}</span></td>
+                                                    <td><span class="${statusClass} fw-bold">${item.response_status}</span></td>
+                                                    <td>${item.response_time}</td>
+                                                    <td class="text-break"><small>${item.url}</small></td>
+                                                </tr>
+                                            `;
                             detailsTableBody.innerHTML += row;
                         });
                     })

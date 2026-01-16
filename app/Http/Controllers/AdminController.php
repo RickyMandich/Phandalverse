@@ -389,14 +389,14 @@ class AdminController extends Controller
     }
 
     /**
-     * Export statistics to CSV
+     * Export statistics to CSV (Raw records)
      */
     public function exportStatisticsCSV(Request $request)
     {
-        $startDate = $request->input('start_date', now()->subDays(7)->startOfDay()->format('Y-m-d H:i:s'));
-        $endDate = $request->input('end_date', now()->endOfDay()->format('Y-m-d H:i:s'));
+        $startDate = $request->input('start_date', now()->subDays(7)->format('Y-m-d H:i:s'));
+        $endDate = $request->input('end_date', now()->format('Y-m-d H:i:s'));
 
-        $filename = "statistics_{$startDate}_{$endDate}.csv";
+        $filename = "statistics_raw_{$startDate}_{$endDate}.csv";
 
         $headers = [
             'Content-Type' => 'text/csv',
@@ -409,24 +409,31 @@ class AdminController extends Controller
         $callback = function () use ($startDate, $endDate, $request) {
             $file = fopen('php://output', 'w');
 
-            // Write headers
-            fputcsv($file, ['User', 'IP Address', 'Request Count', 'Last Activity', 'Sample URL']);
+            // Write headers (Match DB structure)
+            fputcsv($file, ['ID', 'User', 'IP Address', 'URL', 'Method', 'Status', 'Response Time (ms)', 'Referrer', 'User Agent', 'Created At']);
 
-            $query = \App\Models\Statistic::getGroupedByUserAndIp($startDate, $endDate);
+            $query = \App\Models\Statistic::query()
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->with('user')
+                ->orderByDesc('created_at');
 
             if ($request->has('user_id') && $request->user_id) {
                 $query->where('user_id', $request->user_id);
             }
 
-            $query->chunk(100, function ($rows) use ($file) {
+            $query->chunk(500, function ($rows) use ($file) {
                 foreach ($rows as $row) {
-                    $userName = $row->user ? $row->user->name : 'Guest';
                     fputcsv($file, [
-                        $userName,
+                        $row->id,
+                        $row->user ? $row->user->name : 'Guest',
                         $row->ip_address,
-                        $row->request_count,
-                        $row->last_activity,
-                        $row->sample_url
+                        $row->url,
+                        $row->http_method,
+                        $row->response_status,
+                        $row->response_time,
+                        $row->referrer,
+                        $row->user_agent,
+                        $row->created_at->format('Y-m-d H:i:s')
                     ]);
                 }
             });
@@ -438,14 +445,14 @@ class AdminController extends Controller
     }
 
     /**
-     * Export statistics to JSON
+     * Export statistics to JSON (Raw records)
      */
     public function exportStatisticsJSON(Request $request)
     {
-        $startDate = $request->input('start_date', now()->subDays(7)->startOfDay()->format('Y-m-d H:i:s'));
-        $endDate = $request->input('end_date', now()->endOfDay()->format('Y-m-d H:i:s'));
+        $startDate = $request->input('start_date', now()->subDays(7)->format('Y-m-d H:i:s'));
+        $endDate = $request->input('end_date', now()->format('Y-m-d H:i:s'));
 
-        $filename = "statistics_{$startDate}_{$endDate}.json";
+        $filename = "statistics_raw_{$startDate}_{$endDate}.json";
 
         $headers = [
             'Content-Type' => 'application/json',
@@ -453,7 +460,10 @@ class AdminController extends Controller
         ];
 
         $callback = function () use ($startDate, $endDate, $request) {
-            $query = \App\Models\Statistic::getGroupedByUserAndIp($startDate, $endDate);
+            $query = \App\Models\Statistic::query()
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->with('user')
+                ->orderByDesc('created_at');
 
             if ($request->has('user_id') && $request->user_id) {
                 $query->where('user_id', $request->user_id);
@@ -461,19 +471,23 @@ class AdminController extends Controller
 
             echo "[";
             $first = true;
-            $query->chunk(100, function ($rows) use (&$first) {
+            $query->chunk(500, function ($rows) use (&$first) {
                 foreach ($rows as $row) {
                     if (!$first) {
                         echo ",";
                     }
-                    $data = [
+                    echo json_encode([
+                        'id' => $row->id,
                         'user' => $row->user ? $row->user->name : 'Guest',
                         'ip_address' => $row->ip_address,
-                        'request_count' => $row->request_count,
-                        'last_activity' => $row->last_activity,
-                        'sample_url' => $row->sample_url
-                    ];
-                    echo json_encode($data);
+                        'url' => $row->url,
+                        'method' => $row->http_method,
+                        'status' => $row->response_status,
+                        'response_time' => $row->response_time,
+                        'referrer' => $row->referrer,
+                        'user_agent' => $row->user_agent,
+                        'created_at' => $row->created_at->format('Y-m-d H:i:s')
+                    ]);
                     $first = false;
                 }
             });
