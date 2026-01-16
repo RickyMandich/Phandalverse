@@ -283,6 +283,7 @@ class AdminController extends Controller
 
         // Base query for summary cards
         $baseQuery = \App\Models\Statistic::query()
+            ->orderBy('ip_address', 'asc')
             ->whereBetween('created_at', [$startDate, $endDate]);
 
         if ($request->has('user_id') && $request->user_id) {
@@ -303,7 +304,6 @@ class AdminController extends Controller
         }
 
         $stats = $groupedStats->paginate(20)->withQueryString();
-        $stats = $stats->orderBy('ip_address', 'asc');
         $users = User::orderBy('name')->get(); // For filter dropdown
 
         return view('admin.statistics', compact(
