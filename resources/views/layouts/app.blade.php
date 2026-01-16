@@ -23,13 +23,6 @@
     @yield('include')
 </head>
 
-<!-- <style>
-    a {
-        text-decoration: none;
-        color: inherit;
-    }
-</style> -->
-
 @yield('style')
 
 <body>
@@ -118,8 +111,9 @@
                                         <i class="bi bi-person-circle"></i> Il mio Profilo
                                     </a>
 
-                                    <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault();
-                                                                         document.getElementById('logout-form').submit();">
+                                    <a class="dropdown-item" href="{{ route('logout') }}"
+                                        onclick="event.preventDefault();
+                                                                             document.getElementById('logout-form').submit();">
                                         {{ __('Logout') }}
                                     </a>
 

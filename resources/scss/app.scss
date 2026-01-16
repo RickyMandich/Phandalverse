@@ -80,6 +80,11 @@ i {
     @extend .wikilink;
 }
 
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
 @function noteHeadings($from: 1, $to: 6) {
     @if $from ==$to {
         @return ".vault-note h#{$from}";
