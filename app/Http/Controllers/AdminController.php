@@ -291,9 +291,28 @@ class AdminController extends Controller
 
         // Calculate summary stats
         $totalVisits = (clone $baseQuery)->count();
-        $uniqueVisitors = (clone $baseQuery)->distinct('user_id')->count('user_id'); // Only counts logged in users distinct
+        $uniqueVisitors = (clone $baseQuery)->whereNotNull('user_id')->distinct('user_id')->count('user_id');
         $uniqueIPs = (clone $baseQuery)->distinct('ip_address')->count('ip_address');
         $avgResponseTime = (clone $baseQuery)->avg('response_time');
+
+        // --- Data for Chart.js ---
+
+        // 1. Visits over time (Line Chart)
+        $visitsOverTime = (clone $baseQuery)
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        // 2. User/IP distribution (Pie Chart) - Top 10
+        $userDistribution = \App\Models\Statistic::query()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('COALESCE(users.name, statistics.ip_address) as label, COUNT(*) as count')
+            ->leftJoin('users', 'statistics.user_id', '=', 'users.id')
+            ->groupBy('label')
+            ->orderByDesc('count')
+            ->limit(10)
+            ->get();
 
         // Get grouped data for table
         $groupedStats = \App\Models\Statistic::getGroupedByUserAndIp($startDate, $endDate);
@@ -302,7 +321,7 @@ class AdminController extends Controller
             $groupedStats->where('user_id', $request->user_id);
         }
 
-        $stats = $groupedStats->orderBy('ip_address')->paginate(20)->withQueryString();
+        $stats = $groupedStats->orderByDesc('request_count')->paginate(20)->withQueryString();
         $users = User::orderBy('name')->get(); // For filter dropdown
 
         return view('admin.statistics', compact(
@@ -313,7 +332,9 @@ class AdminController extends Controller
             'totalVisits',
             'uniqueVisitors',
             'uniqueIPs',
-            'avgResponseTime'
+            'avgResponseTime',
+            'visitsOverTime',
+            'userDistribution'
         ));
     }
 

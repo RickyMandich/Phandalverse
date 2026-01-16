@@ -87,6 +87,30 @@
             </div>
         </div>
 
+        <!-- Charts Section -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="bi bi-graph-up"></i> Visite nel Tempo
+                    </div>
+                    <div class="card-body">
+                        <canvas id="visitsChart" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <i class="bi bi-pie-chart"></i> Distribuzione Utenti (Top 10)
+                    </div>
+                    <div class="card-body">
+                        <canvas id="userDistChart" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Tabella Dati Raggruppati -->
         <div class="card">
             <div class="card-header">
@@ -184,8 +208,62 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // --- Charts Initialization ---
+            const visitsData = @json($visitsOverTime);
+            const userDistData = @json($userDistribution);
+
+            // Visits Chart (Line)
+            new Chart(document.getElementById('visitsChart'), {
+                type: 'line',
+                data: {
+                    labels: visitsData.map(d => d.date),
+                    datasets: [{
+                        label: 'Visite',
+                        data: visitsData.map(d => d.count),
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 } }
+                    }
+                }
+            });
+
+            // User Distribution Chart (Pie)
+            new Chart(document.getElementById('userDistChart'), {
+                type: 'pie',
+                data: {
+                    labels: userDistData.map(d => d.label),
+                    datasets: [{
+                        data: userDistData.map(d => d.count),
+                        backgroundColor: [
+                            '#0d6efd', '#198754', '#0dcaf0', '#ffc107', '#dc3545',
+                            '#6610f2', '#6f42c1', '#d63384', '#fd7e14', '#20c997'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12 } }
+                    }
+                }
+            });
+
+            // --- Modal Details Logic ---
             const modal = document.getElementById('detailsModal');
             const detailsTableBody = document.querySelector('#detailsTable tbody');
 
@@ -236,14 +314,14 @@
                             else if (item.response_status >= 500) statusClass = 'text-danger';
 
                             const row = `
-                                        <tr>
-                                            <td>${date}</td>
-                                            <td><span class="badge ${methodClass}">${item.http_method}</span></td>
-                                            <td><span class="${statusClass} fw-bold">${item.response_status}</span></td>
-                                            <td>${item.response_time}</td>
-                                            <td class="text-break"><small>${item.url}</small></td>
-                                        </tr>
-                                    `;
+                                            <tr>
+                                                <td>${date}</td>
+                                                <td><span class="badge ${methodClass}">${item.http_method}</span></td>
+                                                <td><span class="${statusClass} fw-bold">${item.response_status}</span></td>
+                                                <td>${item.response_time}</td>
+                                                <td class="text-break"><small>${item.url}</small></td>
+                                            </tr>
+                                        `;
                             detailsTableBody.innerHTML += row;
                         });
                     })
