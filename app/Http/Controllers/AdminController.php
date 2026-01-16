@@ -270,5 +270,172 @@ class AdminController extends Controller
 
         return redirect()->route('admin.users')->with('success', 'Utente eliminato con successo');
     }
+    // ========== STATISTICHE ==========
+
+    /**
+     * Display statistics page
+     */
+    public function statistics(Request $request)
+    {
+        // Default to last 7 days if no dates provided
+        $startDate = $request->input('start_date', now()->subDays(7)->startOfDay()->format('Y-m-d H:i:s'));
+        $endDate = $request->input('end_date', now()->endOfDay()->format('Y-m-d H:i:s'));
+
+        // Base query for summary cards
+        $baseQuery = \App\Models\Statistic::query()
+            ->whereBetween('created_at', [$startDate, $endDate]);
+
+        if ($request->has('user_id') && $request->user_id) {
+            $baseQuery->where('user_id', $request->user_id);
+        }
+
+        // Calculate summary stats
+        $totalVisits = (clone $baseQuery)->count();
+        $uniqueVisitors = (clone $baseQuery)->distinct('user_id')->count('user_id'); // Only counts logged in users distinct
+        $uniqueIPs = (clone $baseQuery)->distinct('ip_address')->count('ip_address');
+        $avgResponseTime = (clone $baseQuery)->avg('response_time');
+
+        // Get grouped data for table
+        $groupedStats = \App\Models\Statistic::getGroupedByUserAndIp($startDate, $endDate);
+
+        if ($request->has('user_id') && $request->user_id) {
+            $groupedStats->where('user_id', $request->user_id);
+        }
+
+        $stats = $groupedStats->paginate(20)->withQueryString();
+        $users = User::orderBy('name')->get(); // For filter dropdown
+
+        return view('admin.statistics', compact(
+            'stats',
+            'users',
+            'startDate',
+            'endDate',
+            'totalVisits',
+            'uniqueVisitors',
+            'uniqueIPs',
+            'avgResponseTime'
+        ));
+    }
+
+    /**
+     * Export statistics specific requests details for a group
+     */
+    public function statisticsDetails(Request $request)
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $userId = $request->input('user_id'); // Can be 'guest'
+        $ipAddress = $request->input('ip_address');
+
+        $query = \App\Models\Statistic::query()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('ip_address', $ipAddress)
+            ->orderByDesc('created_at');
+
+        if ($userId && $userId !== 'guest') {
+            $query->where('user_id', $userId);
+        } else {
+            $query->whereNull('user_id');
+        }
+
+        $details = $query->get();
+
+        return response()->json($details);
+    }
+
+    /**
+     * Export statistics to CSV
+     */
+    public function exportStatisticsCSV(Request $request)
+    {
+        $startDate = $request->input('start_date', now()->subDays(7)->startOfDay()->format('Y-m-d H:i:s'));
+        $endDate = $request->input('end_date', now()->endOfDay()->format('Y-m-d H:i:s'));
+
+        $filename = "statistics_{$startDate}_{$endDate}.csv";
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        $callback = function () use ($startDate, $endDate, $request) {
+            $file = fopen('php://output', 'w');
+
+            // Write headers
+            fputcsv($file, ['User', 'IP Address', 'Request Count', 'Last Activity', 'Sample URL']);
+
+            $query = \App\Models\Statistic::getGroupedByUserAndIp($startDate, $endDate);
+
+            if ($request->has('user_id') && $request->user_id) {
+                $query->where('user_id', $request->user_id);
+            }
+
+            $query->chunk(100, function ($rows) use ($file) {
+                foreach ($rows as $row) {
+                    $userName = $row->user ? $row->user->name : 'Guest';
+                    fputcsv($file, [
+                        $userName,
+                        $row->ip_address,
+                        $row->request_count,
+                        $row->last_activity,
+                        $row->sample_url
+                    ]);
+                }
+            });
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Export statistics to JSON
+     */
+    public function exportStatisticsJSON(Request $request)
+    {
+        $startDate = $request->input('start_date', now()->subDays(7)->startOfDay()->format('Y-m-d H:i:s'));
+        $endDate = $request->input('end_date', now()->endOfDay()->format('Y-m-d H:i:s'));
+
+        $filename = "statistics_{$startDate}_{$endDate}.json";
+
+        $headers = [
+            'Content-Type' => 'application/json',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function () use ($startDate, $endDate, $request) {
+            $query = \App\Models\Statistic::getGroupedByUserAndIp($startDate, $endDate);
+
+            if ($request->has('user_id') && $request->user_id) {
+                $query->where('user_id', $request->user_id);
+            }
+
+            echo "[";
+            $first = true;
+            $query->chunk(100, function ($rows) use (&$first) {
+                foreach ($rows as $row) {
+                    if (!$first) {
+                        echo ",";
+                    }
+                    $data = [
+                        'user' => $row->user ? $row->user->name : 'Guest',
+                        'ip_address' => $row->ip_address,
+                        'request_count' => $row->request_count,
+                        'last_activity' => $row->last_activity,
+                        'sample_url' => $row->sample_url
+                    ];
+                    echo json_encode($data);
+                    $first = false;
+                }
+            });
+            echo "]";
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }
 

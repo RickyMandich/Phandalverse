@@ -9,14 +9,19 @@ use App\Models\SystemError;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        commands: __DIR__.'/../routes/console.php',
+        web: __DIR__ . '/../routes/web.php',
+        commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Registra l'alias per il middleware admin
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+        ]);
+
+        // Aggiungi middleware per tracciare statistiche su tutte le richieste web
+        $middleware->web(append: [
+            \App\Http\Middleware\TrackStatistics::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
