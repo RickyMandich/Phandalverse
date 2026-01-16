@@ -295,26 +295,48 @@ class AdminController extends Controller
         $uniqueIPs = (clone $baseQuery)->distinct('ip_address')->count('ip_address');
         $avgResponseTime = (clone $baseQuery)->avg('response_time');
 
-        // --- Data for Chart.js ---
+        // --- Data for Chart.js (2x2 Grid) ---
 
-        // 1. Visits over time (Line Chart)
-        $visitsOverTime = (clone $baseQuery)
-            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
-            ->groupBy('date')
-            ->orderBy('date')
+        // 1. Weekly Trends (6-hour blocks)
+        $weekStart = now()->subDays(7)->startOfDay();
+        $weekTrends = \App\Models\Statistic::query()
+            ->where('created_at', '>=', $weekStart)
+            ->selectRaw("
+                CONCAT(DATE_FORMAT(created_at, '%d/%m '), LPAD(FLOOR(HOUR(created_at)/6)*6, 2, '0'), ':00') as label,
+                COUNT(*) as count
+            ")
+            ->groupBy('label')
+            ->orderByRaw('MIN(created_at)')
             ->get();
 
-        // 2. User/IP distribution (Pie Chart) - Top 10
-        $userDistribution = \App\Models\Statistic::query()
-            ->whereBetween('statistics.created_at', [$startDate, $endDate])
+        // 2. Monthly Trends (Daily)
+        $monthStart = now()->subDays(30)->startOfDay();
+        $monthTrends = \App\Models\Statistic::query()
+            ->where('created_at', '>=', $monthStart)
+            ->selectRaw("DATE_FORMAT(created_at, '%d/%m') as label, COUNT(*) as count")
+            ->groupBy('label')
+            ->orderByRaw('MIN(created_at)')
+            ->get();
+
+        // 3. Weekly Distribution (Pie - All users)
+        $weekDistribution = \App\Models\Statistic::query()
+            ->where('statistics.created_at', '>=', $weekStart)
             ->selectRaw('COALESCE(users.name, statistics.ip_address) as label, COUNT(*) as count')
             ->leftJoin('users', 'statistics.user_id', '=', 'users.id')
             ->groupBy('label')
             ->orderByDesc('count')
-            ->limit(10)
             ->get();
 
-        // Get grouped data for table
+        // 4. Monthly Distribution (Pie - All users)
+        $monthDistribution = \App\Models\Statistic::query()
+            ->where('statistics.created_at', '>=', $monthStart)
+            ->selectRaw('COALESCE(users.name, statistics.ip_address) as label, COUNT(*) as count')
+            ->leftJoin('users', 'statistics.user_id', '=', 'users.id')
+            ->groupBy('label')
+            ->orderByDesc('count')
+            ->get();
+
+        // Get grouped data for table (this still respects the user filters)
         $groupedStats = \App\Models\Statistic::getGroupedByUserAndIp($startDate, $endDate);
 
         if ($request->has('user_id') && $request->user_id) {
@@ -333,8 +355,10 @@ class AdminController extends Controller
             'uniqueVisitors',
             'uniqueIPs',
             'avgResponseTime',
-            'visitsOverTime',
-            'userDistribution'
+            'weekTrends',
+            'monthTrends',
+            'weekDistribution',
+            'monthDistribution'
         ));
     }
 

@@ -87,34 +87,58 @@
             </div>
         </div>
 
-        <!-- Charts Section -->
+        <!-- Row 1: Trends -->
         <div class="row mb-4">
-            <div class="col-md-8">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <i class="bi bi-graph-up"></i> Visite nel Tempo
+            <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-transparent py-3">
+                        <h6 class="mb-0 text-primary fw-bold"><i class="bi bi-graph-up"></i> Andamento Ultima Settimana (blocchi 6h)</h6>
                     </div>
                     <div class="card-body">
-                        <canvas id="visitsChart" style="max-height: 300px;"></canvas>
+                        <canvas id="weekTrendsChart" style="max-height: 250px;"></canvas>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <i class="bi bi-pie-chart"></i> Distribuzione Utenti (Top 10)
+            <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-transparent py-3">
+                        <h6 class="mb-0 text-info fw-bold"><i class="bi bi-calendar-range"></i> Andamento Ultimo Mese (giornaliero)</h6>
                     </div>
                     <div class="card-body">
-                        <canvas id="userDistChart" style="max-height: 300px;"></canvas>
+                        <canvas id="monthTrendsChart" style="max-height: 250px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Distributions -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-transparent py-3">
+                        <h6 class="mb-0 text-success fw-bold"><i class="bi bi-pie-chart"></i> Visitatori Ultima Settimana (tutti)</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="weekDistChart" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-transparent py-3">
+                        <h6 class="mb-0 text-warning fw-bold"><i class="bi bi-pie-chart-fill"></i> Visitatori Ultimo Mese (tutti)</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="monthDistChart" style="max-height: 300px;"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Tabella Dati Raggruppati -->
-        <div class="card">
-            <div class="card-header">
-                Riepilogo per Utente / IP
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent py-3">
+                <h6 class="mb-0 fw-bold">Riepilogo Dettagliato (Applica i Filtri sopra)</h6>
             </div>
             <div class="card-body table-responsive">
                 <table class="table table-hover align-middle">
@@ -166,7 +190,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="card-footer">
+            <div class="card-footer bg-transparent border-0">
                 {{ $stats->links() }}
             </div>
         </div>
@@ -212,58 +236,98 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // --- Charts Initialization ---
-            const visitsData = @json($visitsOverTime);
-            const userDistData = @json($userDistribution);
+            
+            const weekTrendsData = @json($weekTrends);
+            const monthTrendsData = @json($monthTrends);
+            const weekDistData = @json($weekDistribution);
+            const monthDistData = @json($monthDistribution);
 
-            // Visits Chart (Line)
-            new Chart(document.getElementById('visitsChart'), {
+            const chartConfig = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            };
+
+            // 1. Weekly Trends (Line)
+            new Chart(document.getElementById('weekTrendsChart'), {
                 type: 'line',
                 data: {
-                    labels: visitsData.map(d => d.date),
+                    labels: weekTrendsData.map(d => d.label),
                     datasets: [{
                         label: 'Visite',
-                        data: visitsData.map(d => d.count),
+                        data: weekTrendsData.map(d => d.count),
                         borderColor: '#0d6efd',
                         backgroundColor: 'rgba(13, 110, 253, 0.1)',
                         fill: true,
-                        tension: 0.3
+                        tension: 0.4
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { precision: 0 } }
-                    }
-                }
+                options: chartConfig
             });
 
-            // User Distribution Chart (Pie)
-            new Chart(document.getElementById('userDistChart'), {
+            // 2. Monthly Trends (Line)
+            new Chart(document.getElementById('monthTrendsChart'), {
+                type: 'line',
+                data: {
+                    labels: monthTrendsData.map(d => d.label),
+                    datasets: [{
+                        label: 'Visite',
+                        data: monthTrendsData.map(d => d.count),
+                        borderColor: '#0dcaf0',
+                        backgroundColor: 'rgba(13, 202, 240, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: chartConfig
+            });
+
+            const generateColors = (n) => {
+                const colors = [];
+                for (let i = 0; i < n; i++) {
+                    colors.push(`hsl(${(i * 360 / n) % 360}, 70%, 50%)`);
+                }
+                return colors;
+            };
+
+            // 3. Weekly Distribution (Pie)
+            new Chart(document.getElementById('weekDistChart'), {
                 type: 'pie',
                 data: {
-                    labels: userDistData.map(d => d.label),
+                    labels: weekDistData.map(d => d.label),
                     datasets: [{
-                        data: userDistData.map(d => d.count),
-                        backgroundColor: [
-                            '#0d6efd', '#198754', '#0dcaf0', '#ffc107', '#dc3545',
-                            '#6610f2', '#6f42c1', '#d63384', '#fd7e14', '#20c997'
-                        ]
+                        data: weekDistData.map(d => d.count),
+                        backgroundColor: generateColors(weekDistData.length)
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 12 } }
+                        legend: { display: weekDistData.length <= 15, position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
                     }
                 }
             });
 
-            // --- Modal Details Logic ---
+            // 4. Monthly Distribution (Pie)
+            new Chart(document.getElementById('monthDistChart'), {
+                type: 'pie',
+                data: {
+                    labels: monthDistData.map(d => d.label),
+                    datasets: [{
+                        data: monthDistData.map(d => d.count),
+                        backgroundColor: generateColors(monthDistData.length)
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: monthDistData.length <= 15, position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+                    }
+                }
+            });
             const modal = document.getElementById('detailsModal');
             const detailsTableBody = document.querySelector('#detailsTable tbody');
 
