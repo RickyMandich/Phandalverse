@@ -54,7 +54,7 @@
         <!-- Summary Cards -->
         <div class="row mb-4">
             <div class="col-md-3">
-                <div class="card bg-primary text-white h-100">
+                <div class="card bg-primary h-100">
                     <div class="card-body text-center">
                         <h5 class="card-title">Visite Totali</h5>
                         <h2 class="display-4">{{ number_format($totalVisits) }}</h2>
@@ -62,7 +62,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card bg-success text-white h-100">
+                <div class="card bg-success h-100">
                     <div class="card-body text-center">
                         <h5 class="card-title">Utenti Unici</h5>
                         <h2 class="display-4">{{ number_format($uniqueVisitors) }}</h2>
@@ -70,7 +70,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card bg-info text-white h-100">
+                <div class="card bg-info h-100">
                     <div class="card-body text-center">
                         <h5 class="card-title">IP Unici</h5>
                         <h2 class="display-4">{{ number_format($uniqueIPs) }}</h2>
@@ -78,7 +78,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card bg-warning text-dark h-100">
+                <div class="card bg-warning h-100">
                     <div class="card-body text-center">
                         <h5 class="card-title">Tempo Medio Risposta</h5>
                         <h2 class="display-4">{{ number_format($avgResponseTime, 2) }} ms</h2>
@@ -236,14 +236,14 @@
                             else if (item.response_status >= 500) statusClass = 'text-danger';
 
                             const row = `
-                                <tr>
-                                    <td>${date}</td>
-                                    <td><span class="badge ${methodClass}">${item.http_method}</span></td>
-                                    <td><span class="${statusClass} fw-bold">${item.response_status}</span></td>
-                                    <td>${item.response_time}</td>
-                                    <td class="text-break"><small>${item.url}</small></td>
-                                </tr>
-                            `;
+                                    <tr>
+                                        <td>${date}</td>
+                                        <td><span class="badge ${methodClass}">${item.http_method}</span></td>
+                                        <td><span class="${statusClass} fw-bold">${item.response_status}</span></td>
+                                        <td>${item.response_time}</td>
+                                        <td class="text-break"><small>${item.url}</small></td>
+                                    </tr>
+                                `;
                             detailsTableBody.innerHTML += row;
                         });
                     })

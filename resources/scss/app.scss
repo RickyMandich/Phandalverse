@@ -80,18 +80,18 @@ i {
     @extend .wikilink;
 }
 
-@function headings($from: 1, $to: 6) {
+@function noteHeadings($from: 1, $to: 6) {
     @if $from ==$to {
-        @return "h#{$from}";
+        @return ".vault-note h#{$from}";
     }
 
     @else {
-        @return "h#{$from}, "+headings($from + 1, $to);
+        @return ".vault-note h#{$from}, "+noteHeadings($from + 1, $to);
     }
 }
 
 // Usage
-#{headings()} {
+#{noteHeadings()} {
     @extend .text-uppercase;
     @extend .text-warning;
 }
