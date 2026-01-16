@@ -303,6 +303,7 @@ class AdminController extends Controller
         }
 
         $stats = $groupedStats->paginate(20)->withQueryString();
+        $stats = $stats->orderBy('ip_address', 'asc');
         $users = User::orderBy('name')->get(); // For filter dropdown
 
         return view('admin.statistics', compact(
