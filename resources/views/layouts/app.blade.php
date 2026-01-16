@@ -73,7 +73,8 @@
                         @guest
                             @if (Route::has('login'))
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('login', ['from' => request()->fullUrl()]) }}">{{ __('Login') }}</a>
+                                    <a class="nav-link"
+                                        href="{{ route('login', ['from' => request()->fullUrl()]) }}">{{ __('Login') }}</a>
                                 </li>
                             @endif
 
@@ -101,6 +102,9 @@
                                         <a class="dropdown-item" href="{{ route('admin.reports') }}">
                                             📢 Segnalazioni
                                         </a>
+                                        <a class="dropdown-item" href="{{ route('admin.statistics') }}">
+                                            <i class="bi bi-graph-up"></i> Statistiche Accessi
+                                        </a>
                                         <a class="dropdown-item" href="{{ route('admin.errors') }}">
                                             <i class="fas fa-exclamation-triangle"></i> Errori Sistema
                                         </a>
@@ -115,7 +119,7 @@
                                     </a>
 
                                     <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault();
-                                                                 document.getElementById('logout-form').submit();">
+                                                                     document.getElementById('logout-form').submit();">
                                         {{ __('Logout') }}
                                     </a>
 
