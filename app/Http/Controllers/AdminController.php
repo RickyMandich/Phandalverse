@@ -306,7 +306,7 @@ class AdminController extends Controller
 
         // 2. User/IP distribution (Pie Chart) - Top 10
         $userDistribution = \App\Models\Statistic::query()
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereBetween('statistics.created_at', [$startDate, $endDate])
             ->selectRaw('COALESCE(users.name, statistics.ip_address) as label, COUNT(*) as count')
             ->leftJoin('users', 'statistics.user_id', '=', 'users.id')
             ->groupBy('label')
