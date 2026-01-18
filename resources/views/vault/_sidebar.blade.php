@@ -58,7 +58,7 @@
     }
 </style>
 
-<aside class="bg-body-secondary border-end border-secondary-subtle rounded-4 d-flex flex-column z-1" id="vault-sidebar">
+<aside class="bg-body-secondary border-end border-secondary-subtle rounded-4 d-flex flex-column z-3" id="vault-sidebar">
     <button class="btn btn-sm btn-dark position-absolute top-0 end-0 m-2 z-2 lh-1" id="sidebar-toggle"
         title="Toggle Sidebar">
         <span id="toggle-icon">◀</span>

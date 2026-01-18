@@ -16,3 +16,4 @@ aggiungere il topic `contenuto` alle segnalazioni
 - sistemare autore segnalazione
 - attiva redirect login
 # da fare
+link senza alias => nome originale
