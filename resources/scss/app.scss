@@ -114,3 +114,11 @@ a {
 .master-block.tag {
     max-width: 27%;
 }
+
+.toggle-indicator {
+    transition: transform 0.3s ease;
+}
+
+[aria-expanded="true"] .toggle-indicator {
+    transform: rotate(180deg);
+}

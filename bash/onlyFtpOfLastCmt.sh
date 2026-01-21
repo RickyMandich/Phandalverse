@@ -6,7 +6,7 @@ function uploadFilesFromCommit() {
         [ -z "$file" ] && continue
 
         # Salta file dentro cartelle escluse
-        if [[ "$file" == node_modules/* || "$file" == vendor/* || "$file" == .obsidian/* ]]; then
+        if [[ "$file" == node_modules/* || "$file" == vendor/* || "$file" == */.obsidian/* ]]; then
             echo "Skipping $file (excluded directory)"
             continue
         fi

@@ -63,19 +63,29 @@
                 <div class="tooltip-graph position-absolute bg-black bg-opacity-90 text-white p-2 rounded small z-3"
                     id="tooltip"></div>
 
-                <div class="position-absolute bottom-0 start-0 m-2 p-2 rounded bg-black bg-opacity-75 small z-2">
-                    @php
-                        $legend = $graphConfig['legend'] ?? [];
-                        $colors = $graphConfig['colors'] ?? [];
-                    @endphp
-                    @foreach($legend as $key => $label)
-                        <div class="d-flex align-items-center gap-2 mb-1">
-                            <div
-                                style="width: 12px; height: 12px; border-radius: 50%; background: {{ $colors[$key] ?? ($colors['default'] ?? '#888') }};">
+                <div
+                    class="position-absolute bottom-0 start-0 m-2 p-0 rounded bg-black bg-opacity-75 border border-secondary small z-2">
+                    <button
+                        class="btn btn-sm text-white w-100 d-flex align-items-center justify-content-between gap-3 px-2 py-1"
+                        type="button" data-bs-toggle="collapse" data-bs-target="#graphLegend" aria-expanded="false"
+                        aria-controls="graphLegend">
+                        <span><i class="bi bi-list-ul me-1"></i> Legenda</span>
+                        <i class="bi bi-chevron-up toggle-indicator"></i>
+                    </button>
+                    <div class="collapse p-2 pt-0" id="graphLegend">
+                        @php
+                            $legend = $graphConfig['legend'] ?? [];
+                            $colors = $graphConfig['colors'] ?? [];
+                        @endphp
+                        @foreach ($legend as $key => $label)
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <div
+                                    style="min-width: 12px; width: 12px; height: 12px; border-radius: 50%; background: {{ $colors[$key] ?? ($colors['default'] ?? '#888') }};">
+                                </div>
+                                <span class="text-nowrap">{{ $label }}</span>
                             </div>
-                            <span>{{ $label }}</span>
-                        </div>
-                    @endforeach
+                        @endforeach
+                    </div>
                 </div>
             </div>
         </section>
@@ -106,36 +116,89 @@
 
         svg.call(zoom);
 
+        // Color scale based on Obsidian colorGroups
         function getNodeColor(node) {
             const path = (node.path || '').toLowerCase();
-            const tags = node.tags || [];
-            const colors = (graphConfig && graphConfig.colors) ? graphConfig.colors : {};
-            const def = colors['default'] || '#888';
+            const tags = (node.tags || []).map(t => t.toLowerCase());
+            const groups = graphConfig.colorGroups || [];
 
-            if (tags.includes('universo') || path.includes('universi')) return colors['universo'] || def;
-            if (tags.includes('città')) return colors['città'] || def;
-            if (tags.includes('pg') || path.includes('giocanti')) return colors['pg'] || def;
-            if (tags.includes('png') || path.includes('non giocanti')) return colors['png'] || def;
-            if (tags.includes('saga') || path.includes('saghe')) return colors['saga'] || def;
-            if (tags.includes('evento') || path.includes('eventi')) return colors['evento'] || def;
-            if (path.includes('definizioni')) return colors['definizioni'] || def;
-            if (path.includes('artefatti')) return colors['artefatti'] || def;
-            return def;
+            // Iterate in reverse because later groups override earlier ones in Obsidian
+            for (let i = groups.length - 1; i >= 0; i--) {
+                const group = groups[i];
+                const query = (group.query || '').toLowerCase();
+                const colorObj = group.color || {};
+                const rgb = colorObj.rgb;
+
+                if (rgb === undefined) continue;
+
+                const hex = '#' + (rgb & 0xFFFFFF).toString(16).padStart(6, '0');
+
+                // Simple query parsing: path:... and tag:#...
+                let matches = true;
+
+                // Matches path
+                const pathMatch = query.match(/path:([^\s]+)/);
+                if (pathMatch) {
+                    if (!path.includes(pathMatch[1])) matches = false;
+                }
+
+                // Matches tag
+                const tagMatch = query.match(/tag:#([^\s]+)/);
+                if (tagMatch) {
+                    if (!tags.includes(tagMatch[1])) matches = false;
+                }
+
+                if (matches && (pathMatch || tagMatch)) {
+                    return hex;
+                }
+            }
+
+            const colors = graphConfig.colors || {};
+            return colors['default'] || '#888';
         }
 
+        // Force simulation
+        const repelStrength = -(graphConfig.repelStrength || 20) * 10;
+        const linkDistance = graphConfig.linkDistance || 30;
+        const linkStrength = graphConfig.linkStrength || 1;
+        const centerStrength = graphConfig.centerStrength || 0.77;
+
         const simulation = d3.forceSimulation(graphData.nodes)
-            .force('link', d3.forceLink(graphData.links).id(d => d.id).distance(80).strength(0.5))
-            .force('charge', d3.forceManyBody().strength(-200))
-            .force('center', d3.forceCenter(width / 2, height / 2))
-            .force('collision', d3.forceCollide().radius(30));
+            .force('link', d3.forceLink(graphData.links)
+                .id(d => d.id)
+                .distance(linkDistance)
+                .strength(linkStrength))
+            .force('charge', d3.forceManyBody()
+                .strength(repelStrength))
+            .force('center', d3.forceCenter(width / 2, height / 2).strength(centerStrength))
+            .force('collision', d3.forceCollide().radius(d => (5 + (d.connections || 0) * 0.5) * (graphConfig
+                .nodeSizeMultiplier || 1) + 2));
 
-        const link = g.append('g').selectAll('line').data(graphData.links).enter().append('line').attr('class', 'link').attr('stroke-width', 1);
+        // Links
+        const lineSizeMultiplier = graphConfig.lineSizeMultiplier || 1;
+        const link = g.append('g')
+            .selectAll('line')
+            .data(graphData.links)
+            .enter()
+            .append('line')
+            .attr('class', 'link')
+            .attr('stroke-width', 1 * lineSizeMultiplier);
 
-        const node = g.append('g').selectAll('g').data(graphData.nodes).enter().append('g').attr('class', 'node')
-            .call(d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended));
+        // Nodes
+        const nodeSizeMultiplier = graphConfig.nodeSizeMultiplier || 1;
+        const node = g.append('g')
+            .selectAll('g')
+            .data(graphData.nodes)
+            .enter()
+            .append('g')
+            .attr('class', 'node')
+            .call(d3.drag()
+                .on('start', dragstarted)
+                .on('drag', dragged)
+                .on('end', dragended));
 
         node.append('circle')
-            .attr('r', d => 5 + (d.connections || 0) * 0.5)
+            .attr('r', d => (5 + (d.connections || 0) * 0.5) * nodeSizeMultiplier)
             .attr('fill', d => getNodeColor(d))
             .on('click', (event, d) => window.location.href = '/vault/' + d.url)
             .on('mouseover', (event, d) => {
@@ -147,20 +210,46 @@
             })
             .on('mouseout', () => document.getElementById('tooltip').style.display = 'none');
 
-        node.append('text').attr('dx', 12).attr('dy', 4).text(d => d.name);
+        node.append('text')
+            .attr('dx', 12 * nodeSizeMultiplier)
+            .attr('dy', 4)
+            .text(d => d.name)
+            .style('display', graphConfig.showTags === false ? 'none' : 'block');
 
         simulation.on('tick', () => {
-            link.attr('x1', d => d.source.x).attr('y1', d => d.source.y).attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+            link.attr('x1', d => d.source.x).attr('y1', d => d.source.y).attr('x2', d => d.target.x).attr('y2', d =>
+                d.target.y);
             node.attr('transform', d => `translate(${d.x},${d.y})`);
         });
 
-        function dragstarted(event) { if (!event.active) simulation.alphaTarget(0.3).restart(); event.subject.fx = event.subject.x; event.subject.fy = event.subject.y; }
-        function dragged(event) { event.subject.fx = event.x; event.subject.fy = event.y; }
-        function dragended(event) { if (!event.active) simulation.alphaTarget(0); event.subject.fx = null; event.subject.fy = null; }
+        function dragstarted(event) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            event.subject.fx = event.subject.x;
+            event.subject.fy = event.subject.y;
+        }
 
-        function resetZoom() { svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity); }
-        function zoomIn() { svg.transition().duration(300).call(zoom.scaleBy, 1.3); }
-        function zoomOut() { svg.transition().duration(300).call(zoom.scaleBy, 0.7); }
+        function dragged(event) {
+            event.subject.fx = event.x;
+            event.subject.fy = event.y;
+        }
+
+        function dragended(event) {
+            if (!event.active) simulation.alphaTarget(0);
+            event.subject.fx = null;
+            event.subject.fy = null;
+        }
+
+        function resetZoom() {
+            svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
+        }
+
+        function zoomIn() {
+            svg.transition().duration(300).call(zoom.scaleBy, 1.3);
+        }
+
+        function zoomOut() {
+            svg.transition().duration(300).call(zoom.scaleBy, 0.7);
+        }
 
         window.addEventListener('resize', () => {
             width = container.clientWidth;
