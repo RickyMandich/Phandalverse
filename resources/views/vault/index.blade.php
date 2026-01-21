@@ -161,7 +161,7 @@
 
                 queryParts.forEach(part => {
                     if (part.startsWith('path:')) {
-                        if (!path.includes(part.replace('path:', ''))) matchesAll = false;
+                        if (!path.startsWith(part.replace('path:', ''))) matchesAll = false;
                     } else if (part.startsWith('tag:#')) {
                         if (!tags.includes(part.replace('tag:#', ''))) matchesAll = false;
                     } else if (part.startsWith('tag:')) {
