@@ -66,8 +66,6 @@ class MarkdownPreprocessor
             }
         }
 
-        CustomLogger::note('system', "BuildFileIndex: Indexed " . count(self::$fileIndex) . " items. User isMaster: " . (Auth::isMaster() ? 'YES' : 'NO'), "debug-index");
-
         return self::$fileIndex;
     }
 
@@ -75,6 +73,7 @@ class MarkdownPreprocessor
     {
         $index = self::buildFileIndex();
         $cleanName = strtolower(trim(str_replace('\\', '/', $noteName)));
+        $cleanName = rtrim($cleanName, '/');
 
         // Rimuovi estensione se presente per il lookup nell'indice
         if (str_ends_with($cleanName, '.md')) {
@@ -172,7 +171,8 @@ class MarkdownPreprocessor
             function ($matches) use ($note) {
                 $nota = trim($matches[1]);
                 $index = self::buildFileIndex();
-                $cleanName = strtolower(str_replace('\\', '/', $nota));
+                $cleanName = strtolower(trim(str_replace('\\', '/', $nota)));
+                $cleanName = rtrim($cleanName, '/');
 
                 // Rimuovi estensione se presente per il lookup nell'indice
                 if (str_ends_with($cleanName, '.md')) {
