@@ -99,7 +99,6 @@ a {
 #{noteHeadings()} {
     @extend .text-uppercase;
     @extend .text-warning;
-    @extend .fw-bold;
 }
 
 .embed-title {
