@@ -161,13 +161,27 @@ class MarkdownPreprocessor
             '/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/',
             function ($matches) use ($note) {
                 $nota = trim($matches[1]);
-                $path = self::findNotePath($nota);
+                $index = self::buildFileIndex();
+                $cleanName = strtolower($nota);
+
+                // Rimuovi estensione se presente per il lookup nell'indice
+                if (str_ends_with($cleanName, '.md')) {
+                    $cleanName = substr($cleanName, 0, -3);
+                }
+
+                $found = isset($index[$cleanName]);
+                $path = $found ? $index[$cleanName] : $cleanName;
 
                 if (isset($matches[2]) && !empty(trim($matches[2]))) {
                     $label = trim($matches[2]);
                 } else {
                     // Se non c'è alias, prova a prendere il nome originale dalla mappa
                     $label = VaultHelper::getOriginalName($path . '.md', $note);
+                }
+
+                // Genera il link solo se la nota è nell'indice (quindi è pubblica o l'utente è master)
+                if (!$found) {
+                    return htmlspecialchars($label);
                 }
 
                 $camelPath = VaultController::pathToCamelCase($path);
