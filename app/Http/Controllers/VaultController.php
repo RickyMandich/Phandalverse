@@ -175,13 +175,35 @@ class VaultController extends Controller
 
         // Navigate to the start node in the map corresponding to $basePath
         $startNode = $map;
-        $basePathParts = $basePath ? explode('/', $basePath) : [];
+        $basePathParts = ($basePath && $basePath !== '') ? explode('/', str_replace('\\', '/', $basePath)) : [];
         $validStart = true;
+        $currentRealPath = '';
 
         foreach ($basePathParts as $part) {
             $lowerPart = strtolower($part);
             if (isset($startNode['directories'][$lowerPart])) {
-                $startNode = $startNode['directories'][$lowerPart];
+                // If we are navigating to a subdirectory, we need to find its real name on disk
+                // to correctly initialize the recursive scanner later.
+                $scanPath = base_path('Vault/' . ($currentRealPath ?: ''));
+                $realFolder = null;
+                if (File::isDirectory($scanPath)) {
+                    $items = scandir($scanPath);
+                    foreach ($items as $item) {
+                        if ($item !== '.' && $item !== '..' && strtolower($item) === $lowerPart && is_dir($scanPath . '/' . $item)) {
+                            $realFolder = $item;
+                            break;
+                        }
+                    }
+                }
+
+                if ($realFolder) {
+                    $startNode = $startNode['directories'][$lowerPart];
+                    $currentRealPath = $currentRealPath ? $currentRealPath . '/' . $realFolder : $realFolder;
+                } else {
+                    // Even if it matches the map, if it's missing on disk, we can't reliably start from here
+                    $validStart = false;
+                    break;
+                }
             } else {
                 $validStart = false;
                 break;
@@ -193,7 +215,8 @@ class VaultController extends Controller
         }
 
         // Traverse map and build tree
-        $result = $this->traverseMapAndBuildTree($startNode, $basePath ?? '', $note);
+        // Pass $currentRealPath so the scanner knows where to start looking for files on disk
+        $result = $this->traverseMapAndBuildTree($startNode, $basePath ?? '', $note, $currentRealPath);
         $tree = $result['tree'];
         $missingFiles = $result['missing'];
 
@@ -204,7 +227,8 @@ class VaultController extends Controller
             $lastHash = \Illuminate\Support\Facades\Cache::get($cacheKey);
 
             if ($currentHash !== $lastHash) {
-                $msg = "⚠️ <b>Vault Integrity Warning</b>\n\n";
+                $isPartial = ($basePath !== null && $basePath !== '');
+                $msg = "⚠️ <b>Vault Integrity Warning" . ($isPartial ? " (Partial Scan)" : "") . "</b>\n\n";
                 $msg .= "Found " . count($missingFiles) . " files/directories defined in map.json but missing on disk:\n\n";
 
                 // Limit the list length
@@ -222,8 +246,8 @@ class VaultController extends Controller
                 // The alert will only trigger again if the LIST of missing files changes.
                 \Illuminate\Support\Facades\Cache::put($cacheKey, $currentHash, 86400); // 1 day
             }
-        } else {
-            // clear cache if fixed so next error triggers immediately
+        } elseif ($basePath === null || $basePath === '') {
+            // clear cache if fixed so next error triggers immediately (only for full scans)
             \Illuminate\Support\Facades\Cache::forget('vault_missing_files_hash');
         }
 
