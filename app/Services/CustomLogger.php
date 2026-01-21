@@ -67,4 +67,25 @@ class CustomLogger
         $line = "[{$time}] {" . strtoupper($level) . "}: {$message}" . PHP_EOL;
         @file_put_contents($filePath, $line, FILE_APPEND | LOCK_EX);
     }
+
+    private static string $graphFile = '';
+
+    /**
+     * Scrive un log relativo alla generazione del grafo.
+     * Il file viene creato in `storage/logs/graph` con nome basato sul timestamp di inizio richiesta.
+     */
+    public static function graph(string $message, string $level = 'info'): void
+    {
+        $dir = storage_path('logs' . DIRECTORY_SEPARATOR . 'graph');
+        self::ensureDirectory($dir);
+
+        if (empty(self::$graphFile)) {
+            self::$graphFile = $dir . DIRECTORY_SEPARATOR . date('Y-m-d_H-i-s') . '.log';
+        }
+
+        $time = date('Y-m-d H:i:s');
+        $line = "[{$time}] {" . strtoupper($level) . "}: {$message}" . PHP_EOL;
+
+        @file_put_contents(self::$graphFile, $line, FILE_APPEND | LOCK_EX);
+    }
 }

@@ -351,8 +351,11 @@ class VaultController extends Controller
      */
     private function buildGraphData(): array
     {
+        CustomLogger::graph("--- Inizio generazione dati grafo ---");
         $vaultPath = base_path('Vault');
         $files = File::allFiles($vaultPath);
+        CustomLogger::graph("File totali trovati nel vault: " . count($files));
+
         $nodes = [];
         $links = [];
         $nodeIndex = [];
@@ -395,40 +398,42 @@ class VaultController extends Controller
             ];
         }
 
-        // Seconda passata: trova i link (wikilinks)
+        CustomLogger::graph("Nodi indicizzati: " . count($nodes));
+
+        // Seconda passata: trova i link (wikilinks e embed)
         foreach ($files as $file) {
             if ($file->getExtension() !== 'md') {
                 continue;
             }
 
             $name = $file->getFilenameWithoutExtension();
-            if (!mb_check_encoding($name, 'UTF-8')) {
-                $name = mb_convert_encoding($name, 'UTF-8', 'ISO-8859-1');
-            }
-
             $content = File::get($file->getPathname());
 
             // Trova tutti i wikilinks e gli embed (![[...]])
             preg_match_all('/!?\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]+)?\]\]/', $content, $matches);
 
-            foreach ($matches[1] as $linkedNote) {
-                $linkedNote = trim($linkedNote);
+            if (!empty($matches[0])) {
+                foreach ($matches[1] as $linkedNote) {
+                    $linkedNote = trim($linkedNote);
 
-                // Verifica se il nodo target esiste
-                if (isset($nodeIndex[$linkedNote]) && isset($nodeIndex[$name])) {
-                    $sourceIdx = $nodeIndex[$name];
-                    $targetIdx = $nodeIndex[$linkedNote];
+                    // Se il link contiene un path, prendiamo solo il nome del file per il matching attuale
+                    $linkedNoteName = basename($linkedNote, '.md');
 
-                    // Evita link duplicati e auto-referenze
-                    if ($sourceIdx !== $targetIdx) {
-                        $links[] = [
-                            'source' => $name,
-                            'target' => $linkedNote,
-                        ];
+                    if (isset($nodeIndex[$linkedNoteName])) {
+                        $sourceIdx = $nodeIndex[$name] ?? null;
+                        $targetIdx = $nodeIndex[$linkedNoteName];
 
-                        // Incrementa il conteggio connessioni
-                        $nodes[$sourceIdx]['connections']++;
-                        $nodes[$targetIdx]['connections']++;
+                        if ($sourceIdx !== null && $sourceIdx !== $targetIdx) {
+                            $links[] = [
+                                'source' => $name,
+                                'target' => $linkedNoteName,
+                            ];
+                            $nodes[$sourceIdx]['connections']++;
+                            $nodes[$targetIdx]['connections']++;
+                            // CustomLogger::note('system', "Link creato: $name -> $linkedNoteName");
+                        }
+                    } else {
+                        CustomLogger::graph("Target non trovato per link in [$name]: '$linkedNote' (confrontato come '$linkedNoteName')");
                     }
                 }
             }
@@ -442,6 +447,9 @@ class VaultController extends Controller
                 $uniqueLinks[$key] = $link;
             }
         }
+
+        CustomLogger::graph("Link totali creati: " . count($uniqueLinks));
+        CustomLogger::graph("--- Fine generazione dati grafo ---");
 
         // Filtra i nodi senza connessioni (nodi fantasma/orfani)
         $connectedNodes = array_filter($nodes, function ($node) {
