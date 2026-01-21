@@ -10,34 +10,50 @@
         .graph-container {
             height: 75vh;
             min-height: 500px;
+            background-color: #1a1a1a !important;
+            /* Darker background like Obsidian */
         }
 
         .node circle {
             cursor: pointer;
-            stroke: #fff;
-            stroke-width: 1.5px;
-            transition: all 0.3s ease;
+            stroke: rgba(255, 255, 255, 0.2);
+            /* Subtle stroke */
+            stroke-width: 1px;
+            transition: all 0.2s ease;
         }
 
         .node circle:hover {
-            stroke-width: 3px;
-            filter: brightness(1.3);
+            stroke: rgba(255, 255, 255, 0.8);
+            stroke-width: 2px;
+            filter: brightness(1.2);
         }
 
         .node text {
-            font-size: 10px;
-            fill: #fff;
+            font-size: 9px;
+            fill: #cccccc;
             pointer-events: none;
-            text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+            text-anchor: middle;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            opacity: 0.8;
         }
 
         .link {
-            stroke: #4a5568;
-            stroke-opacity: 0.6;
+            stroke: #444444;
+            /* Darker, more subtle links */
+            stroke-opacity: 0.4;
+            transition: stroke-opacity 0.3s;
+        }
+
+        .link-highlight {
+            stroke-opacity: 0.8;
+            stroke: #63b3ed;
         }
 
         .tooltip-graph {
             display: none;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
     </style>
 @endsection
@@ -116,40 +132,36 @@
 
         svg.call(zoom);
 
-        // Color scale based on Obsidian colorGroups
+        // Color and Query Logic
         function getNodeColor(node) {
             const path = (node.path || '').toLowerCase();
             const tags = (node.tags || []).map(t => t.toLowerCase());
             const groups = graphConfig.colorGroups || [];
 
-            // Iterate in reverse because later groups override earlier ones in Obsidian
             for (let i = groups.length - 1; i >= 0; i--) {
                 const group = groups[i];
-                const query = (group.query || '').toLowerCase();
+                const query = (group.query || '').toLowerCase().trim();
                 const colorObj = group.color || {};
                 const rgb = colorObj.rgb;
 
                 if (rgb === undefined) continue;
 
-                const hex = '#' + (rgb & 0xFFFFFF).toString(16).padStart(6, '0');
+                // Split Obsidian query into parts (AND logic)
+                const queryParts = query.split(/\s+/);
+                let matchesAll = true;
 
-                // Simple query parsing: path:... and tag:#...
-                let matches = true;
+                queryParts.forEach(part => {
+                    if (part.startsWith('path:')) {
+                        if (!path.includes(part.replace('path:', ''))) matchesAll = false;
+                    } else if (part.startsWith('tag:#')) {
+                        if (!tags.includes(part.replace('tag:#', ''))) matchesAll = false;
+                    } else if (part.startsWith('tag:')) {
+                        if (!tags.includes(part.replace('tag:', ''))) matchesAll = false;
+                    }
+                });
 
-                // Matches path
-                const pathMatch = query.match(/path:([^\s]+)/);
-                if (pathMatch) {
-                    if (!path.includes(pathMatch[1])) matches = false;
-                }
-
-                // Matches tag
-                const tagMatch = query.match(/tag:#([^\s]+)/);
-                if (tagMatch) {
-                    if (!tags.includes(tagMatch[1])) matches = false;
-                }
-
-                if (matches && (pathMatch || tagMatch)) {
-                    return hex;
+                if (matchesAll && queryParts.length > 0) {
+                    return '#' + (rgb & 0xFFFFFF).toString(16).padStart(6, '0');
                 }
             }
 
@@ -157,11 +169,14 @@
             return colors['default'] || '#888';
         }
 
-        // Force simulation
-        const repelStrength = -(graphConfig.repelStrength || 20) * 10;
-        const linkDistance = graphConfig.linkDistance || 30;
-        const linkStrength = graphConfig.linkStrength || 1;
-        const centerStrength = graphConfig.centerStrength || 0.77;
+        // Force Simulation Configuration (Directly from .obsidian/graph.json)
+        // Note: D3 units and Obsidian units differ, so we apply a standard conversion factor
+        const repelStrength = -(graphConfig.repelStrength || 20) * 15;
+        const linkDistance = (graphConfig.linkDistance || 30) * 2.5;
+        const linkStrength = (graphConfig.linkStrength || 1) * 0.5;
+        const centerStrength = (graphConfig.centerStrength || 0.77) * 0.5;
+        const nodeSizeMultiplier = (graphConfig.nodeSizeMultiplier || 1.0) * 0.8;
+        const lineSizeMultiplier = (graphConfig.lineSizeMultiplier || 1.0) * 0.5;
 
         const simulation = d3.forceSimulation(graphData.nodes)
             .force('link', d3.forceLink(graphData.links)
@@ -171,11 +186,11 @@
             .force('charge', d3.forceManyBody()
                 .strength(repelStrength))
             .force('center', d3.forceCenter(width / 2, height / 2).strength(centerStrength))
-            .force('collision', d3.forceCollide().radius(d => (5 + (d.connections || 0) * 0.5) * (graphConfig
-                .nodeSizeMultiplier || 1) + 2));
+            .force('collision', d3.forceCollide().radius(d => {
+                return (3 + Math.sqrt(d.connections || 0) * 1.5) * nodeSizeMultiplier + 5;
+            }));
 
         // Links
-        const lineSizeMultiplier = graphConfig.lineSizeMultiplier || 1;
         const link = g.append('g')
             .selectAll('line')
             .data(graphData.links)
@@ -185,7 +200,6 @@
             .attr('stroke-width', 1 * lineSizeMultiplier);
 
         // Nodes
-        const nodeSizeMultiplier = graphConfig.nodeSizeMultiplier || 1;
         const node = g.append('g')
             .selectAll('g')
             .data(graphData.nodes)
@@ -198,7 +212,7 @@
                 .on('end', dragended));
 
         node.append('circle')
-            .attr('r', d => (5 + (d.connections || 0) * 0.5) * nodeSizeMultiplier)
+            .attr('r', d => (3 + Math.sqrt(d.connections || 0) * 1.5) * nodeSizeMultiplier)
             .attr('fill', d => getNodeColor(d))
             .on('click', (event, d) => window.location.href = '/vault/' + d.url)
             .on('mouseover', (event, d) => {
@@ -211,8 +225,7 @@
             .on('mouseout', () => document.getElementById('tooltip').style.display = 'none');
 
         node.append('text')
-            .attr('dx', 12 * nodeSizeMultiplier)
-            .attr('dy', 4)
+            .attr('dy', d => -((3 + Math.sqrt(d.connections || 0) * 1.5) * nodeSizeMultiplier + 5))
             .text(d => d.name)
             .style('display', graphConfig.showTags === false ? 'none' : 'block');
 
