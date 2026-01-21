@@ -376,6 +376,7 @@ class VaultController extends Controller
 
             $fullPath = $relativePath ? $relativePath . '/' . $name . '.md' : $name . '.md';
             $content = File::get($file->getPathname());
+            $originalName = VaultHelper::getOriginalName($fullPath, 'system');
 
             // Estrai i tag
             preg_match_all('/(?<=^|\s)#([a-zA-Z][a-zA-Z0-9_-]*)(?=\s|$)/m', $content, $tagMatches);
@@ -386,7 +387,7 @@ class VaultController extends Controller
 
             $nodes[] = [
                 'id' => $nodeId,
-                'name' => $name,
+                'name' => $originalName,
                 'path' => $fullPath,
                 'url' => self::pathToCamelCase($fullPath),
                 'tags' => $tags,
@@ -407,8 +408,8 @@ class VaultController extends Controller
 
             $content = File::get($file->getPathname());
 
-            // Trova tutti i wikilinks
-            preg_match_all('/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]+)?\]\]/', $content, $matches);
+            // Trova tutti i wikilinks e gli embed (![[...]])
+            preg_match_all('/!?\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]+)?\]\]/', $content, $matches);
 
             foreach ($matches[1] as $linkedNote) {
                 $linkedNote = trim($linkedNote);
