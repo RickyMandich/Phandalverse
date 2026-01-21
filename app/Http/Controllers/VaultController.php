@@ -43,15 +43,15 @@ class VaultController extends Controller
                 }
             }
 
-            // Fallback: try to parse Obsidian's graph.json and map colorGroups
+            // Fallback: try to parse Obsidian's graph.json
             if (File::exists($graphJsonPath)) {
                 $json = File::get($graphJsonPath);
                 $data = json_decode($json, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
                     $colors = [];
                     $legend = [];
-
                     $groups = $data['colorGroups'] ?? [];
+
                     foreach ($groups as $grp) {
                         $query = $grp['query'] ?? '';
                         $colorObj = $grp['color'] ?? null;
@@ -66,10 +66,9 @@ class VaultController extends Controller
                             $hex = null;
                         }
 
-                        // try to extract a key from query
+                        // try to extract a key from query for the legend
                         $key = null;
                         if (str_contains($query, 'tag:#')) {
-                            // tag:#universo or tag:#png  tag:#phandalmain
                             if (preg_match('/tag:#([a-zA-Z0-9_\-]+)/', $query, $m)) {
                                 $key = strtolower($m[1]);
                             }
@@ -79,11 +78,8 @@ class VaultController extends Controller
                             }
                         }
 
-                        if ($key) {
-                            if ($hex) {
-                                $colors[$key] = $hex;
-                            }
-                            // generate a readable label
+                        if ($key && $hex) {
+                            $colors[$key] = $hex;
                             $labelMap = [
                                 'universo' => 'Universi',
                                 'città' => 'Città',
@@ -99,9 +95,21 @@ class VaultController extends Controller
                         }
                     }
 
+                    // Map Obsidian forces to our config
                     return [
                         'colors' => $colors,
                         'legend' => $legend,
+                        'colorGroups' => $groups, // Send full groups to frontend
+                        'repelStrength' => $data['repelStrength'] ?? 20,
+                        'linkStrength' => $data['linkStrength'] ?? 1,
+                        'linkDistance' => $data['linkDistance'] ?? 30,
+                        'centerStrength' => $data['centerStrength'] ?? 0.77,
+                        'nodeSizeMultiplier' => $data['nodeSizeMultiplier'] ?? 1,
+                        'lineSizeMultiplier' => $data['lineSizeMultiplier'] ?? 1,
+                        'showTags' => $data['showTags'] ?? false,
+                        'showAttachments' => $data['showAttachments'] ?? false,
+                        'hideUnresolved' => $data['hideUnresolved'] ?? false,
+                        'showOrphans' => $data['showOrphans'] ?? true,
                     ];
                 }
             }
@@ -109,7 +117,7 @@ class VaultController extends Controller
             // ignore and fallback to defaults
         }
 
-        // Default colors & legend (keeps previous hardcoded values)
+        // Default values
         return [
             'colors' => [
                 'universo' => '#D66B5C',
@@ -130,7 +138,13 @@ class VaultController extends Controller
                 'saga' => 'Saghe',
                 'evento' => 'Eventi',
                 'altro' => 'Altri'
-            ]
+            ],
+            'repelStrength' => 20,
+            'linkStrength' => 1,
+            'linkDistance' => 30,
+            'centerStrength' => 0.77,
+            'nodeSizeMultiplier' => 1,
+            'lineSizeMultiplier' => 1,
         ];
     }
 

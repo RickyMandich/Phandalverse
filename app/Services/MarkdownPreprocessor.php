@@ -155,16 +155,21 @@ class MarkdownPreprocessor
         );
     }
 
-    public static function convertWikilinks(string $text): string
+    public static function convertWikilinks(string $text, string $note = ''): string
     {
         return preg_replace_callback(
             '/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/',
-            function ($matches) {
-                $nota = $matches[1];
-                $label = $matches[2] ?? $matches[0];
-                $label = trim($label, '[]');
+            function ($matches) use ($note) {
+                $nota = trim($matches[1]);
                 $path = self::findNotePath($nota);
-                // Converti il path in camelCase per l'URL (usiamo il path normalizzato con .md)
+
+                if (isset($matches[2]) && !empty(trim($matches[2]))) {
+                    $label = trim($matches[2]);
+                } else {
+                    // Se non c'è alias, prova a prendere il nome originale dalla mappa
+                    $label = VaultHelper::getOriginalName($path . '.md', $note);
+                }
+
                 $camelPath = VaultController::pathToCamelCase($path);
                 $url = '/vault/' . $camelPath;
                 return '<a href="' . $url . '" class="wikilink">' . htmlspecialchars($label) . '</a>';
@@ -530,7 +535,7 @@ class MarkdownPreprocessor
         $processContent = function (string $t) use (&$embeds, $note) {
             $t = self::replaceEmbedsWithPlaceholders($t, $embeds);
             $t = self::convertTags($t);
-            $t = self::convertWikilinks($t);
+            $t = self::convertWikilinks($t, $note);
             $t = self::convertRomanNumbers($t, $note);
             return $t;
         };

@@ -1,0 +1,60 @@
+{
+  "confirmDeletion": true,
+  "showAddCommand": true,
+  "debug": false,
+  "editorMenu": [],
+  "fileMenu": [],
+  "leftRibbon": [
+    {
+      "id": "obsidian-shellcommands:shell-command-4w1sm6xb31",
+      "icon": "lucide-git-commit",
+      "name": "Shell commands: Execute: cmt",
+      "mode": "any"
+    },
+    {
+      "id": "obsidian-shellcommands:shell-command-xk4l33ncmo",
+      "icon": "lucide-download",
+      "name": "Shell commands: Execute: pull",
+      "mode": "any"
+    },
+    {
+      "id": "obsidian-shellcommands:shell-command-e2p22u6n5g",
+      "icon": "lucide-git-fork",
+      "name": "Shell commands: Execute: status",
+      "mode": "any"
+    },
+    {
+      "id": "obsidian-shellcommands:shell-command-m1h205x0l5",
+      "icon": "lucide-plane-takeoff",
+      "name": "Shell commands: Execute: all",
+      "mode": "any"
+    },
+    {
+      "id": "obsidian-shellcommands:shell-command-ve8j2kjh78",
+      "icon": "lucide-upload-cloud",
+      "name": "Shell commands: Execute: ftp",
+      "mode": "any"
+    }
+  ],
+  "rightRibbon": [],
+  "titleBar": [],
+  "statusBar": [],
+  "pageHeader": [],
+  "macros": [],
+  "explorer": [],
+  "hide": {
+    "statusbar": [],
+    "leftRibbon": []
+  },
+  "spacing": "8",
+  "advancedToolbar": {
+    "rowHeight": 48,
+    "rowCount": 1,
+    "spacing": 0,
+    "buttonWidth": 48,
+    "columnLayout": false,
+    "mappedIcons": [],
+    "tooltips": false,
+    "heightOffset": 0
+  }
+}

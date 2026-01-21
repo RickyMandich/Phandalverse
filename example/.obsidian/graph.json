@@ -1,0 +1,128 @@
+{
+  "collapse-filter": true,
+  "search": "",
+  "showTags": false,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": true,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    {
+      "query": "tag:#universo",
+      "color": {
+        "a": 1,
+        "rgb": 14048348
+      }
+    },
+    {
+      "query": "tag:#citta",
+      "color": {
+        "a": 1,
+        "rgb": 14069084
+      }
+    },
+    {
+      "query": "path:definizioni  ",
+      "color": {
+        "a": 1,
+        "rgb": 11392604
+      }
+    },
+    {
+      "query": "path:entita  ",
+      "color": {
+        "a": 1,
+        "rgb": 6084188
+      }
+    },
+    {
+      "query": "tag:#regno  ",
+      "color": {
+        "a": 1,
+        "rgb": 6084269
+      }
+    },
+    {
+      "query": "path:personaggi/giocanti/pet  ",
+      "color": {
+        "a": 1,
+        "rgb": 14002666
+      }
+    },
+    {
+      "query": "path:personaggi/giocanti  ",
+      "color": {
+        "a": 1,
+        "rgb": 12996095
+      }
+    },
+    {
+      "query": "path:personaggi/non-giocanti tag:#phandalmain  ",
+      "color": {
+        "a": 1,
+        "rgb": 8026879
+      }
+    },
+    {
+      "query": "path:personaggi/non-giocanti tag:#fandalmein  ",
+      "color": {
+        "a": 1,
+        "rgb": 262266
+      }
+    },
+    {
+      "query": "tag:#gruppo ",
+      "color": {
+        "a": 1,
+        "rgb": 16689634
+      }
+    },
+    {
+      "query": "tag:#evento",
+      "color": {
+        "a": 1,
+        "rgb": 6371865
+      }
+    },
+    {
+      "query": "tag:#saga",
+      "color": {
+        "a": 1,
+        "rgb": 15558399
+      }
+    },
+    {
+      "query": "tag:#macrosaga",
+      "color": {
+        "a": 1,
+        "rgb": 15597823
+      }
+    },
+    {
+      "query": "path:artefatti/party  ",
+      "color": {
+        "a": 1,
+        "rgb": 11256626
+      }
+    },
+    {
+      "query": "path:artefatti  ",
+      "color": {
+        "a": 1,
+        "rgb": 16776960
+      }
+    }
+  ],
+  "collapse-display": true,
+  "showArrow": true,
+  "textFadeMultiplier": -3,
+  "nodeSizeMultiplier": 2.14166666666667,
+  "lineSizeMultiplier": 3.0859375,
+  "collapse-forces": true,
+  "centerStrength": 0.770833333333333,
+  "repelStrength": 20,
+  "linkStrength": 1,
+  "linkDistance": 30,
+  "scale": 0.31595320796091847,
+  "close": true
+}

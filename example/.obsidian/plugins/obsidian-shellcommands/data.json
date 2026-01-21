@@ -1,0 +1,271 @@
+{
+  "settings_version": "0.23.0",
+  "debug": false,
+  "obsidian_command_palette_prefix": "Execute: ",
+  "preview_variables_in_command_palette": true,
+  "show_autocomplete_menu": true,
+  "working_directory": "",
+  "default_shells": {
+    "win32": "87nebwvvy3"
+  },
+  "environment_variable_path_augmentations": {},
+  "show_installation_warnings": true,
+  "error_message_duration": 20,
+  "notification_message_duration": 20,
+  "execution_notification_mode": "permanent",
+  "output_channel_clipboard_also_outputs_to_notification": true,
+  "output_channel_notification_decorates_output": true,
+  "enable_events": true,
+  "approve_modals_by_pressing_enter_key": true,
+  "command_palette": {
+    "re_execute_last_shell_command": {
+      "enabled": true,
+      "prefix": "Re-execute: "
+    }
+  },
+  "max_visible_lines_in_shell_command_fields": false,
+  "shell_commands": [
+    {
+      "id": "xk4l33ncmo",
+      "platform_specific_commands": {
+        "default": "bash/pull.sh"
+      },
+      "shells": {},
+      "alias": "pull",
+      "icon": "lucide-download",
+      "confirm_execution": false,
+      "ignore_error_codes": [],
+      "input_contents": {
+        "stdin": null
+      },
+      "output_handlers": {
+        "stdout": {
+          "handler": "notification",
+          "convert_ansi_code": true
+        },
+        "stderr": {
+          "handler": "notification",
+          "convert_ansi_code": true
+        }
+      },
+      "output_wrappers": {
+        "stdout": null,
+        "stderr": null
+      },
+      "output_channel_order": "stdout-first",
+      "output_handling_mode": "buffered",
+      "execution_notification_mode": null,
+      "events": {
+        "on-layout-ready": {
+          "enabled": true
+        }
+      },
+      "debounce": null,
+      "command_palette_availability": "enabled",
+      "preactions": [],
+      "variable_default_values": {}
+    },
+    {
+      "id": "4w1sm6xb31",
+      "platform_specific_commands": {
+        "default": "bash/cmt.sh"
+      },
+      "shells": {},
+      "alias": "cmt",
+      "icon": "lucide-upload",
+      "confirm_execution": false,
+      "ignore_error_codes": [],
+      "input_contents": {
+        "stdin": null
+      },
+      "output_handlers": {
+        "stdout": {
+          "handler": "notification",
+          "convert_ansi_code": true
+        },
+        "stderr": {
+          "handler": "notification",
+          "convert_ansi_code": true
+        }
+      },
+      "output_wrappers": {
+        "stdout": null,
+        "stderr": null
+      },
+      "output_channel_order": "stdout-first",
+      "output_handling_mode": "buffered",
+      "execution_notification_mode": null,
+      "events": {},
+      "debounce": null,
+      "command_palette_availability": "enabled",
+      "preactions": [],
+      "variable_default_values": {}
+    },
+    {
+      "id": "ve8j2kjh78",
+      "platform_specific_commands": {
+        "default": "bash/ftp.sh"
+      },
+      "shells": {},
+      "alias": "ftp",
+      "icon": "lucide-upload-cloud",
+      "confirm_execution": false,
+      "ignore_error_codes": [],
+      "input_contents": {
+        "stdin": null
+      },
+      "output_handlers": {
+        "stdout": {
+          "handler": "notification",
+          "convert_ansi_code": true
+        },
+        "stderr": {
+          "handler": "notification",
+          "convert_ansi_code": true
+        }
+      },
+      "output_wrappers": {
+        "stdout": null,
+        "stderr": null
+      },
+      "output_channel_order": "stdout-first",
+      "output_handling_mode": "buffered",
+      "execution_notification_mode": null,
+      "events": {},
+      "debounce": null,
+      "command_palette_availability": "enabled",
+      "preactions": [],
+      "variable_default_values": {}
+    },
+    {
+      "id": "e2p22u6n5g",
+      "platform_specific_commands": {
+        "default": "git status"
+      },
+      "shells": {},
+      "alias": "status",
+      "icon": "lucide-git-fork",
+      "confirm_execution": false,
+      "ignore_error_codes": [],
+      "input_contents": {
+        "stdin": null
+      },
+      "output_handlers": {
+        "stdout": {
+          "handler": "notification",
+          "convert_ansi_code": true
+        },
+        "stderr": {
+          "handler": "notification",
+          "convert_ansi_code": true
+        }
+      },
+      "output_wrappers": {
+        "stdout": null,
+        "stderr": null
+      },
+      "output_channel_order": "stdout-first",
+      "output_handling_mode": "buffered",
+      "execution_notification_mode": null,
+      "events": {},
+      "debounce": null,
+      "command_palette_availability": "enabled",
+      "preactions": [],
+      "variable_default_values": {}
+    },
+    {
+      "id": "m1h205x0l5",
+      "platform_specific_commands": {
+        "default": "bash/all.sh"
+      },
+      "shells": {},
+      "alias": "all",
+      "icon": "lucide-plane-takeoff",
+      "confirm_execution": false,
+      "ignore_error_codes": [],
+      "input_contents": {
+        "stdin": null
+      },
+      "output_handlers": {
+        "stdout": {
+          "handler": "status-bar",
+          "convert_ansi_code": true
+        },
+        "stderr": {
+          "handler": "notification",
+          "convert_ansi_code": true
+        }
+      },
+      "output_wrappers": {
+        "stdout": null,
+        "stderr": null
+      },
+      "output_channel_order": "stdout-first",
+      "output_handling_mode": "buffered",
+      "execution_notification_mode": null,
+      "events": {},
+      "debounce": null,
+      "command_palette_availability": "enabled",
+      "preactions": [],
+      "variable_default_values": {}
+    }
+  ],
+  "prompts": [],
+  "builtin_variables": {},
+  "custom_variables": [],
+  "custom_variables_notify_changes_via": {
+    "obsidian_uri": true,
+    "output_assignment": true
+  },
+  "custom_shells": [
+    {
+      "id": "87nebwvvy3",
+      "name": "myBash",
+      "description": "git bash",
+      "binary_path": "C:\\Program Files\\Git\\bin\\bash.exe",
+      "shell_arguments": [
+        "-c",
+        "{{!shell_command_content}}"
+      ],
+      "host_platform": "win32",
+      "host_platform_configurations": {
+        "win32": {
+          "quote_shell_arguments": true
+        }
+      },
+      "shell_platform": null,
+      "escaper": "PowerShell",
+      "path_translator": null,
+      "shell_command_wrapper": null,
+      "shell_command_test": null
+    },
+    {
+      "id": "vx7gvccxf5",
+      "name": "wsl",
+      "description": "",
+      "binary_path": "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\WSL.lnk",
+      "shell_arguments": [
+        "-c",
+        "{{!shell_command_content}}"
+      ],
+      "host_platform": "win32",
+      "host_platform_configurations": {
+        "win32": {
+          "quote_shell_arguments": true
+        }
+      },
+      "shell_platform": null,
+      "escaper": "PowerShell",
+      "path_translator": null,
+      "shell_command_wrapper": null,
+      "shell_command_test": "git status"
+    }
+  ],
+  "output_wrappers": [
+    {
+      "id": "5q3i0kdgil",
+      "title": "",
+      "content": ""
+    }
+  ]
+}

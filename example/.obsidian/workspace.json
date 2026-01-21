@@ -1,0 +1,316 @@
+{
+  "main": {
+    "id": "826ecafb728cb6da",
+    "type": "split",
+    "children": [
+      {
+        "id": "2a02b292f5de3402",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "3e6228d859635414",
+            "type": "leaf",
+            "pinned": true,
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "todo.md",
+                "mode": "source",
+                "source": false
+              },
+              "pinned": true,
+              "icon": "lucide-file",
+              "title": "todo"
+            }
+          },
+          {
+            "id": "051799c036fb5488",
+            "type": "leaf",
+            "pinned": true,
+            "state": {
+              "type": "webviewer",
+              "state": {
+                "url": "http://phandalverse.altervista.org/vault/artefatti/party/artefatto-necromante",
+                "title": "Occhio di Atos",
+                "mode": "webview"
+              },
+              "pinned": true,
+              "icon": "globe-2",
+              "title": "Occhio di Atos"
+            }
+          },
+          {
+            "id": "a745e6ed58a9babd",
+            "type": "leaf",
+            "pinned": true,
+            "state": {
+              "type": "graph",
+              "state": {},
+              "pinned": true,
+              "icon": "lucide-git-fork",
+              "title": "Vista grafo"
+            }
+          },
+          {
+            "id": "d688fa0d08b91dad",
+            "type": "leaf",
+            "pinned": true,
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "saghe/saga-di-capodanno-1312.md",
+                "mode": "source",
+                "source": false
+              },
+              "pinned": true,
+              "icon": "lucide-file",
+              "title": "saga-di-capodanno-1312"
+            }
+          },
+          {
+            "id": "0abf7ebade7e991a",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "saghe/moduli-non-usati/capodanno1.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "capodanno1"
+            }
+          },
+          {
+            "id": "42a57ffcf343c6f6",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "saghe/moduli-non-usati/capodanno1-minion.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "capodanno1-minion"
+            }
+          }
+        ],
+        "currentTab": 5
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "8d87a56882adca33",
+    "type": "split",
+    "children": [
+      {
+        "id": "aac4763c47a910e3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4a0168f4c436222b",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": true
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Esplora risorse"
+            }
+          },
+          {
+            "id": "b9827de2db8e94d1",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "saga-di-gemgrave",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Ricerca"
+            }
+          },
+          {
+            "id": "fc245400d41d7229",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Segnalibri"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "1933adafaa71d301",
+    "type": "split",
+    "children": [
+      {
+        "id": "de66e1b823192482",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "adbe15ca08aaf52c",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Riferimenti"
+            }
+          },
+          {
+            "id": "9dc95d79c94de12d",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etichette"
+            }
+          },
+          {
+            "id": "f1ce41b5c33ddf52",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "saghe/saga-di-gemgrave.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": false
+              },
+              "icon": "links-going-out",
+              "title": "Collegamenti in uscita da saga-di-gemgrave"
+            }
+          },
+          {
+            "id": "4464d0482ee3dc61",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Tutte le proprietà"
+            }
+          },
+          {
+            "id": "8ce16f2c1975d305",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Struttura"
+            }
+          }
+        ],
+        "currentTab": 2
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "bases:Crea nuova Base": false,
+      "graph:Apri vista grafo": false,
+      "switcher:Apri selezione rapida": false,
+      "canvas:Crea nuova lavagna": false,
+      "daily-notes:Apri nota del giorno": false,
+      "templates:Inserisci modello": false,
+      "command-palette:Apri riquadro comandi": false,
+      "obsidian-shellcommands:Shell commands: Custom variables": false,
+      "cmdr:Shell commands: Execute: cmt": false,
+      "cmdr:Shell commands: Execute: pull": false,
+      "cmdr:Shell commands: Execute: status": false,
+      "cmdr:Shell commands: Execute: all": false,
+      "cmdr:Shell commands: Execute: ftp": false
+    }
+  },
+  "active": "42a57ffcf343c6f6",
+  "lastOpenFiles": [
+    "saghe/moduli-non-usati/capodanno1-minion.md",
+    "artefatti/party/artefatto-necromante.md",
+    "bash/d2utmpyWVChI",
+    "bash/d2utmpoC4aZY",
+    "bash/d2utmpk9CGxw",
+    "bash/d2utmpIypQse",
+    "bash/d2utmpka4Vi3",
+    "bash/d2utmpghlsv3",
+    "bash/d2utmpl6EP5s",
+    "bash/d2utmpXcYSPD",
+    "incantesimi/necromante/esplosione-cadaverica.md",
+    "incantesimi/tutti/esplosione-cadaverica.md",
+    "C/Users/RickyMandich/PROJECT/Phandalverse/PhandalverseVault/incantesimi/necromante",
+    "C/Users/RickyMandich/PROJECT/Phandalverse/PhandalverseVault/incantesimi/tutti",
+    "incantesimi/tutti/ricrescita-scheletrica.md",
+    "incantesimi/tutti/test.md",
+    "C/Users/RickyMandich/PROJECT/Phandalverse/PhandalverseVault/incantesimi/tutti/test.md",
+    "incantesimi/necromante/ricrescita-scheletrica.md",
+    "incantesimi/necromante/pioggia-di-frammenti.md",
+    "incantesimi/tutti/pioggia-di-frammenti.md",
+    "CUsersRickyMandichPROJECTPhandalversePhandalverseVault/incantesimi/necromante/pioggia-di-frammenti.md",
+    "CUsersRickyMandichPROJECTPhandalversePhandalverseVault/incantesimi/tutti/pioggia-di-frammenti.md",
+    "CUsersRickyMandichPROJECTPhandalversePhandalverseVault/incantesimi/necromante/ricresita-scheletrica.md",
+    "CUsersRickyMandichPROJECTPhandalversePhandalverseVault/incantesimi/tutti/ricresita-scheletrica.md",
+    "incantesimi/tutti/lama-dosso.md",
+    "incantesimi/tutti/radar-osseo.md",
+    "incantesimi/tutti/esoscheletro-transitorio.md",
+    "incantesimi/tutti/barriera-ossea.md",
+    "incantesimi/necromante/spine-ossee.md",
+    "incantesimi/necromante/radar-osseo.md",
+    "incantesimi/necromante/esoscheletro-transitorio.md",
+    "incantesimi/necromante/barriera-ossea.md",
+    "data/incantesimi/necromante/spine-ossee.md",
+    "data/incantesimi/necromante/radar-osseo.md",
+    "data/incantesimi/necromante/barriera-ossea.md",
+    "data/incantesimi/barriera-ossea.md",
+    "personaggi/non-giocanti/gemgrave/perrin.jpg",
+    "universi/phandalmain/phandalmain.jpg",
+    "artefatti/party/occhio-di-atos.jpeg",
+    "artefatti/party/netjerheka-di-osiride.png",
+    "artefatti/party/netjerheka-by-chatgpt.png",
+    "artefatti/party/netjerheka.png",
+    "artefatti/party/myrkvathinn.webp",
+    "artefatti/party/myrkvathinn.png",
+    "artefatti/party/kokytos.png",
+    "artefatti/party/kokytos.avif",
+    "Senza nome.canvas"
+  ]
+}

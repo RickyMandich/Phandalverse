@@ -49,58 +49,72 @@
 @endsection
 
 @section('content')
-<div class="d-flex gap-0 h-100 w-100">
-    @include('vault._sidebar', ['tree' => $tree ?? []])
+    <div class="d-flex gap-0 h-100 w-100">
+        @include('vault._sidebar', ['tree' => $tree ?? []])
 
-    <main class="flex-grow-1 p-3" style="min-width: 0;">
-        <div class="vault-graph-page h-100 d-flex flex-column">
-    @if(Auth::check() && (Auth::isAdmin() || Auth::isMaster()))
-        <div class="d-flex gap-2 mb-3 align-items-center">
-            <a href="{{ route('vault.show') }}?view=tree" class="btn btn-sm {{ $currentView === 'tree' ? 'btn-primary' : 'btn-outline-secondary' }}">
-                📂 Vista Albero
-            </a>
-            <a href="{{ route('vault.show') }}?view=graph" class="btn btn-sm {{ $currentView === 'graph' ? 'btn-primary' : 'btn-outline-secondary' }}">
-                🕸️ Vista Grafo
-            </a>
-            @if(Auth::isAdmin())
-                <form action="{{ route('admin.vault.setDefaultView') }}" method="POST" class="d-inline ms-2">
-                    @csrf
-                    <select name="view" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: auto;" onchange="this.form.submit()">
-                        <option value="tree" {{ \App\Models\SystemSetting::getVaultDefaultView() === 'tree' ? 'selected' : '' }}>Default: Albero</option>
-                        <option value="graph" {{ \App\Models\SystemSetting::getVaultDefaultView() === 'graph' ? 'selected' : '' }}>Default: Grafo</option>
-                    </select>
-                </form>
-            @endif
-        </div>
-    @endif
-    
-    <div class="graph-container position-relative w-100 overflow-hidden bg-dark rounded-3 border border-secondary flex-grow-1">
-        <div class="position-absolute top-0 end-0 m-2 z-2 d-flex gap-2">
-            <button class="btn btn-sm btn-dark bg-opacity-75 border-secondary text-white" onclick="resetZoom()" title="Reset Zoom">🔄 Reset</button>
-            <button class="btn btn-sm btn-dark bg-opacity-75 border-secondary text-white" onclick="zoomIn()" title="Zoom In">➕</button>
-            <button class="btn btn-sm btn-dark bg-opacity-75 border-secondary text-white" onclick="zoomOut()" title="Zoom Out">➖</button>
-        </div>
-        
-        <svg id="vault-graph" class="w-100 h-100 d-block"></svg>
-        
-        <div class="tooltip-graph position-absolute bg-black bg-opacity-90 text-white p-2 rounded small z-3" id="tooltip"></div>
-        
-        <div class="position-absolute bottom-0 start-0 m-2 p-2 rounded bg-black bg-opacity-75 small z-2">
-            @php
-                $legend = $graphConfig['legend'] ?? [];
-                $colors = $graphConfig['colors'] ?? [];
-            @endphp
-            @foreach($legend as $key => $label)
-                <div class="d-flex align-items-center gap-2 mb-1">
-                    <div style="width: 12px; height: 12px; border-radius: 50%; background: {{ $colors[$key] ?? ($colors['default'] ?? '#888') }};"></div>
-                    <span>{{ $label }}</span>
+        <main class="flex-grow-1 p-3" style="min-width: 0;">
+            <div class="vault-graph-page h-100 d-flex flex-column">
+                @if(Auth::check() && (Auth::isAdmin() || Auth::isMaster()))
+                    <div class="d-flex gap-2 mb-3 align-items-center">
+                        <a href="{{ route('vault.show') }}?view=tree"
+                            class="btn btn-sm {{ $currentView === 'tree' ? 'btn-primary' : 'btn-outline-secondary' }}">
+                            📂 Vista Albero
+                        </a>
+                        <a href="{{ route('vault.show') }}?view=graph"
+                            class="btn btn-sm {{ $currentView === 'graph' ? 'btn-primary' : 'btn-outline-secondary' }}">
+                            🕸️ Vista Grafo
+                        </a>
+                        @if(Auth::isAdmin())
+                            <form action="{{ route('admin.vault.setDefaultView') }}" method="POST" class="d-inline ms-2">
+                                @csrf
+                                <select name="view" class="form-select form-select-sm bg-dark text-white border-secondary"
+                                    style="width: auto;" onchange="this.form.submit()">
+                                    <option value="tree" {{ \App\Models\SystemSetting::getVaultDefaultView() === 'tree' ? 'selected' : '' }}>Default: Albero</option>
+                                    <option value="graph" {{ \App\Models\SystemSetting::getVaultDefaultView() === 'graph' ? 'selected' : '' }}>Default: Grafo</option>
+                                </select>
+                            </form>
+                        @endif
+                    </div>
+                @endif
+
+                <div
+                    class="graph-container position-relative w-100 overflow-hidden bg-dark rounded-3 border border-secondary flex-grow-1">
+                    <div class="position-absolute top-0 end-0 m-2 z-2 d-flex gap-2">
+                        <button class="btn btn-sm btn-dark bg-opacity-75 border-secondary text-white" onclick="resetZoom()"
+                            title="Reset Zoom">🔄 Reset</button>
+                        <button class="btn btn-sm btn-dark bg-opacity-75 border-secondary text-white" onclick="zoomIn()"
+                            title="Zoom In">➕</button>
+                        <button class="btn btn-sm btn-dark bg-opacity-75 border-secondary text-white" onclick="zoomOut()"
+                            title="Zoom Out">➖</button>
+                    </div>
+
+                    <svg id="vault-graph" class="w-100 h-100 d-block"></svg>
+
+                    <div class="tooltip-graph position-absolute bg-black bg-opacity-90 text-white p-2 rounded small z-3"
+                        id="tooltip"></div>
+
+                    <div class="position-absolute bottom-0 start-0 m-2 p-0 rounded bg-black bg-opacity-75 border border-secondary small z-2">
+                        <button class="btn btn-sm text-white w-100 d-flex align-items-center justify-content-between gap-3 px-2 py-1" type="button" data-bs-toggle="collapse" data-bs-target="#graphLegend" aria-expanded="false" aria-controls="graphLegend">
+                            <span><i class="bi bi-list-ul me-1"></i> Legenda</span>
+                            <i class="bi bi-chevron-up toggle-indicator"></i>
+                        </button>
+                        <div class="collapse p-2 pt-0" id="graphLegend">
+                            @php
+                                $legend = $graphConfig['legend'] ?? [];
+                                $colors = $graphConfig['colors'] ?? [];
+                            @endphp
+                            @foreach($legend as $key => $label)
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <div style="min-width: 12px; width: 12px; height: 12px; border-radius: 50%; background: {{ $colors[$key] ?? ($colors['default'] ?? '#888') }};"></div>
+                                    <span class="text-nowrap">{{ $label }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
-            @endforeach
-        </div>
-        </div>
-        </div>
-    </main>
-</div>
+            </div>
+        </main>
+    </div>
 @endsection
 
 @section('script')
@@ -128,45 +142,75 @@
 
         svg.call(zoom);
 
-        // Color scale based on folder/tags
+        // Color scale based on Obsidian colorGroups
         function getNodeColor(node) {
             const path = (node.path || '').toLowerCase();
-            const tags = node.tags || [];
-            const colors = (graphConfig && graphConfig.colors) ? graphConfig.colors : {};
-            const def = colors['default'] || '#888';
+            const tags = (node.tags || []).map(t => t.toLowerCase());
+            const groups = graphConfig.colorGroups || [];
 
-            if (tags.includes('universo') || path.includes('universi')) return colors['universo'] || def;
-            if (tags.includes('città')) return colors['città'] || def;
-            if (tags.includes('pg') || path.includes('giocanti')) return colors['pg'] || def;
-            if (tags.includes('png') || path.includes('non giocanti')) return colors['png'] || def;
-            if (tags.includes('saga') || path.includes('saghe')) return colors['saga'] || def;
-            if (tags.includes('evento') || path.includes('eventi')) return colors['evento'] || def;
-            if (path.includes('definizioni')) return colors['definizioni'] || def;
-            if (path.includes('artefatti')) return colors['artefatti'] || def;
-            return def;
+            // Iterate in reverse because later groups override earlier ones in Obsidian
+            for (let i = groups.length - 1; i >= 0; i--) {
+                const group = groups[i];
+                const query = (group.query || '').toLowerCase();
+                const colorObj = group.color || {};
+                const rgb = colorObj.rgb;
+
+                if (rgb === undefined) continue;
+
+                const hex = '#' + (rgb & 0xFFFFFF).toString(16).padStart(6, '0');
+
+                // Simple query parsing: path:... and tag:#...
+                let matches = true;
+
+                // Matches path
+                const pathMatch = query.match(/path:([^\s]+)/);
+                if (pathMatch) {
+                    if (!path.includes(pathMatch[1])) matches = false;
+                }
+
+                // Matches tag
+                const tagMatch = query.match(/tag:#([^\s]+)/);
+                if (tagMatch) {
+                    if (!tags.includes(tagMatch[1])) matches = false;
+                }
+
+                if (matches && (pathMatch || tagMatch)) {
+                    return hex;
+                }
+            }
+
+            const colors = graphConfig.colors || {};
+            return colors['default'] || '#888';
         }
 
         // Force simulation
+        const repelStrength = -(graphConfig.repelStrength || 20) * 10;
+        const linkDistance = graphConfig.linkDistance || 30;
+        const linkStrength = graphConfig.linkStrength || 1;
+        const centerStrength = graphConfig.centerStrength || 0.77;
+
         const simulation = d3.forceSimulation(graphData.nodes)
             .force('link', d3.forceLink(graphData.links)
                 .id(d => d.id)
-                .distance(80)
-                .strength(0.5))
+                .distance(linkDistance)
+                .strength(linkStrength))
             .force('charge', d3.forceManyBody()
-                .strength(-200))
-            .force('center', d3.forceCenter(width / 2, height / 2))
-            .force('collision', d3.forceCollide().radius(30));
+                .strength(repelStrength))
+            .force('center', d3.forceCenter(width / 2, height / 2).strength(centerStrength))
+            .force('collision', d3.forceCollide().radius(d => (5 + (d.connections || 0) * 0.5) * (graphConfig.nodeSizeMultiplier || 1) + 2));
 
         // Links
+        const lineSizeMultiplier = graphConfig.lineSizeMultiplier || 1;
         const link = g.append('g')
             .selectAll('line')
             .data(graphData.links)
             .enter()
             .append('line')
             .attr('class', 'link')
-            .attr('stroke-width', 1);
+            .attr('stroke-width', 1 * lineSizeMultiplier);
 
         // Nodes
+        const nodeSizeMultiplier = graphConfig.nodeSizeMultiplier || 1;
         const node = g.append('g')
             .selectAll('g')
             .data(graphData.nodes)
@@ -179,7 +223,7 @@
                 .on('end', dragended));
 
         node.append('circle')
-            .attr('r', d => 5 + (d.connections || 0) * 0.5)
+            .attr('r', d => (5 + (d.connections || 0) * 0.5) * nodeSizeMultiplier)
             .attr('fill', d => getNodeColor(d))
             .on('click', (event, d) => {
                 window.location.href = '/vault/' + d.url;
@@ -196,9 +240,10 @@
             });
 
         node.append('text')
-            .attr('dx', 12)
+            .attr('dx', 12 * nodeSizeMultiplier)
             .attr('dy', 4)
-            .text(d => d.name);
+            .text(d => d.name)
+            .style('display', graphConfig.showTags === false ? 'none' : 'block');
 
         simulation.on('tick', () => {
             link

@@ -12,8 +12,9 @@
 - aggiungere la renderizzazione dei numeri romani (regex: `\bM{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})\b`)
 - sistemare generazione wikilink
 - pagina di fallback in caso la nota non esista
-aggiungere il topic `contenuto` alle segnalazioni
+- aggiungere il topic `contenuto` alle segnalazioni
 - sistemare autore segnalazione
 - attiva redirect login
+- link senza alias => nome originale
+- modificare il grafo per usare le informazioni nella cartella .obsidian (è presente un esempio di cartella .obsidian nella cartella example, ricorda che come i file del vault anche la cartella obsidian è presente sul server di produzione ma non qui, nel server si trova in /vault/.obsidian)
 # da fare
-link senza alias => nome originale
