@@ -29,12 +29,21 @@
         }
 
         .node text {
-            font-size: 9px;
-            fill: #cccccc;
+            font-size: 7px;
+            /* Small and always visible */
+            fill: #888;
             pointer-events: none;
             text-anchor: middle;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            opacity: 0.8;
+            transition: all 0.2s ease;
+        }
+
+        .node:hover text {
+            font-size: 12px;
+            /* Bigger on hover */
+            fill: #ffffff;
+            font-weight: bold;
+            opacity: 1;
         }
 
         .link {
@@ -256,8 +265,7 @@
 
         node.append('text')
             .attr('dy', d => -((3 + Math.sqrt(d.connections || 0) * 1.5) * nodeSizeMultiplier + 5))
-            .text(d => d.name)
-            .style('display', graphConfig.showTags === false ? 'none' : 'block');
+            .text(d => d.name);
 
         simulation.on('tick', () => {
             link
