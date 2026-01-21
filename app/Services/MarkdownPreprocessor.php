@@ -33,18 +33,26 @@ class MarkdownPreprocessor
 
         foreach ($files as $file) {
             if ($file->getExtension() === 'md') {
+                $isMaster = Auth::check() && Auth::isMaster();
+                $shouldSkip = false;
+
                 // If user is not master, skip files that are DM-only so they are not discoverable
-                if (!Auth::check() || !Auth::isMaster()) {
+                if (!$isMaster) {
                     try {
                         $fileContent = File::get($file->getPathname());
                         if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $fileContent)) {
-                            continue;
+                            $shouldSkip = true;
                         }
                     } catch (\Throwable $e) {
                         // If cannot read file, skip it
-                        continue;
+                        $shouldSkip = true;
                     }
                 }
+
+                if ($shouldSkip) {
+                    continue;
+                }
+
                 $name = strtolower($file->getFilenameWithoutExtension());
                 $relativePath = str_replace('\\', '/', $file->getRelativePath());
                 $fullPath = $relativePath ? $relativePath . '/' . $file->getFilenameWithoutExtension() : $file->getFilenameWithoutExtension();
@@ -58,13 +66,15 @@ class MarkdownPreprocessor
             }
         }
 
+        CustomLogger::note('system', "BuildFileIndex: Indexed " . count(self::$fileIndex) . " items. User isMaster: " . (Auth::isMaster() ? 'YES' : 'NO'), "debug-index");
+
         return self::$fileIndex;
     }
 
     public static function findNotePath(string $noteName): string
     {
         $index = self::buildFileIndex();
-        $cleanName = strtolower(trim($noteName));
+        $cleanName = strtolower(trim(str_replace('\\', '/', $noteName)));
 
         // Rimuovi estensione se presente per il lookup nell'indice
         if (str_ends_with($cleanName, '.md')) {
@@ -162,7 +172,7 @@ class MarkdownPreprocessor
             function ($matches) use ($note) {
                 $nota = trim($matches[1]);
                 $index = self::buildFileIndex();
-                $cleanName = strtolower($nota);
+                $cleanName = strtolower(str_replace('\\', '/', $nota));
 
                 // Rimuovi estensione se presente per il lookup nell'indice
                 if (str_ends_with($cleanName, '.md')) {
@@ -171,6 +181,8 @@ class MarkdownPreprocessor
 
                 $found = isset($index[$cleanName]);
                 $path = $found ? $index[$cleanName] : $cleanName;
+
+                CustomLogger::note($note, "Wikilink resolution: '$nota' (clean: '$cleanName') -> found: " . ($found ? "YES ($path)" : "NO"), "debug-wikilink");
 
                 if (isset($matches[2]) && !empty(trim($matches[2]))) {
                     $label = trim($matches[2]);
@@ -181,6 +193,7 @@ class MarkdownPreprocessor
 
                 // Genera il link solo se la nota è nell'indice (quindi è pubblica o l'utente è master)
                 if (!$found) {
+                    CustomLogger::note($note, "Wikilink '$nota' NOT FOUND in index. Returning plain text: $label", "debug-wikilink");
                     return htmlspecialchars($label);
                 }
 
