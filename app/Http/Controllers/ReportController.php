@@ -7,6 +7,7 @@ use App\Services\CustomLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use App\Mail\ReportResponseMail;
 use Log;
 
@@ -44,6 +45,7 @@ class ReportController extends Controller
             'description' => 'required|string|min:10|max:2000',
             'page_urls' => 'nullable|string|max:1000',
             'email' => 'nullable|email',
+            'images.*' => 'nullable|image|max:5120', // max 5MB per immagine
         ]);
 
         // Converti le URL in array (separate da newline)
@@ -61,6 +63,20 @@ class ReportController extends Controller
             'user_id' => Auth::id(), // null se non loggato
             'email' => $validated['email'],
         ]);
+
+        // Gestione immagini
+        if ($request->hasFile('images')) {
+            $directory = "reports/{$report->id}";
+
+            // Crea la cartella se non esiste (anche se store() lo farebbe comunque)
+            if (!Storage::disk('public')->exists($directory)) {
+                Storage::disk('public')->makeDirectory($directory);
+            }
+
+            foreach ($request->file('images') as $image) {
+                $image->store($directory, 'public');
+            }
+        }
 
         // Notifica Telegram per nuova segnalazione
         try {

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
+
 
 class UserReport extends Model
 {
@@ -85,6 +87,26 @@ class UserReport extends Model
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
+    }
+
+    /**
+     * Ottiene le immagini dal filesystem
+     */
+    public function getImagesAttribute(): array
+    {
+        $directory = "reports/{$this->id}";
+        if (Storage::disk('public')->exists($directory)) {
+            return Storage::disk('public')->files($directory);
+        }
+        return [];
+    }
+
+    /**
+     * Verifica se ci sono immagini
+     */
+    public function getHasImagesAttribute(): bool
+    {
+        return !empty($this->images);
     }
 }
 

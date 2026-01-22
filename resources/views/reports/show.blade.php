@@ -42,6 +42,20 @@
                         </ul>
                     @endif
 
+                    @if($report->images)
+                        <h6 class="text-muted mb-2">Immagini allegate</h6>
+                        <div class="row g-2 mb-4">
+                            @foreach($report->images as $imagePath)
+                                <div class="col-md-3">
+                                    <a href="{{ asset('storage/' . $imagePath) }}" target="_blank">
+                                        <img src="{{ asset('storage/' . $imagePath) }}" class="img-fluid rounded border"
+                                            alt="Screenshot problema" style="height: 150px; width: 100%; object-fit: cover;">
+                                    </a>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
                     <div class="row text-muted small">
                         <div class="col-md-6">
                             <strong>Segnalato da:</strong> {{ $report->user?->name ?? $report->email }}
