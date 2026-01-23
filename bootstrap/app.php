@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Registra l'alias per il middleware admin
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'master' => \App\Http\Middleware\MasterMiddleware::class,
         ]);
 
         // Aggiungi middleware per tracciare statistiche su tutte le richieste web

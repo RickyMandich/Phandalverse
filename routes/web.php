@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DmController;
 use App\Http\Controllers\VaultController;
 use App\Http\Controllers\LogsController;
 use App\Http\Controllers\AdminController;
@@ -31,6 +32,20 @@ Route::middleware(['auth'])->group(function () {
 // ========== SEGNALAZIONI (pubbliche) ==========
 Route::get('/report', [ReportController::class, 'create'])->name('report.create');
 Route::post('/report', [ReportController::class, 'store'])->name('report.store');
+
+// ========== DM SCREEN (solo master) ==========
+Route::middleware(['auth', 'master'])->prefix('dm')->group(function () {
+    Route::get('/', [DmController::class, 'index'])->name('dm.screen');
+    Route::get('/api/characters', [DmController::class, 'getCharacters'])->name('dm.api.characters.index');
+    Route::post('/api/characters', [DmController::class, 'storeCharacter'])->name('dm.api.characters.store');
+    Route::patch('/api/characters/{character}', [DmController::class, 'updateCharacter'])->name('dm.api.characters.update');
+    Route::delete('/api/characters/{character}', [DmController::class, 'destroyCharacter'])->name('dm.api.characters.destroy');
+
+    Route::post('/api/session', [DmController::class, 'saveSession'])->name('dm.api.session.save');
+    Route::get('/api/session', [DmController::class, 'loadSession'])->name('dm.api.session.load');
+
+    Route::post('/api/render-stat-block', [DmController::class, 'renderStatBlock'])->name('dm.api.render-stat-block');
+});
 
 // ========== ADMIN ROUTES (solo amministratori) ==========
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {

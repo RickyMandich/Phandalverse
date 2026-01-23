@@ -1,0 +1,317 @@
+
+function dmScreen() {
+    return {
+        templates: [],
+        players: [],
+        combatants: [],
+        round: 1,
+        currentTurnIndex: 0,
+        
+        // Modal & Selection
+        selectedCombatant: null,
+        selectedStatBlock: '',
+        characterModal: null,
+        modalMode: 'create', // or 'edit'
+        characterForm: {
+            id: null,
+            name: '',
+            type: 'template',
+            stats: {
+                ac: 10,
+                hp_formula: '1d8',
+                dex_mod: 0,
+                notes: '',
+                saving_throws: {}
+            }
+        },
+
+        init() {
+            this.loadCharacters();
+            this.loadSession();
+            this.characterModal = new bootstrap.Modal(document.getElementById('characterModal'));
+            
+            // Auto-save every 30 seconds or on change
+            setInterval(() => {
+                this.saveSession();
+            }, 30000);
+        },
+
+        async loadCharacters() {
+            const response = await fetch('/dm/api/characters');
+            const data = await response.json();
+            this.templates = data.filter(c => c.type === 'template');
+            this.players = data.filter(c => c.type === 'player');
+        },
+
+        openCharacterModal(type) {
+            this.modalMode = 'create';
+            this.characterForm = {
+                id: null,
+                name: '',
+                type: type,
+                stats: {
+                    ac: 10,
+                    hp_formula: type === 'template' ? '1d8' : '10',
+                    dex_mod: 0,
+                    notes: '',
+                    saving_throws: {}
+                }
+            };
+            this.characterModal.show();
+        },
+
+        editCharacter(char) {
+            this.modalMode = 'edit';
+            this.characterForm = {
+                id: char.id,
+                name: char.name,
+                type: char.type,
+                stats: JSON.parse(JSON.stringify(char.stats)) // Deep copy
+            };
+            this.characterModal.show();
+        },
+
+        async saveCharacter() {
+            const method = this.modalMode === 'create' ? 'POST' : 'PATCH';
+            const url = this.modalMode === 'create' 
+                ? '/dm/api/characters' 
+                : `/dm/api/characters/${this.characterForm.id}`;
+            
+            // Token handling if not using axios global config
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token
+                    },
+                    body: JSON.stringify(this.characterForm)
+                });
+                
+                if (response.ok) {
+                    await this.loadCharacters();
+                    this.characterModal.hide();
+                } else {
+                    alert('Error saving character');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error saving character');
+            }
+        },
+
+        // --- COMBAT LOGIC ---
+
+        resolveFormula(formula) {
+            // Robust parsing for "XdY+Z" or constant numbers
+            if (!formula) return 0;
+            formula = String(formula).toLowerCase().replace(/\s/g, '');
+            
+            // If just a number
+            if (/^\d+$/.test(formula)) return parseInt(formula);
+
+            // Regex for XdY(+/-)Z
+            // Capture groups: 1=numDice, 2=dieSize, 3=modifier(signed)
+            // Example: 3d8+4 -> splits to [3, 8, +4] approx
+            
+            // simple check: split by 'd'
+            let parts = formula.split('d');
+            if (parts.length !== 2) {
+                // Try parsing as simple math expression like "10+2"
+                 try {
+                    return eval(formula.replace(/[^0-9+\-]/g, ''));
+                 } catch { return 0; }
+            }
+
+            let numDice = parseInt(parts[0]) || 1;
+            let rest = parts[1];
+            
+            // Split rest by + or -
+            let dieSize = 0;
+            let modifier = 0;
+            
+            let modIndex = rest.search(/[+\-]/);
+            if (modIndex !== -1) {
+                dieSize = parseInt(rest.substring(0, modIndex));
+                modifier = parseInt(rest.substring(modIndex));
+            } else {
+                dieSize = parseInt(rest);
+            }
+
+            let total = 0;
+            for (let i = 0; i < numDice; i++) {
+                total += Math.floor(Math.random() * dieSize) + 1;
+            }
+            
+            return total + modifier;
+        },
+
+        addToCombat(char) {
+            // Determine Initiative
+            let init = 0;
+            if (char.type === 'player') {
+                init = 0; // Placeholder for manual entry
+            } else {
+                // Roll d20 + dex_mod
+                let mod = parseInt(char.stats.dex_mod) || 0;
+                init = Math.floor(Math.random() * 20) + 1 + mod;
+            }
+
+            // Determine HP
+            let hp = this.resolveFormula(char.stats.hp_formula);
+
+            // Helper to count existing enemies of same name to add # number
+            let count = this.combatants.filter(c => c.name === char.name).length;
+            
+            let combatant = {
+                instanceId: Date.now() + Math.random(),
+                id: char.id,
+                name: char.name,
+                type: char.type,
+                ac: char.stats.ac,
+                maxHp: hp,
+                hp: hp,
+                initiative: init,
+                statuses: [],
+                notes: char.stats.notes || '',
+                enemyCount: char.type === 'template' ? count + 1 : null
+            };
+
+            // Insert into combatants list
+            this.combatants.push(combatant);
+            
+            // Dynamic insertion/sort
+            // If we are in middle of combat, we want to maintain current turn if possible
+            // but for simplicity, we insert, then sort.
+            
+            // Check if we started combat (anyone has initiative)
+            // If NPC was added, it has init. If Player, it has 0.
+            // We'll leave the list unsorted until user clicks "Sort" or if we want auto-sort:
+            
+            this.sortCombat();
+            this.saveSession();
+        },
+
+        sortCombat() {
+            // Store who is currently active to restore focus if possible
+            let activeId = null;
+            if (this.combatants.length > 0 && this.combatants[this.currentTurnIndex]) {
+                 activeId = this.combatants[this.currentTurnIndex].instanceId;
+            }
+
+            this.combatants.sort((a, b) => {
+                if (b.initiative !== a.initiative) {
+                    return b.initiative - a.initiative;
+                }
+                // Tie-breaker: Dex mod (not stored on instance currently, defaulting to random stability)
+                return 0;
+            });
+
+            // Try to find where the active player went
+            if (activeId) {
+                let newIndex = this.combatants.findIndex(c => c.instanceId === activeId);
+                if (newIndex !== -1) {
+                    this.currentTurnIndex = newIndex;
+                }
+            }
+        },
+
+        nextTurn() {
+            if (this.combatants.length === 0) return;
+            
+            this.currentTurnIndex++;
+            if (this.currentTurnIndex >= this.combatants.length) {
+                this.currentTurnIndex = 0;
+                this.round++;
+            }
+            this.saveSession();
+        },
+
+        resetCombat() {
+            if(confirm('Clear all combatants?')) {
+                this.combatants = [];
+                this.round = 1;
+                this.currentTurnIndex = 0;
+                this.selectedCombatant = null;
+                this.saveSession();
+            }
+        },
+
+        removeCombatant(index) {
+            if (index === this.currentTurnIndex) {
+               // If removing current actor, move index back one so nextTurn works or handle gracefully
+            }
+            if (index < this.currentTurnIndex) {
+                this.currentTurnIndex--;
+            }
+            this.combatants.splice(index, 1);
+            this.saveSession();
+        },
+
+        modifyHp(combatant, amount) {
+            combatant.hp += amount;
+            this.saveSession();
+        },
+        
+        addStatus(combatant) {
+            let status = prompt("Status name (e.g. Stunned):");
+            if (status) {
+                combatant.statuses.push(status);
+                this.saveSession();
+            }
+        },
+
+        async selectCombatant(combatant) {
+            this.selectedCombatant = combatant;
+            
+            // If it has a statblock/notes, render markdown
+            if (combatant.notes) {
+                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                const response = await fetch('/dm/api/render-stat-block', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                         'X-CSRF-TOKEN': token
+                    },
+                    body: JSON.stringify({ content: combatant.notes })
+                });
+                const data = await response.json();
+                this.selectedStatBlock = data.html;
+            } else {
+                this.selectedStatBlock = '';
+            }
+        },
+
+        // --- SESSION PERSISTENCE ---
+
+        async saveSession() {
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            await fetch('/dm/api/session', {
+                method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token
+                    },
+                body: JSON.stringify({
+                    data: {
+                        combatants: this.combatants,
+                        round: this.round,
+                        currentTurnIndex: this.currentTurnIndex
+                    }
+                })
+            });
+        },
+
+        async loadSession() {
+            const response = await fetch('/dm/api/session');
+            const data = await response.json();
+            if (data) {
+                this.combatants = data.combatants || [];
+                this.round = data.round || 1;
+                this.currentTurnIndex = data.currentTurnIndex || 0;
+            }
+        }
+    }
+}

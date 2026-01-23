@@ -107,13 +107,23 @@
                                         <div class="dropdown-divider"></div>
                                     @endif
 
+                                    @if(Auth::user()->master)
+                                        <h6 class="dropdown-header">
+                                            <i class="bi bi-dice-6"></i> Dungeon Master
+                                        </h6>
+                                        <a class="dropdown-item" href="{{ route('dm.screen') }}">
+                                            <i class="bi bi-person-badge"></i> DM Screen
+                                        </a>
+                                        <div class="dropdown-divider"></div>
+                                    @endif
+
                                     <a class="dropdown-item" href="{{ route('dashboard') }}">
                                         <i class="bi bi-person-circle"></i> Il mio Profilo
                                     </a>
 
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                         onclick="event.preventDefault();
-                                                                             document.getElementById('logout-form').submit();">
+                                                                                 document.getElementById('logout-form').submit();">
                                         {{ __('Logout') }}
                                     </a>
 
