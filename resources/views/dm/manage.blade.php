@@ -139,7 +139,7 @@
             <div class="col">
                 <ul class="nav nav-pills bg-dark p-2 rounded shadow-sm" id="manageTabs">
                     <li class="nav-item">
-                        <button class="nav-link active px-4" :class="activeTab === 'characters' ? 'active' : ''"
+                        <button class="nav-link px-4" :class="activeTab === 'characters' ? 'active' : ''"
                             @click="activeTab = 'characters'">👤 Personaggi & Mostri</button>
                     </li>
                     <li class="nav-item ms-2">
