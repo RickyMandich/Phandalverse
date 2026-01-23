@@ -107,10 +107,10 @@
                 <div class="combat-list">
                     <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                         <div class="card mb-2" x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                    'border-3 border-warning shadow': currentTurnIndex === index, 
-                                    'bg-opacity-50 grayscale': combatant.hp <= 0,
-                                    'border-danger': combatant.hp <= 0 && combatant.type !== 'player'
-                                }" :id="'combatant-' + combatant.instanceId">
+                                        'border-3 border-warning shadow': currentTurnIndex === index, 
+                                        'bg-opacity-50 grayscale': combatant.hp <= 0,
+                                        'border-danger': combatant.hp <= 0 && combatant.type !== 'player'
+                                    }" :id="'combatant-' + combatant.instanceId">
                             <div class="card-body p-2 d-flex align-items-center">
                                 <!-- INITIATIVE -->
                                 <div class="me-3 text-center" style="width: 50px;">
@@ -330,7 +330,7 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="{{ asset('js/dm-screen.js') }}" defer></script>
+    <script src="{{ asset('js/dm-screen.js') }}?v={{ time() }}" defer></script>
     <script src="//unpkg.com/alpinejs" defer></script>
     <style>
         .grayscale {

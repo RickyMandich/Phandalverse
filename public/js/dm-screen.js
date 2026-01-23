@@ -1,6 +1,7 @@
 
 function dmScreen() {
     return {
+        // --- DATA PROPERTIES ---
         templates: [],
         players: [],
         groups: [],
@@ -9,12 +10,11 @@ function dmScreen() {
         currentTurnIndex: 0,
         hideDead: false,
 
-        // Modal & Selection
         selectedCombatant: null,
         selectedStatBlock: '',
         characterModal: null,
         groupModal: null,
-        modalMode: 'create', // or 'edit'
+        modalMode: 'create',
 
         characterForm: {
             id: null,
@@ -35,11 +35,11 @@ function dmScreen() {
             members: []
         },
 
+        // --- INITIALIZATION ---
         init() {
             this.loadCharacters();
             this.loadSession();
 
-            // Inizializzazione modal con controllo esistenza bootstrap
             this.$nextTick(() => {
                 this.initModals();
             });
@@ -50,33 +50,30 @@ function dmScreen() {
         },
 
         initModals() {
+            if (!window.bootstrap) return;
             const modalEl = document.getElementById('characterModal');
-            if (modalEl && window.bootstrap) {
-                this.characterModal = new window.bootstrap.Modal(modalEl);
-            }
+            if (modalEl) this.characterModal = new window.bootstrap.Modal(modalEl);
             const groupModalEl = document.getElementById('groupModal');
-            if (groupModalEl && window.bootstrap) {
-                this.groupModal = new window.bootstrap.Modal(groupModalEl);
-            }
+            if (groupModalEl) this.groupModal = new window.bootstrap.Modal(groupModalEl);
         },
 
         async loadCharacters() {
             try {
                 const response = await fetch('/dm/api/characters');
                 const data = await response.json();
-                // Aggiungiamo qty: 1 a ogni elemento per gestire l'input di inserimento multiplo
                 this.templates = data.filter(c => c.type === 'template').map(c => ({ ...c, qty: 1 }));
                 this.players = data.filter(c => c.type === 'player').map(c => ({ ...c, qty: 1 }));
                 this.groups = data.filter(c => c.type === 'group');
             } catch (e) {
-                console.error("Errore caricamento libreria:", e);
+                console.error("Library load error:", e);
             }
         },
 
         getStatModifier(val) {
-            return Math.floor((val - 10) / 2);
+            return Math.floor((parseInt(val || 10) - 10) / 2);
         },
 
+        // --- MODAL TRIGGERS ---
         openCharacterModal(type, char = null) {
             this.modalMode = char ? 'edit' : 'create';
             if (char) {
@@ -95,12 +92,9 @@ function dmScreen() {
                 };
             } else {
                 this.characterForm = {
-                    id: null,
-                    name: '',
-                    type: type,
+                    id: null, name: '', type: type,
                     stats: {
-                        ac: 10,
-                        hp_formula: type === 'template' ? '1d8' : '10',
+                        ac: 10, hp_formula: type === 'template' ? '1d8' : '10',
                         attributes: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
                         saves: { str: false, dex: false, con: false, int: false, wis: false, cha: false },
                         notes: ''
@@ -120,11 +114,7 @@ function dmScreen() {
                     members: stats.members || []
                 };
             } else {
-                this.groupForm = {
-                    id: null,
-                    name: '',
-                    members: []
-                };
+                this.groupForm = { id: null, name: '', members: [] };
             }
             this.showModal(this.groupModal);
         },
@@ -139,11 +129,8 @@ function dmScreen() {
 
         showModal(modalObj) {
             if (!modalObj) this.initModals();
-            if (modalObj) {
-                modalObj.show();
-            } else {
-                alert('Impossibile caricare il modal. Riprova tra un istante.');
-            }
+            if (modalObj) modalObj.show();
+            else alert('Bootstrap Modal error.');
         },
 
         async saveCharacter() {
@@ -185,6 +172,7 @@ function dmScreen() {
             } catch (e) { console.error(e); }
         },
 
+        // --- COMBAT LOGIC ---
         resolveFormula(formula) {
             if (!formula) return 0;
             formula = String(formula).toLowerCase().replace(/\s/g, '');
@@ -193,14 +181,13 @@ function dmScreen() {
             let parts = formula.split('d');
             if (parts.length !== 2) {
                 try {
-                    return Function('"use strict";return (' + formula.replace(/[^0-9+\-*\/()]/g, '') + ')')();
+                    return eval(formula.replace(/[^0-9+\-*\/()]/g, ''));
                 } catch { return 0; }
             }
 
             let numDice = parseInt(parts[0]) || 1;
             let rest = parts[1];
-            let dieSize = 0;
-            let modifier = 0;
+            let dieSize = 0, modifier = 0;
             let modIndex = rest.search(/[+\-]/);
             if (modIndex !== -1) {
                 dieSize = parseInt(rest.substring(0, modIndex));
@@ -217,39 +204,32 @@ function dmScreen() {
         },
 
         addToCombat(char, qty = null) {
-            // Se qty è null, prendiamo quello dall'oggetto (popolato da x-model)
             const countToAdd = qty !== null ? parseInt(qty) : (parseInt(char.qty) || 1);
-
             for (let i = 0; i < countToAdd; i++) {
                 let init = 0;
                 let stats = typeof char.stats === 'string' ? JSON.parse(char.stats) : (char.stats || {});
                 let dexVal = (stats.attributes && stats.attributes.dex) ? stats.attributes.dex : 10;
                 let dexMod = this.getStatModifier(dexVal);
 
-                if (char.type === 'player') {
-                    init = 0;
-                } else {
-                    init = Math.floor(Math.random() * 20) + 1 + dexMod;
-                }
+                if (char.type === 'player') init = 0;
+                else init = Math.floor(Math.random() * 20) + 1 + dexMod;
 
                 let hp = this.resolveFormula(stats.hp_formula);
                 let countSameName = this.combatants.filter(c => c.name === char.name).length;
 
-                let combatant = {
+                this.combatants.push({
                     instanceId: Date.now() + Math.random(),
                     id: char.id,
                     name: char.name,
                     type: char.type,
                     ac: stats.ac || 10,
-                    maxHp: hp,
-                    hp: hp,
+                    maxHp: hp, hp: hp,
                     initiative: init,
                     statuses: [],
                     notes: stats.notes || '',
                     enemyCount: char.type === 'template' ? countSameName + 1 : null,
                     stats: stats
-                };
-                this.combatants.push(combatant);
+                });
             }
             this.sortCombat();
             this.saveSession();
@@ -260,9 +240,7 @@ function dmScreen() {
             const members = stats.members || [];
             members.forEach(m => {
                 const char = [...this.templates, ...this.players].find(c => c.id == m.character_id);
-                if (char) {
-                    this.addToCombat(char, m.qty);
-                }
+                if (char) this.addToCombat(char, m.qty);
             });
         },
 
@@ -273,15 +251,11 @@ function dmScreen() {
             }
             this.combatants.sort((a, b) => {
                 if (b.initiative !== a.initiative) return b.initiative - a.initiative;
-                let modA = this.getStatModifier(a.stats?.attributes?.dex || 10);
-                let modB = this.getStatModifier(b.stats?.attributes?.dex || 10);
-                return modB - modA;
+                return this.getStatModifier(b.stats?.attributes?.dex || 10) - this.getStatModifier(a.stats?.attributes?.dex || 10);
             });
             if (activeId) {
                 let newIndex = this.combatants.findIndex(c => c.instanceId === activeId);
-                if (newIndex !== -1) {
-                    this.currentTurnIndex = newIndex;
-                }
+                if (newIndex !== -1) this.currentTurnIndex = newIndex;
             }
         },
 
@@ -296,20 +270,15 @@ function dmScreen() {
         },
 
         resetCombat() {
-            if (confirm('Clear all combatants?')) {
-                this.combatants = [];
-                this.round = 1;
-                this.currentTurnIndex = 0;
-                this.selectedCombatant = null;
-                this.selectedStatBlock = '';
+            if (confirm('Reset combat?')) {
+                this.combatants = []; this.round = 1; this.currentTurnIndex = 0;
+                this.selectedCombatant = null; this.selectedStatBlock = '';
                 this.saveSession();
             }
         },
 
         removeCombatant(index) {
-            if (index < this.currentTurnIndex) {
-                this.currentTurnIndex--;
-            }
+            if (index < this.currentTurnIndex) this.currentTurnIndex--;
             this.combatants.splice(index, 1);
             this.saveSession();
         },
@@ -320,11 +289,8 @@ function dmScreen() {
         },
 
         addStatus(combatant) {
-            let status = prompt("Status name (e.g. Stunned):");
-            if (status) {
-                combatant.statuses.push(status);
-                this.saveSession();
-            }
+            let status = prompt("Status:");
+            if (status) { combatant.statuses.push(status); this.saveSession(); }
         },
 
         async selectCombatant(combatant) {
@@ -338,9 +304,7 @@ function dmScreen() {
                 });
                 const data = await response.json();
                 this.selectedStatBlock = data.html;
-            } else {
-                this.selectedStatBlock = '';
-            }
+            } else { this.selectedStatBlock = ''; }
         },
 
         async saveSession() {
@@ -369,9 +333,7 @@ function dmScreen() {
                     this.currentTurnIndex = data.currentTurnIndex || 0;
                     this.hideDead = data.hideDead || false;
                 }
-            } catch (e) {
-                console.error("Errore caricamento sessione:", e);
-            }
+            } catch (e) { console.error("Session load error:", e); }
         }
     }
 }
