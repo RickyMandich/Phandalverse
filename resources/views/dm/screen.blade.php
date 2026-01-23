@@ -4,7 +4,7 @@
     <div class="container-fluid" x-data="dmScreen()" x-init="init()">
         <div class="row">
             <!-- SIDEBAR: Library & Templates -->
-            <div class="col-md-3 border-end vh-100 overflow-auto bg-dark text-light p-3">
+            <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3">
                 <h4 class="mb-3">📚 Library</h4>
 
                 <ul class="nav nav-tabs mb-3" id="libraryTabs" role="tablist">
@@ -26,7 +26,7 @@
                         <div class="list-group list-group-flush">
                             <template x-for="char in templates" :key="char.id">
                                 <div
-                                    class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex justify-content-between align-items-center">
+                                    class="list-group-item list-group-item-action bg-dark border-secondary d-flex justify-content-between align-items-center">
                                     <div>
                                         <strong x-text="char.name"></strong>
                                         <div class="small text-muted" x-text="'HP: ' + (char.stats.hp_formula || 'N/A')">
@@ -50,7 +50,7 @@
                         <div class="list-group list-group-flush">
                             <template x-for="char in players" :key="char.id">
                                 <div
-                                    class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex justify-content-between align-items-center">
+                                    class="list-group-item list-group-item-action bg-dark border-secondary d-flex justify-content-between align-items-center">
                                     <span x-text="char.name"></span>
                                     <div>
                                         <button class="btn btn-sm btn-primary py-0" @click="addToCombat(char)"><i
@@ -120,7 +120,7 @@
 
                                 <!-- ACTIONS -->
                                 <div class="ms-2 dropdown">
-                                    <button class="btn btn-sm btn-light dropdown-toggle" type="button"
+                                    <button class="btn btn-sm btn-dark dropdown-toggle" type="button"
                                         data-bs-toggle="dropdown">⋮</button>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" href="#" @click.prevent="addStatus(combatant)">Add
