@@ -5,9 +5,9 @@
 
 @section('content')
     <div x-data="dmScreen({ 
-                        isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
-                        isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
-                    })">
+                                    isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
+                                    isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
+                                })">
         <div class="row gx-0">
             <!-- SIDEBAR LEFT: Libreria -->
             <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3 custom-scrollbar">
@@ -114,8 +114,8 @@
                                     <i class="bi bi-folder2-open me-2"></i>
                                     <span class="text-truncate" style="max-width: 150px;"
                                         x-text="currentSession.name"></span>
-                                    <span class="ms-2 badge bg-warning text-dark px-2" x-text="currentSession.share_code"
-                                        x-show="currentSession.share_code"></span>
+                                    <span class="ms-2 badge bg-warning text-dark px-2 font-monospace"
+                                        x-text="currentSession.share_code || '---'" x-show="currentSession.id"></span>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-dark shadow border-secondary">
                                     <li><a class="dropdown-item small" href="#" @click.prevent="createSession()">+ Nuova
@@ -124,11 +124,13 @@
                                         <hr class="dropdown-divider">
                                     </li>
                                     <template x-for="s in availableSessions" :key="s.id">
-                                        <li class="d-flex align-items-center justify-content-between px-2 py-1">
+                                        <li
+                                            class="d-flex align-items-center justify-content-between px-2 py-1 border-bottom border-secondary border-opacity-25">
                                             <div class="flex-grow-1 d-flex flex-column" @click="switchSession(s)"
                                                 style="cursor: pointer;">
                                                 <span class="small fw-bold text-light" x-text="s.name"></span>
-                                                <span class="x-small text-muted" x-text="s.share_code"></span>
+                                                <span class="x-small text-warning font-monospace"
+                                                    x-text="s.share_code"></span>
                                             </div>
                                             <button class="btn btn-sm btn-link text-danger p-0 ms-1 shadow-none"
                                                 @click.stop="deleteSession(s.id)" x-show="availableSessions.length > 1">
@@ -142,7 +144,7 @@
                             <!-- COPY BUTTON -->
                             <button class="btn btn-sm btn-outline-info border-0 ms-2 px-2"
                                 x-show="currentSession.share_code"
-                                @click="const url = window.location.origin + '/dm/player/' + currentSession.share_code; navigator.clipboard.writeText(url); alert('Link copiato!');"
+                                @click="const url = window.location.origin + '/dm/player/' + currentSession.share_code; navigator.clipboard.writeText(url); alert('Link copiato per la sessione: ' + currentSession.share_code)"
                                 title="Copia link giocatori">
                                 <i class="bi bi-link-45deg"></i>
                             </button>
@@ -167,10 +169,10 @@
                         <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                             <div class="list-group-item mb-2 rounded border-0 shadow-sm combatant-card p-0 overflow-hidden"
                                 x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                                'active-turn': currentTurnIndex === index,
-                                                'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
-                                                'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
-                                            }" @click="selectCombatant(combatant)">
+                                                            'active-turn': currentTurnIndex === index,
+                                                            'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
+                                                            'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
+                                                        }" @click="selectCombatant(combatant)">
 
                                 <div class="d-flex align-items-center p-2">
                                     <!-- INITIATIVE -->
@@ -320,7 +322,7 @@
 
     <!-- MODALS -->
     <!-- (Il resto dei modali e degli stili rimane invariato rispetto alla versione precedente per brevità, 
-                      ma inclusi qui per integrità del database di conoscenza se necessario) -->
+                                  ma inclusi qui per integrità del database di conoscenza se necessario) -->
 
     <!-- MODAL: Crea/Modifica Personaggio -->
     <div class="modal fade" id="characterModal" tabindex="-1">

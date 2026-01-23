@@ -232,6 +232,10 @@ class DmController extends Controller
     public function legacyLoadSession()
     {
         $session = DmSession::where('user_id', Auth::id())->orderBy('updated_at', 'desc')->first();
+        if ($session && !$session->share_code) {
+            $session->share_code = DmSession::generateUniqueCode();
+            $session->save();
+        }
         return response()->json($session);
     }
 
