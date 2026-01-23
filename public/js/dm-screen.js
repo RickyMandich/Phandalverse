@@ -420,6 +420,8 @@ function dmScreen(config = {}) {
                 hideDead: this.hideDead
             };
 
+            console.log("DM Screen Saving Session:", data);
+
             await fetch(`/dm/api/sessions/${this.currentSession.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },

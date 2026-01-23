@@ -96,6 +96,7 @@
                         const response = await fetch(`/dm/api/public/sessions/${config.shareCode}`);
                         if (response.ok) {
                             const session = await response.json();
+                            console.log("Player View Data Sync:", session);
                             const data = session.data || {};
                             this.combatants = data.combatants || [];
                             this.round = data.round || 1;

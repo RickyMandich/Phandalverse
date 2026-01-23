@@ -7,6 +7,7 @@ use App\Models\DmCharacter;
 use App\Models\DmSession;
 use Illuminate\Support\Facades\Auth;
 use App\Services\MarkdownPreprocessor;
+use App\Services\CustomLogger;
 
 class DmController extends Controller
 {
@@ -19,6 +20,7 @@ class DmController extends Controller
 
     public function index()
     {
+        CustomLogger::screen("view-master", "DM Screen loaded by ID: " . Auth::id());
         return view('dm.screen');
     }
 
@@ -183,6 +185,7 @@ class DmController extends Controller
         if ($session->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
             abort(403);
         }
+        CustomLogger::screen("{$session->share_code}-master", "Master loading specific session ID: {$session->id}");
         return response()->json($session);
     }
 
@@ -198,6 +201,8 @@ class DmController extends Controller
         ]);
 
         $session->update($validated);
+
+        CustomLogger::screen("{$session->share_code}-master", "Session ID {$session->id} updated. Combatants: " . count($validated['data']['combatants'] ?? []) . ", Round: " . ($validated['data']['round'] ?? '1'));
 
         return response()->json(['success' => true]);
     }
@@ -226,6 +231,8 @@ class DmController extends Controller
             ['data' => $validated['data']]
         );
 
+        CustomLogger::screen("{$session->share_code}-master", "Legacy Save (Default). Data combatants: " . count($validated['data']['combatants'] ?? []) . ", Round: " . ($validated['data']['round'] ?? '1'));
+
         return response()->json($session);
     }
 
@@ -236,6 +243,10 @@ class DmController extends Controller
             $session->share_code = DmSession::generateUniqueCode();
             $session->save();
         }
+
+        $code = $session ? $session->share_code : 'none';
+        CustomLogger::screen("{$code}-master", "Legacy Load Session: " . ($session ? "ID {$session->id}" : "No session found"));
+
         return response()->json($session);
     }
 
@@ -264,6 +275,9 @@ class DmController extends Controller
     public function publicLoadSession($share_code)
     {
         $session = DmSession::where('share_code', $share_code)->firstOrFail();
+
+        CustomLogger::screen("{$share_code}-player", "Public Load Session requested. Combatants in DB: " . count($session->data['combatants'] ?? []) . ", Round: " . ($session->data['round'] ?? '1'));
+
         return response()->json($session);
     }
 }

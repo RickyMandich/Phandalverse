@@ -88,4 +88,27 @@ class CustomLogger
 
         @file_put_contents(self::$graphFile, $line, FILE_APPEND | LOCK_EX);
     }
+
+    /**
+     * Scrive un log relativo a una sessione DM Screen o Player View.
+     * $sessionIdentifier format: {share_code}-{master/player}
+     */
+    public static function screen(string $sessionIdentifier, string $message, string $level = 'info'): void
+    {
+        $dir = storage_path('logs' . DIRECTORY_SEPARATOR . 'screen');
+        self::ensureDirectory($dir);
+
+        $key = 'screen_' . $sessionIdentifier;
+        if (!isset(self::$files[$key])) {
+            $safeName = self::sanitizeFilename($sessionIdentifier ?: 'session');
+            $filename = date('Y-m-d_H-i-s') . '_' . ($safeName ?: 'session') . '.log';
+            self::$files[$key] = $dir . DIRECTORY_SEPARATOR . $filename;
+        }
+
+        $filePath = self::$files[$key];
+        $time = date('Y-m-d H:i:s');
+        $line = "[{$time}] {" . strtoupper($level) . "}: {$message}" . PHP_EOL;
+
+        @file_put_contents($filePath, $line, FILE_APPEND | LOCK_EX);
+    }
 }
