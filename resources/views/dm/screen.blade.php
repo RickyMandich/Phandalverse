@@ -106,63 +106,82 @@
 
                 <div class="combat-list">
                     <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
-                        <div class="card mb-2" x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                        'border-3 border-warning shadow': currentTurnIndex === index, 
-                                        'bg-opacity-50 grayscale': combatant.hp <= 0,
-                                        'border-danger': combatant.hp <= 0 && combatant.type !== 'player'
-                                    }" :id="'combatant-' + combatant.instanceId">
-                            <div class="card-body p-2 d-flex align-items-center">
-                                <!-- INITIATIVE -->
-                                <div class="me-3 text-center" style="width: 50px;">
-                                    <label class="small text-muted" style="font-size: 0.7rem;">Init</label>
-                                    <input type="number" class="form-control form-control-sm text-center p-0"
-                                        x-model.number="combatant.initiative" @change="sortCombat()"
-                                        style="font-weight: bold;">
-                                </div>
-
-                                <!-- NAME & TYPE -->
-                                <div class="flex-grow-1" @click="selectCombatant(combatant)" style="cursor: pointer;">
-                                    <div class="fw-bold d-flex align-items-center">
-                                        <span x-text="combatant.name"
-                                            :class="combatant.type === 'player' ? 'text-info' : ''"></span>
-                                        <span class="badge bg-secondary ms-2" x-show="combatant.enemyCount"
-                                            x-text="'#' + combatant.enemyCount"></span>
+                        <div class="card mb-2 combatant-card"
+                            x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
+                                    'active-turn': currentTurnIndex === index, 
+                                    'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
+                                    'dead-combatant': combatant.hp <= 0 && combatant.type !== 'player'
+                                }" :id="'combatant-' + combatant.instanceId">
+                            <div class="card-body p-2">
+                                <div class="d-flex align-items-center">
+                                    <!-- INITIATIVE -->
+                                    <div class="me-3 text-center" style="width: 50px;">
+                                        <label class="small text-muted" style="font-size: 0.7rem;">Init</label>
+                                        <input type="number" class="form-control form-control-sm text-center p-0"
+                                            x-model.number="combatant.initiative" @change="sortCombat()"
+                                            style="font-weight: bold;">
                                     </div>
-                                    <div class="small text-muted">
-                                        <span class="badge bg-dark me-1 border border-secondary">AC <span
-                                                x-text="combatant.ac"></span></span>
-                                        <template x-for="status in combatant.statuses" :key="status">
-                                            <span class="badge bg-danger me-1" x-text="status"></span>
-                                        </template>
+
+                                    <!-- NAME & TYPE -->
+                                    <div class="flex-grow-1" @click="selectCombatant(combatant)" style="cursor: pointer;">
+                                        <div class="fw-bold d-flex align-items-center">
+                                            <span x-text="combatant.alias || combatant.name"
+                                                :class="combatant.type === 'player' ? 'text-info' : ''"></span>
+                                            <span class="badge bg-secondary ms-2" x-show="combatant.enemyCount"
+                                                x-text="'#' + combatant.enemyCount"></span>
+                                            <span class="small text-muted ms-2" x-show="combatant.alias"
+                                                style="font-size: 0.7rem;">(<span x-text="combatant.name"></span>)</span>
+                                        </div>
+                                        <div class="small text-muted d-flex align-items-center">
+                                            <span class="badge bg-dark me-1 border border-secondary">AC <span
+                                                    x-text="combatant.ac"></span></span>
+                                            <template x-for="status in combatant.statuses" :key="status">
+                                                <span class="badge bg-danger me-1" x-text="status"></span>
+                                            </template>
+                                            <!-- ICONS -->
+                                            <i class="bi bi-journal-text ms-2" x-show="combatant.personalNotes"
+                                                @click.stop="combatant.showNotesInline = !combatant.showNotesInline"
+                                                :class="combatant.showNotesInline ? 'text-info' : ''"></i>
+                                        </div>
+                                    </div>
+
+                                    <!-- HP CONTROLS -->
+                                    <div class="d-flex align-items-center me-2" style="width: 140px;">
+                                        <button class="btn btn-sm btn-outline-danger px-1 py-0"
+                                            @click="modifyHp(combatant, -1)">-</button>
+                                        <input type="number"
+                                            class="form-control form-control-sm text-center mx-1 p-0 fw-bold border-0 bg-transparent"
+                                            x-model.number="combatant.hp"
+                                            :class="{'text-danger': combatant.hp <= 0, 'text-warning': combatant.hp > 0 && combatant.hp < (combatant.maxHp/2)}">
+                                        <span class="text-muted small">/<span x-text="combatant.maxHp"></span></span>
+                                        <button class="btn btn-sm btn-outline-success px-1 py-0"
+                                            @click="modifyHp(combatant, 1)">+</button>
+                                    </div>
+
+                                    <!-- ACTIONS -->
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-dark px-1 py-0" type="button"
+                                            data-bs-toggle="dropdown">⋮</button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                                            <li><a class="dropdown-item py-1" href="#"
+                                                    @click.prevent="addStatus(combatant)">Add Status</a></li>
+                                            <li><a class="dropdown-item py-1" href="#"
+                                                    @click.prevent="let a = prompt('Alias:', combatant.alias); if(a !== null) combatant.alias = a">Set
+                                                    Alias</a></li>
+                                            <li>
+                                                <hr class="dropdown-divider my-1">
+                                            </li>
+                                            <li><a class="dropdown-item text-danger py-1" href="#"
+                                                    @click.prevent="removeCombatant(index)">Remove</a></li>
+                                        </ul>
                                     </div>
                                 </div>
 
-                                <!-- HP CONTROLS -->
-                                <div class="d-flex align-items-center me-2" style="width: 140px;">
-                                    <button class="btn btn-sm btn-outline-danger px-1 py-0"
-                                        @click="modifyHp(combatant, -1)">-</button>
-                                    <input type="number"
-                                        class="form-control form-control-sm text-center mx-1 p-0 fw-bold border-0 bg-transparent"
-                                        x-model.number="combatant.hp"
-                                        :class="{'text-danger': combatant.hp <= 0, 'text-warning': combatant.hp > 0 && combatant.hp < (combatant.maxHp/2)}">
-                                    <span class="text-muted small">/<span x-text="combatant.maxHp"></span></span>
-                                    <button class="btn btn-sm btn-outline-success px-1 py-0"
-                                        @click="modifyHp(combatant, 1)">+</button>
-                                </div>
-
-                                <!-- ACTIONS -->
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-dark px-1 py-0" type="button"
-                                        data-bs-toggle="dropdown">⋮</button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><a class="dropdown-item py-1" href="#" @click.prevent="addStatus(combatant)">Add
-                                                Status</a></li>
-                                        <li>
-                                            <hr class="dropdown-divider my-1">
-                                        </li>
-                                        <li><a class="dropdown-item text-danger py-1" href="#"
-                                                @click.prevent="removeCombatant(index)">Remove</a></li>
-                                    </ul>
+                                <!-- INLINE NOTES -->
+                                <div x-show="combatant.showNotesInline" x-transition
+                                    class="mt-2 p-2 bg-dark rounded border border-secondary">
+                                    <textarea class="form-control form-control-sm bg-transparent text-light border-0"
+                                        rows="2" placeholder="Note rapide..." x-model="combatant.personalNotes"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -179,8 +198,17 @@
                 <h4 class="mb-3">📜 Details</h4>
                 <template x-if="selectedCombatant">
                     <div>
-                        <h3 x-text="selectedCombatant.name"
-                            :class="selectedCombatant.type === 'player' ? 'text-info' : 'text-warning'"></h3>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h3 class="mb-0" x-text="selectedCombatant.alias || selectedCombatant.name"
+                                    :class="selectedCombatant.type === 'player' ? 'text-info' : 'text-warning'"></h3>
+                                <p class="small text-muted" x-show="selectedCombatant.alias">Original: <span
+                                        x-text="selectedCombatant.name"></span></p>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-secondary">AC <span x-text="selectedCombatant.ac"></span></span>
+                            </div>
+                        </div>
 
                         <!-- ATTRIBUTES GRID -->
                         <div class="row g-1 mb-3 text-center">
@@ -188,23 +216,29 @@
                                 <div class="col-4">
                                     <div class="bg-secondary bg-opacity-25 rounded p-1 border"
                                         :class="selectedCombatant.stats.saves[stat] ? 'border-info' : 'border-secondary'">
-                                        <div class="text-uppercase small fw-bold" x-text="stat"></div>
-                                        <div class="fs-5" x-text="val"></div>
-                                        <div class="small"
+                                        <div class="text-uppercase small fw-bold" x-text="stat" style="font-size: 0.6rem;">
+                                        </div>
+                                        <div class="fs-5 fw-bold" x-text="val"></div>
+                                        <div class="small fw-bold text-info" style="font-size: 0.7rem;"
                                             x-text="(getStatModifier(val) >= 0 ? '+' : '') + getStatModifier(val)"></div>
                                     </div>
                                 </div>
                             </template>
                         </div>
 
+                        <!-- PERSONAL NOTES -->
                         <div class="mb-3">
-                            <label class="small text-muted">Notes / Personal Notes</label>
-                            <textarea class="form-control bg-secondary text-white border-0" rows="4"
-                                x-model="selectedCombatant.notes"></textarea>
+                            <label class="small text-info fw-bold mb-1"><i class="bi bi-pencil-square"></i> Personal DM
+                                Notes</label>
+                            <textarea class="form-control bg-secondary text-white border-0" rows="5"
+                                x-model="selectedCombatant.personalNotes"
+                                placeholder="Write encounter-specific notes here..."></textarea>
                         </div>
 
+                        <!-- STAT BLOCK (FROM TEMPLATE) -->
                         <div class="mb-3">
-                            <h5 class="border-bottom border-secondary pb-1">Stat Block</h5>
+                            <h5 class="border-bottom border-secondary pb-1 text-warning small fw-bold text-uppercase"><i
+                                    class="bi bi-shield-shaded"></i> Stat Block</h5>
                             <div x-html="selectedStatBlock"
                                 class="statblock-rendered p-2 bg-light text-dark rounded small shadow-sm"></div>
                         </div>
@@ -212,7 +246,7 @@
                 </template>
                 <div x-show="!selectedCombatant" class="text-muted text-center pt-5">
                     <i class="bi bi-info-circle fs-3"></i>
-                    <p>Select a combatant</p>
+                    <p>Select a combatant to see details</p>
                 </div>
             </div>
         </div>
@@ -241,7 +275,7 @@
                                 </div>
                                 <div class="mb-2">
                                     <label class="small"
-                                        x-text="characterForm.stats.type === 'template' ? 'HP Formula (3d8+4)' : 'Default HP'"></label>
+                                        x-text="characterForm.type === 'template' ? 'HP Formula (3d8+4)' : 'Default HP'"></label>
                                     <input type="text" class="form-control form-control-sm bg-secondary text-white border-0"
                                         x-model="characterForm.stats.hp_formula">
                                 </div>
@@ -333,12 +367,40 @@
     <script src="{{ asset('js/dm-screen.js') }}?v={{ time() }}" defer></script>
     <script src="//unpkg.com/alpinejs" defer></script>
     <style>
+        .combatant-card {
+            transition: all 0.2s;
+            border: 1px solid #444;
+        }
+
+        .active-turn {
+            border: 3px solid #ffc107 !important;
+            box-shadow: 0 0 10px rgba(255, 193, 7, 0.4);
+            z-index: 2;
+        }
+
+        .selected-combatant {
+            border: 3px solid #0dcaf0 !important;
+            box-shadow: 0 0 10px rgba(13, 202, 240, 0.4);
+            z-index: 1;
+        }
+
+        .dead-combatant {
+            filter: grayscale(80%);
+            opacity: 0.6;
+            border-color: #dc3545 !important;
+        }
+
         .grayscale {
             filter: grayscale(80%);
         }
 
         .x-small {
             font-size: 0.65rem;
+        }
+
+        .statblock-rendered {
+            max-height: 500px;
+            overflow-y: auto;
         }
 
         .statblock-rendered blockquote {

@@ -25,7 +25,7 @@ function dmScreen() {
                 hp_formula: '1d8',
                 attributes: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
                 saves: { str: false, dex: false, con: false, int: false, wis: false, cha: false },
-                notes: ''
+                notes: '' // Reale Stat Block Markdown
             }
         },
 
@@ -221,14 +221,15 @@ function dmScreen() {
                     instanceId: Date.now() + Math.random(),
                     id: char.id,
                     name: char.name,
+                    alias: '', // Alias opzionale
                     type: char.type,
                     ac: stats.ac || 10,
                     maxHp: hp, hp: hp,
                     initiative: init,
                     statuses: [],
-                    notes: stats.notes || '',
-                    enemyCount: char.type === 'template' ? countSameName + 1 : null,
-                    stats: stats
+                    personalNotes: '', // Note personali del DM (separate dallo statblock)
+                    showNotesInline: false, // Toggle per mostrare note nella card
+                    stats: stats // Qui rimane 'notes' che è lo statblock statico
                 });
             }
             this.sortCombat();
@@ -278,8 +279,10 @@ function dmScreen() {
         },
 
         removeCombatant(index) {
+            const isSelected = (this.selectedCombatant && this.selectedCombatant.instanceId === this.combatants[index].instanceId);
             if (index < this.currentTurnIndex) this.currentTurnIndex--;
             this.combatants.splice(index, 1);
+            if (isSelected) this.selectedCombatant = null;
             this.saveSession();
         },
 
@@ -295,12 +298,13 @@ function dmScreen() {
 
         async selectCombatant(combatant) {
             this.selectedCombatant = combatant;
-            if (combatant.notes) {
+            // Carica lo Stat Block (dalle stats originali del template)
+            if (combatant.stats && combatant.stats.notes) {
                 const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                 const response = await fetch('/dm/api/render-stat-block', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
-                    body: JSON.stringify({ content: combatant.notes })
+                    body: JSON.stringify({ content: combatant.stats.notes })
                 });
                 const data = await response.json();
                 this.selectedStatBlock = data.html;
