@@ -1,3 +1,5 @@
+@extends('layouts.app')
+
 @section('include')
     <script src="//unpkg.com/alpinejs" defer></script>
 @endsection
