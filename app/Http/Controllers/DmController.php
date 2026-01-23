@@ -246,6 +246,11 @@ class DmController extends Controller
         return response()->json(['html' => MarkdownPreprocessor::toHtml($content, 'DM Screen')]);
     }
 
+    public function playerIndex()
+    {
+        return view('dm.player_index');
+    }
+
     public function playerView($share_code)
     {
         $session = DmSession::where('share_code', $share_code)->firstOrFail();

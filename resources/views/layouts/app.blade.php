@@ -62,6 +62,11 @@
 
                     <!-- Right Side Of Navbar -->
                     <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('dm.player.index') }}">
+                                <i class="bi bi-eye"></i> Visuale Giocatori
+                            </a>
+                        </li>
                         <!-- Authentication Links -->
                         @guest
                             @if (Route::has('login'))
@@ -122,6 +127,9 @@
                                         <a class="dropdown-item" href="{{ route('dm.manage') }}">
                                             <i class="bi bi-gear"></i> Gestione Risorse
                                         </a>
+                                        <a class="dropdown-item" href="{{ route('dm.player.index') }}">
+                                            <i class="bi bi-eye"></i> Visuale Giocatori
+                                        </a>
                                         <div class="dropdown-divider"></div>
                                     @endif
 
@@ -131,7 +139,7 @@
 
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                         onclick="event.preventDefault();
-                                                                                             document.getElementById('logout-form').submit();">
+                                                                                                         document.getElementById('logout-form').submit();">
                                         {{ __('Logout') }}
                                     </a>
 
@@ -147,8 +155,8 @@
         </nav>
 
 
-        <main class="py-4 flex-grow-1">
-            <div class="container content @yield('content-class')">
+        <main class="@yield('main-class', 'py-4') flex-grow-1 d-flex flex-column">
+            <div class="@yield('container-class', 'container') content @yield('content-class')">
                 @yield('content')
             </div>
         </main>

@@ -24,6 +24,7 @@ Route::get('/vault/{note?}', [VaultController::class, 'show'])
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
 
 // ========== PLAYER VIEW (Pubblica) ==========
+Route::get('/dm/player', [DmController::class, 'playerIndex'])->name('dm.player.index');
 Route::get('/dm/player/{share_code}', [DmController::class, 'playerView'])->name('dm.player');
 
 // ========== PROFILO UTENTE (autenticato) ==========

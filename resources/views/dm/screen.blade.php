@@ -1,13 +1,16 @@
 @extends('layouts.app')
 
+@section('main-class', 'p-0')
+@section('container-class', 'container-fluid p-0')
+
 @section('content')
-    <div class="container-fluid" x-data="dmScreen({ 
-                    isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
-                    isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
-                })">
-        <div class="row">
+    <div x-data="dmScreen({ 
+                        isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
+                        isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
+                    })">
+        <div class="row gx-0">
             <!-- SIDEBAR: Libreria -->
-            <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3">
+            <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3 custom-scrollbar">
                 <h4 class="mb-3 text-light">📚 Libreria</h4>
 
                 <ul class="nav nav-tabs mb-3" id="libraryTabs" role="tablist">
@@ -107,28 +110,36 @@
                                 <button class="btn btn-sm btn-outline-light dropdown-toggle border-0" type="button"
                                     data-bs-toggle="dropdown" @click="loadSessionsList()">
                                     <i class="bi bi-folder2-open me-1"></i> <span x-text="currentSession.name"></span>
-                                    <span class="ms-2 badge bg-info text-dark" x-text="currentSession.share_code"
+                                    <span class="ms-2 badge bg-warning text-dark" x-text="currentSession.share_code"
                                         x-show="currentSession.share_code"></span>
                                 </button>
-                                <ul class="dropdown-menu dropdown-menu-dark shadow">
+                                <ul class="dropdown-menu dropdown-menu-dark shadow border-secondary">
                                     <li><a class="dropdown-item small py-1" href="#" @click.prevent="createSession()">+
-                                            Nuova
-                                            Sessione</a></li>
+                                            Nuova Sessione</a></li>
                                     <li>
                                         <hr class="dropdown-divider">
                                     </li>
                                     <template x-for="s in availableSessions" :key="s.id">
-                                        <li class="d-flex align-items-center justify-content-between px-2">
-                                            <a class="dropdown-item small py-1 rounded flex-grow-1" href="#"
-                                                @click.prevent="switchSession(s)"
-                                                :class="currentSession.id === s.id ? 'active' : ''" x-text="s.name"></a>
-                                            <button class="btn btn-sm btn-link text-danger p-0 ms-1"
+                                        <li class="d-flex align-items-center justify-content-between px-2 py-1">
+                                            <div class="flex-grow-1 d-flex flex-column" @click="switchSession(s)"
+                                                style="cursor: pointer;">
+                                                <span class="small fw-bold text-light" x-text="s.name"></span>
+                                                <span class="x-small text-muted" x-text="s.share_code"></span>
+                                            </div>
+                                            <button class="btn btn-sm btn-link text-danger p-0 ms-1 shadow-none"
                                                 @click.stop="deleteSession(s.id)" x-show="availableSessions.length > 1"><i
                                                     class="bi bi-x-circle"></i></button>
                                         </li>
                                     </template>
                                 </ul>
                             </div>
+                            <!-- COPY LINK BUTTON -->
+                            <button class="btn btn-sm btn-outline-info border-0 ms-1 px-2"
+                                x-show="currentSession.share_code"
+                                @click="const url = window.location.origin + '/dm/player/' + currentSession.share_code; navigator.clipboard.writeText(url); alert('Link copiato: ' + url)"
+                                title="Copia link per i giocatori">
+                                <i class="bi bi-link-45deg"></i>
+                            </button>
                         </div>
                         <div class="d-flex align-items-center">
                             <div class="form-check form-switch me-3">
@@ -150,10 +161,10 @@
                         <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                             <div class="list-group-item mb-2 rounded border-0 shadow-sm combatant-card p-0 overflow-hidden"
                                 x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                        'active-turn': currentTurnIndex === index,
-                                        'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
-                                        'dead-combatant bg-black bg-opacity-50': combatant.hp <= 0 && combatant.type !== 'player'
-                                    }" @click="selectCombatant(combatant)">
+                                                    'active-turn': currentTurnIndex === index,
+                                                    'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
+                                                    'dead-combatant bg-black bg-opacity-50': combatant.hp <= 0 && combatant.type !== 'player'
+                                                }" @click="selectCombatant(combatant)">
 
                                 <div class="d-flex align-items-center p-2">
                                     <!-- INITIATIVE -->
@@ -259,252 +270,259 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+                <!-- Center column ends here, do NOT close the row yet -->
 
-        <!-- RIGHT: Pannello Dettagli -->
-        <div class="col-md-3 border-start vh-100 overflow-auto bg-dark p-3 text-light">
-            <h4 class="mb-3">📜 Dettagli</h4>
-            <template x-if="selectedCombatant">
-                <div>
-                    <div class="d-flex justify-content-between align-items-start mb-2">
+                <!-- RIGHT: Pannello Dettagli -->
+                <div class="col-md-3 border-start vh-100 overflow-auto bg-dark p-3 text-light custom-scrollbar">
+                    <h4 class="mb-3">📜 Dettagli</h4>
+                    <template x-if="selectedCombatant">
                         <div>
-                            <h3 class="mb-0" x-text="selectedCombatant.alias || selectedCombatant.name"
-                                :class="selectedCombatant.type === 'player' ? 'text-info' : 'text-warning'"></h3>
-                            <p class="small text-muted" x-show="selectedCombatant.alias">Originale: <span
-                                    x-text="selectedCombatant.name"></span></p>
-                        </div>
-                        <div class="text-end">
-                            <span class="badge bg-secondary">CA <span x-text="selectedCombatant.ac"></span></span>
-                        </div>
-                    </div>
-
-                    <!-- GRIGLIA CARATTERISTICHE -->
-                    <div class="row g-1 mb-3 text-center">
-                        <template x-for="(val, stat) in selectedCombatant.stats.attributes" :key="stat">
-                            <div class="col-4">
-                                <div class="bg-secondary bg-opacity-25 rounded p-1 border"
-                                    :class="selectedCombatant.stats.saves[stat] ? 'border-info' : 'border-secondary'">
-                                    <div class="text-uppercase small fw-bold" x-text="stat" style="font-size: 0.6rem;">
-                                    </div>
-                                    <div class="fs-5 fw-bold" x-text="val"></div>
-                                    <div class="small fw-bold text-info" style="font-size: 0.7rem;"
-                                        x-text="(getStatModifier(val) >= 0 ? '+' : '') + getStatModifier(val)"></div>
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h3 class="mb-0" x-text="selectedCombatant.alias || selectedCombatant.name"
+                                        :class="selectedCombatant.type === 'player' ? 'text-info' : 'text-warning'"></h3>
+                                    <p class="small text-muted" x-show="selectedCombatant.alias">Originale: <span
+                                            x-text="selectedCombatant.name"></span></p>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-secondary">CA <span x-text="selectedCombatant.ac"></span></span>
                                 </div>
                             </div>
-                        </template>
-                    </div>
 
-                    <!-- NOTE PERSONALI -->
-                    <div class="mb-3" x-show="isMaster">
-                        <label class="small text-info fw-bold mb-1"><i class="bi bi-pencil-square"></i> Note Personali
-                            DM</label>
-                        <textarea class="form-control bg-secondary text-white border-0" rows="5"
-                            x-model="selectedCombatant.personalNotes" placeholder="Note per questo incontro..."></textarea>
-                    </div>
-
-                    <!-- STAT BLOCK -->
-                    <div class="mb-3">
-                        <h5 class="border-bottom border-secondary pb-1 text-warning small fw-bold text-uppercase"><i
-                                class="bi bi-shield-shaded"></i> Stat Block</h5>
-                        <div x-html="selectedStatBlock"
-                            class="statblock-rendered p-2 bg-dark text-white rounded small shadow-sm"></div>
-                    </div>
-                </div>
-            </template>
-            <div x-show="!selectedCombatant" class="text-muted text-center pt-5">
-                <i class="bi bi-info-circle fs-3"></i>
-                <p>Seleziona un combattente per i dettagli</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: Crea/Modifica Personaggio -->
-    <div class="modal fade" id="characterModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content bg-dark text-white border-secondary shadow">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title" x-text="modalMode === 'create' ? 'Crea' : 'Modifica'"></h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-2">
-                                <label class="small">Nome</label>
-                                <input type="text" class="form-control form-control-sm bg-secondary text-white border-0"
-                                    x-model="characterForm.name">
-                            </div>
-                            <div class="mb-2">
-                                <label class="small">Classe Armatura (CA)</label>
-                                <input type="number" class="form-control form-control-sm bg-secondary text-white border-0"
-                                    x-model.number="characterForm.stats.ac">
-                            </div>
-                            <div class="mb-2">
-                                <label class="small"
-                                    x-text="characterForm.type === 'template' ? 'Formula HP (es. 3d8+4)' : 'HP Iniziali'"></label>
-                                <input type="text" class="form-control form-control-sm bg-secondary text-white border-0"
-                                    x-model="characterForm.stats.hp_formula">
-                            </div>
-                        </div>
-                        <!-- GRIGLIA CARATTERISTICHE -->
-                        <div class="col-md-6 border-start border-secondary">
-                            <label class="small mb-1 d-block text-center">Caratteristiche e Tiri Salvezza</label>
-                            <div class="row g-2">
-                                <template x-for="(val, stat) in characterForm.stats.attributes" :key="stat">
-                                    <div class="col-4 text-center">
-                                        <div class="text-uppercase small fw-bold" x-text="stat"></div>
-                                        <input type="number"
-                                            class="form-control form-control-sm bg-secondary text-white border-0 text-center"
-                                            x-model.number="characterForm.stats.attributes[stat]">
-                                        <div class="form-check form-check-inline mt-1">
-                                            <input class="form-check-input" type="checkbox"
-                                                x-model="characterForm.stats.saves[stat]">
-                                            <label class="form-check-label x-small">T.S.</label>
+                            <!-- GRIGLIA CARATTERISTICHE -->
+                            <div class="row g-1 mb-3 text-center">
+                                <template x-for="(val, stat) in selectedCombatant.stats.attributes" :key="stat">
+                                    <div class="col-4">
+                                        <div class="bg-secondary bg-opacity-25 rounded p-1 border"
+                                            :class="selectedCombatant.stats.saves[stat] ? 'border-info' : 'border-secondary'">
+                                            <div class="text-uppercase small fw-bold" x-text="stat"
+                                                style="font-size: 0.6rem;">
+                                            </div>
+                                            <div class="fs-5 fw-bold" x-text="val"></div>
+                                            <div class="small fw-bold text-info" style="font-size: 0.7rem;"
+                                                x-text="(getStatModifier(val) >= 0 ? '+' : '') + getStatModifier(val)">
+                                            </div>
                                         </div>
                                     </div>
                                 </template>
                             </div>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <label class="small">Stat Block (Markdown)</label>
-                        <textarea class="form-control bg-secondary text-white border-0" rows="6"
-                            x-model="characterForm.stats.notes"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
-                    <button type="button" class="btn btn-primary" @click="saveCharacter()">Salva</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- MODAL: Gestione Gruppi -->
-    <div class="modal fade" id="groupModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark text-white border-secondary shadow">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title">Insieme / Gruppo</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label>Nome Gruppo (es. Il Party)</label>
-                        <input type="text" class="form-control bg-secondary text-white border-0" x-model="groupForm.name">
-                    </div>
-                    <label class="small">Membri</label>
-                    <template x-for="(member, idx) in groupForm.members" :key="idx">
-                        <div class="d-flex mb-2 align-items-center">
-                            <select class="form-control form-control-sm bg-secondary text-white border-0 me-1"
-                                x-model="member.character_id">
-                                <option value="">Seleziona...</option>
-                                <optgroup label="Giocatori">
-                                    <template x-for="p in players" :key="p.id">
-                                        <option :value="p.id" x-text="p.name"></option>
-                                    </template>
-                                </optgroup>
-                                <optgroup label="Mostri">
-                                    <template x-for="t in templates" :key="t.id">
-                                        <option :value="t.id" x-text="t.name"></option>
-                                    </template>
-                                </optgroup>
-                            </select>
-                            <input type="number"
-                                class="form-control form-control-sm bg-secondary text-white border-0 w-25 me-1"
-                                x-model.number="member.qty">
-                            <button class="btn btn-sm btn-outline-danger border-0" @click="removeGroupMember(idx)"><i
-                                    class="bi bi-trash"></i></button>
+                            <!-- NOTE PERSONALI -->
+                            <div class="mb-3" x-show="isMaster">
+                                <label class="small text-info fw-bold mb-1"><i class="bi bi-pencil-square"></i> Note
+                                    Personali
+                                    DM</label>
+                                <textarea class="form-control bg-secondary text-white border-0" rows="5"
+                                    x-model="selectedCombatant.personalNotes"
+                                    placeholder="Note per questo incontro..."></textarea>
+                            </div>
+
+                            <!-- STAT BLOCK -->
+                            <div class="mb-3">
+                                <h5 class="border-bottom border-secondary pb-1 text-warning small fw-bold text-uppercase"><i
+                                        class="bi bi-shield-shaded"></i> Stat Block</h5>
+                                <div x-html="selectedStatBlock"
+                                    class="statblock-rendered p-2 bg-dark text-white rounded small shadow-sm"></div>
+                            </div>
                         </div>
                     </template>
-                    <button class="btn btn-sm btn-outline-info w-100" @click="addGroupMember()">+ Aggiungi
-                        Membro</button>
+                    <div x-show="!selectedCombatant" class="text-muted text-center pt-5">
+                        <i class="bi bi-info-circle fs-3"></i>
+                        <p>Seleziona un combattente per i dettagli</p>
+                    </div>
                 </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
-                    <button type="button" class="btn btn-primary" @click="saveGroup()">Salva Gruppo</button>
+            </div>
+
+            <!-- MODAL: Crea/Modifica Personaggio -->
+            <div class="modal fade" id="characterModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content bg-dark text-white border-secondary shadow">
+                        <div class="modal-header border-secondary">
+                            <h5 class="modal-title" x-text="modalMode === 'create' ? 'Crea' : 'Modifica'"></h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <label class="small">Nome</label>
+                                        <input type="text"
+                                            class="form-control form-control-sm bg-secondary text-white border-0"
+                                            x-model="characterForm.name">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="small">Classe Armatura (CA)</label>
+                                        <input type="number"
+                                            class="form-control form-control-sm bg-secondary text-white border-0"
+                                            x-model.number="characterForm.stats.ac">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="small"
+                                            x-text="characterForm.type === 'template' ? 'Formula HP (es. 3d8+4)' : 'HP Iniziali'"></label>
+                                        <input type="text"
+                                            class="form-control form-control-sm bg-secondary text-white border-0"
+                                            x-model="characterForm.stats.hp_formula">
+                                    </div>
+                                </div>
+                                <!-- GRIGLIA CARATTERISTICHE -->
+                                <div class="col-md-6 border-start border-secondary">
+                                    <label class="small mb-1 d-block text-center">Caratteristiche e Tiri Salvezza</label>
+                                    <div class="row g-2">
+                                        <template x-for="(val, stat) in characterForm.stats.attributes" :key="stat">
+                                            <div class="col-4 text-center">
+                                                <div class="text-uppercase small fw-bold" x-text="stat"></div>
+                                                <input type="number"
+                                                    class="form-control form-control-sm bg-secondary text-white border-0 text-center"
+                                                    x-model.number="characterForm.stats.attributes[stat]">
+                                                <div class="form-check form-check-inline mt-1">
+                                                    <input class="form-check-input" type="checkbox"
+                                                        x-model="characterForm.stats.saves[stat]">
+                                                    <label class="form-check-label x-small">T.S.</label>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <label class="small">Stat Block (Markdown)</label>
+                                <textarea class="form-control bg-secondary text-white border-0" rows="6"
+                                    x-model="characterForm.stats.notes"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-secondary">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                            <button type="button" class="btn btn-primary" @click="saveCharacter()">Salva</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: Gestione Gruppi -->
+            <div class="modal fade" id="groupModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content bg-dark text-white border-secondary shadow">
+                        <div class="modal-header border-secondary">
+                            <h5 class="modal-title">Insieme / Gruppo</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label>Nome Gruppo (es. Il Party)</label>
+                                <input type="text" class="form-control bg-secondary text-white border-0"
+                                    x-model="groupForm.name">
+                            </div>
+                            <label class="small">Membri</label>
+                            <template x-for="(member, idx) in groupForm.members" :key="idx">
+                                <div class="d-flex mb-2 align-items-center">
+                                    <select class="form-control form-control-sm bg-secondary text-white border-0 me-1"
+                                        x-model="member.character_id">
+                                        <option value="">Seleziona...</option>
+                                        <optgroup label="Giocatori">
+                                            <template x-for="p in players" :key="p.id">
+                                                <option :value="p.id" x-text="p.name"></option>
+                                            </template>
+                                        </optgroup>
+                                        <optgroup label="Mostri">
+                                            <template x-for="t in templates" :key="t.id">
+                                                <option :value="t.id" x-text="t.name"></option>
+                                            </template>
+                                        </optgroup>
+                                    </select>
+                                    <input type="number"
+                                        class="form-control form-control-sm bg-secondary text-white border-0 w-25 me-1"
+                                        x-model.number="member.qty">
+                                    <button class="btn btn-sm btn-outline-danger border-0"
+                                        @click="removeGroupMember(idx)"><i class="bi bi-trash"></i></button>
+                                </div>
+                            </template>
+                            <button class="btn btn-sm btn-outline-info w-100" @click="addGroupMember()">+ Aggiungi
+                                Membro</button>
+                        </div>
+                        <div class="modal-footer border-secondary">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                            <button type="button" class="btn btn-primary" @click="saveGroup()">Salva Gruppo</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    </div>
 
-    <!-- SCRIPTS -->
-    <script src="{{ asset('js/dm-screen.js') }}?v={{ time() }}" defer></script>
-    <script src="//unpkg.com/alpinejs" defer></script>
-    <style>
-        .combatant-card {
-            transition: all 0.2s;
-            border: 1px solid #444;
-        }
+        <!-- SCRIPTS -->
+        <script src="{{ asset('js/dm-screen.js') }}?v={{ time() }}" defer></script>
+        <script src="//unpkg.com/alpinejs" defer></script>
+        <style>
+            .combatant-card {
+                transition: all 0.2s;
+                border: 1px solid #444;
+            }
 
-        .active-turn {
-            border: 3px solid #ffc107 !important;
-            box-shadow: 0 0 10px rgba(255, 193, 7, 0.4);
-            z-index: 2;
-        }
+            .active-turn {
+                border: 3px solid #ffc107 !important;
+                box-shadow: 0 0 10px rgba(255, 193, 7, 0.4);
+                z-index: 2;
+            }
 
-        .selected-combatant {
-            border: 3px solid #0dcaf0 !important;
-            box-shadow: 0 0 10px rgba(13, 202, 240, 0.4);
-            z-index: 1;
-        }
+            .selected-combatant {
+                border: 3px solid #0dcaf0 !important;
+                box-shadow: 0 0 10px rgba(13, 202, 240, 0.4);
+                z-index: 1;
+            }
 
-        .dead-combatant {
-            filter: grayscale(80%);
-            opacity: 0.6;
-            border-color: #dc3545 !important;
-        }
+            .dead-combatant {
+                filter: grayscale(80%);
+                opacity: 0.6;
+                border-color: #dc3545 !important;
+            }
 
-        .grayscale {
-            filter: grayscale(80%);
-        }
+            .grayscale {
+                filter: grayscale(80%);
+            }
 
-        .x-small {
-            font-size: 0.65rem;
-        }
+            .x-small {
+                font-size: 0.65rem;
+            }
 
-        .statblock-rendered {
-            max-height: 500px;
-            overflow-y: auto;
-        }
+            .statblock-rendered {
+                max-height: 500px;
+                overflow-y: auto;
+            }
 
-        .statblock-rendered blockquote {
-            border-left: 3px solid #ddd;
-            padding-left: 10px;
-            color: #555;
-        }
+            .statblock-rendered blockquote {
+                border-left: 3px solid #ddd;
+                padding-left: 10px;
+                color: #555;
+            }
 
-        .statblock-rendered table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 10px;
-        }
+            .statblock-rendered table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 10px;
+            }
 
-        .statblock-rendered table td,
-        .statblock-rendered table th {
-            border: 1px solid #ddd;
-            padding: 4px;
-        }
+            .statblock-rendered table td,
+            .statblock-rendered table th {
+                border: 1px solid #ddd;
+                padding: 4px;
+            }
 
-        .statblock-rendered h1,
-        .statblock-rendered h2,
-        .statblock-rendered h3 {
-            color: #822;
-            border-bottom: 2px solid #822;
-            margin-top: 15px;
-            margin-bottom: 5px;
-        }
+            .statblock-rendered h1,
+            .statblock-rendered h2,
+            .statblock-rendered h3 {
+                color: #822;
+                border-bottom: 2px solid #822;
+                margin-top: 15px;
+                margin-bottom: 5px;
+            }
 
-        .nav-tabs .nav-link {
-            color: #aaa;
-        }
+            .nav-tabs .nav-link {
+                color: #aaa;
+            }
 
-        .nav-tabs .nav-link.active {
-            background-color: #333;
-            color: #fff;
-            border-color: #444;
-        }
-    </style>
+            .nav-tabs .nav-link.active {
+                background-color: #333;
+                color: #fff;
+                border-color: #444;
+            }
+        </style>
 @endsection
