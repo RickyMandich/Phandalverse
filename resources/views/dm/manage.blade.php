@@ -1,4 +1,128 @@
-@extends('layouts.app')
+@section('include')
+    <script src="//unpkg.com/alpinejs" defer></script>
+@endsection
+
+@section('script')
+    <script>
+        function dmManage() {
+            return {
+                activeTab: 'characters',
+                characters: [],
+                sessions: [],
+                charFilter: '',
+
+                init() {
+                    this.reloadData();
+                },
+
+                async reloadData() {
+                    const response = await fetch('/dm/api/manage-data');
+                    const data = await response.json();
+                    this.characters = data.characters;
+                    this.sessions = data.sessions;
+                },
+
+                get filteredCharacters() {
+                    if (!this.charFilter) return this.characters;
+                    const f = this.charFilter.toLowerCase();
+                    return this.characters.filter(c =>
+                        c.name.toLowerCase().includes(f) || c.type.toLowerCase().includes(f)
+                    );
+                },
+
+                getStats(char) {
+                    return typeof char.stats === 'string' ? JSON.parse(char.stats) : (char.stats || {});
+                },
+
+                getData(session) {
+                    return typeof session.data === 'string' ? JSON.parse(session.data) : (session.data || {});
+                },
+
+                canEdit(char) {
+                    return char.user_id === {{ Auth::id() }} || {{ Auth::user()->isAdmin() ? 'true' : 'false' }};
+                },
+
+                formatDate(dateStr) {
+                    return new Date(dateStr).toLocaleString('it-IT');
+                },
+
+                async editChar(char) {
+                    alert("Puoi modificare i dettagli dei personaggi direttamente dallo 'DM Screen' cliccando sull'icona della matita nella libreria.");
+                },
+
+                async deleteChar(id) {
+                    if (!confirm('Eliminare definitivamente questo personaggio?')) return;
+                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    await fetch(`/dm/api/characters/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-TOKEN': token }
+                    });
+                    this.reloadData();
+                },
+
+                async renameSession(s) {
+                    const newName = prompt("Nuovo nome per la sessione:", s.name);
+                    if (!newName || newName === s.name) return;
+                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    await fetch(`/dm/api/sessions/${s.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+                        body: JSON.stringify({ name: newName, data: this.getData(s) })
+                    });
+                    this.reloadData();
+                },
+
+                async deleteSession(id) {
+                    if (!confirm('Eliminare definitivamente questa sessione?')) return;
+                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    await fetch(`/dm/api/sessions/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-TOKEN': token }
+                    });
+                    this.reloadData();
+                }
+            }
+        }
+    </script>
+@endsection
+
+@section('style')
+    <style>
+        .nav-pills .nav-link {
+            color: #aaa;
+            transition: all 0.2s;
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: #ffc107;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .nav-pills .nav-link:hover:not(.active) {
+            background-color: #444;
+            color: #fff;
+        }
+
+        .table-dark {
+            --bs-table-bg: transparent;
+        }
+
+        .table-secondary {
+            --bs-table-bg: #444;
+            color: #fff;
+            border-bottom: 0;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+    </style>
+@endsection
 
 @section('content')
     <div class="container" x-data="dmManage()">
@@ -120,124 +244,4 @@
             </div>
         </div>
     </div>
-
-    <script>
-        function dmManage() {
-            return {
-                activeTab: 'characters',
-                characters: [],
-                sessions: [],
-                charFilter: '',
-
-                init() {
-                    this.reloadData();
-                },
-
-                async reloadData() {
-                    const response = await fetch('/dm/api/manage-data');
-                    const data = await response.json();
-                    this.characters = data.characters;
-                    this.sessions = data.sessions;
-                },
-
-                get filteredCharacters() {
-                    if (!this.charFilter) return this.characters;
-                    const f = this.charFilter.toLowerCase();
-                    return this.characters.filter(c =>
-                        c.name.toLowerCase().includes(f) || c.type.toLowerCase().includes(f)
-                    );
-                },
-
-                getStats(char) {
-                    return typeof char.stats === 'string' ? JSON.parse(char.stats) : (char.stats || {});
-                },
-
-                getData(session) {
-                    return typeof session.data === 'string' ? JSON.parse(session.data) : (session.data || {});
-                },
-
-                canEdit(char) {
-                    return char.user_id === {{ Auth::id() }} || {{ Auth::user()->isAdmin() ? 'true' : 'false' }};
-                },
-
-                formatDate(dateStr) {
-                    return new Date(dateStr).toLocaleString('it-IT');
-                },
-
-                async editChar(char) {
-                    // Reindirizza allo schermo DM con il modal aperto? 
-                    // O meglio: informiamo l'utente di farlo dallo schermo DM perché lì c'è tutta la logica di parsing HP/Saves
-                    alert("Puoi modificare i dettagli dei personaggi direttamente dallo 'DM Screen' cliccando sull'icona della matita nella libreria.");
-                },
-
-                async deleteChar(id) {
-                    if (!confirm('Eliminare definitivamente questo personaggio?')) return;
-                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    await fetch(`/dm/api/characters/${id}`, {
-                        method: 'DELETE',
-                        headers: { 'X-CSRF-TOKEN': token }
-                    });
-                    this.reloadData();
-                },
-
-                async renameSession(s) {
-                    const newName = prompt("Nuovo nome per la sessione:", s.name);
-                    if (!newName || newName === s.name) return;
-                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    await fetch(`/dm/api/sessions/${s.id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
-                        body: JSON.stringify({ name: newName, data: this.getData(s) })
-                    });
-                    this.reloadData();
-                },
-
-                async deleteSession(id) {
-                    if (!confirm('Eliminare definitivamente questa sessione?')) return;
-                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    await fetch(`/dm/api/sessions/${id}`, {
-                        method: 'DELETE',
-                        headers: { 'X-CSRF-TOKEN': token }
-                    });
-                    this.reloadData();
-                }
-            }
-        }
-    </script>
-
-    <style>
-        .nav-pills .nav-link {
-            color: #aaa;
-            transition: all 0.2s;
-        }
-
-        .nav-pills .nav-link.active {
-            background-color: #ffc107;
-            color: #000;
-            font-weight: bold;
-        }
-
-        .nav-pills .nav-link:hover:not(.active) {
-            background-color: #444;
-            color: #fff;
-        }
-
-        .table-dark {
-            --bs-table-bg: transparent;
-        }
-
-        .table-secondary {
-            --bs-table-bg: #444;
-            color: #fff;
-            border-bottom: 0;
-        }
-
-        tbody tr {
-            transition: background 0.2s;
-        }
-
-        tbody tr:hover {
-            background: rgba(255, 255, 255, 0.05) !important;
-        }
-    </style>
 @endsection
