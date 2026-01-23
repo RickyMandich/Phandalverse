@@ -41,7 +41,7 @@
 
                 @isset($sessionInfo)
                     {{-- Info sessione --}}
-                    <div class="card-body border-bottom py-2 bg-light">
+                    <div class="card-body border-bottom py-2 bg-dark">
                         <div class="row small">
                             <div class="col-md-3">
                                 <strong>Stato:</strong>
@@ -71,8 +71,8 @@
                 <div class="card-body">
                     <pre class="bg-dark text-light p-3"
                         style="max-height: 600px; overflow-y: auto; overflow-x: auto; white-space: pre;">
-                                {{ $fileContent }}
-                            </pre>
+                                        {{ $fileContent }}
+                                    </pre>
                 </div>
             </div>
         @else

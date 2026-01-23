@@ -2,9 +2,9 @@
 
 @section('content')
     <div class="container-fluid" x-data="dmScreen({ 
-            isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
-            isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
-        })">
+                isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
+                isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
+            })">
         <div class="row">
             <!-- SIDEBAR: Libreria -->
             <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3">
@@ -139,10 +139,10 @@
                     <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                         <div class="card mb-2 combatant-card"
                             x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                                            'active-turn': currentTurnIndex === index, 
-                                                            'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
-                                                            'dead-combatant': combatant.hp <= 0 && combatant.type !== 'player'
-                                                        }" :id="'combatant-' + combatant.instanceId">
+                                                                'active-turn': currentTurnIndex === index, 
+                                                                'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
+                                                                'dead-combatant': combatant.hp <= 0 && combatant.type !== 'player'
+                                                            }" :id="'combatant-' + combatant.instanceId">
                             <div class="card-body p-2">
                                 <div class="d-flex align-items-center">
                                     <!-- INIZIATIVA -->
@@ -292,7 +292,7 @@
                             <h5 class="border-bottom border-secondary pb-1 text-warning small fw-bold text-uppercase"><i
                                     class="bi bi-shield-shaded"></i> Stat Block</h5>
                             <div x-html="selectedStatBlock"
-                                class="statblock-rendered p-2 bg-light text-dark rounded small shadow-sm"></div>
+                                class="statblock-rendered p-2 bg-dark text-white rounded small shadow-sm"></div>
                         </div>
                     </div>
                 </template>
