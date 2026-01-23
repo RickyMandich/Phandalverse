@@ -186,7 +186,7 @@
                                             x-text="char.type === 'template' ? 'Mostro' : (char.type === 'player' ? 'Giocatore' : 'Gruppo')"></span>
                                     </td>
                                     <td class="small text-muted"
-                                        x-text="char.user_id === {{ Auth::id() }} ? 'Tu' : char.user_name">
+                                        x-text="char.user_id === {{ Auth::id() }} ? 'Tu' : (char.user ? char.user.name : 'Sistema')">
                                     </td>
                                     <td x-text="getStats(char).ac || '-'"></td>
                                     <td x-text="getStats(char).hp_formula || '-'"></td>

@@ -34,10 +34,11 @@ class DmController extends Controller
         $isMaster = $user->isMaster();
         $isAdmin = $user->isAdmin();
 
-        $characters = DmCharacter::when(!$isAdmin, function ($q) use ($userId) {
-            $q->where('user_id', $userId)
-                ->orWhere('type', 'template');
-        })
+        $characters = DmCharacter::with('user')
+            ->when(!$isAdmin, function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                    ->orWhere('type', 'template');
+            })
             ->orderBy('type')
             ->orderBy('name')
             ->get();
@@ -85,7 +86,8 @@ class DmController extends Controller
         $isMaster = Auth::user()->isMaster();
 
         // Public templates + User's own players/groups
-        $characters = DmCharacter::where('type', 'template')
+        $characters = DmCharacter::with('user')
+            ->where('type', 'template')
             ->orWhere('user_id', $userId)
             ->orderBy('name')
             ->get();
