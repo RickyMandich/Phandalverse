@@ -23,10 +23,12 @@ Route::get('/vault/{note?}', [VaultController::class, 'show'])
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
 
+// ========== API PUBBLICA SESSIONI (Per visuale giocatori) ==========
+Route::get('/dm/api/public/sessions/{share_code}', [DmController::class, 'publicLoadSession']);
+
 // ========== PLAYER VIEW (Pubblica) ==========
 Route::get('/dm/player', [DmController::class, 'playerIndex'])->name('dm.player.index');
 Route::get('/dm/player/{share_code}', [DmController::class, 'playerView'])->name('dm.player');
-Route::get('/dm/api/public/sessions/{share_code}', [DmController::class, 'publicLoadSession']);
 
 // ========== PROFILO UTENTE (autenticato) ==========
 Route::middleware(['auth'])->group(function () {

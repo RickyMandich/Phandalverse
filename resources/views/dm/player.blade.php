@@ -76,6 +76,7 @@
         </div>
     </div>
 
+    <script src="//unpkg.com/alpinejs" defer></script>
     <script>
         function playerView(config) {
             return {
@@ -83,12 +84,11 @@
                 round: 1,
                 currentTurnIndex: 0,
                 hideDead: false,
-                pollingInterval: null,
 
                 init() {
+                    console.log("Player View Initialized for Code:", config.shareCode);
                     this.fetchData();
-                    // Polling ogni 3 secondi per aggiornamenti in tempo reale
-                    this.pollingInterval = setInterval(() => this.fetchData(), 3000);
+                    setInterval(() => this.fetchData(), 3000);
                 },
 
                 async fetchData() {
@@ -96,18 +96,19 @@
                         const response = await fetch(`/dm/api/public/sessions/${config.shareCode}`);
                         if (response.ok) {
                             const session = await response.json();
-                            console.log("Player View Data Sync:", session);
-                            const data = session.data || {};
-                            this.combatants = data.combatants || [];
-                            this.round = data.round || 1;
-                            this.currentTurnIndex = data.currentTurnIndex || 0;
-                            this.hideDead = data.hideDead || false;
-
-                            // Sort locally to ensure same order as Master
-                            this.combatants.sort((a, b) => b.initiative - a.initiative);
+                            console.log("Sync Response:", session);
+                            if (session && session.data) {
+                                const d = typeof session.data === 'string' ? JSON.parse(session.data) : session.data;
+                                this.combatants = d.combatants || [];
+                                this.round = d.round || 1;
+                                this.currentTurnIndex = d.currentTurnIndex || 0;
+                                this.hideDead = d.hideDead || false;
+                            }
+                        } else {
+                            console.error("Fetch failed with status:", response.status);
                         }
                     } catch (e) {
-                        console.error("Errore aggiornamento dati player view:", e);
+                        console.error("Data Sync Error:", e);
                     }
                 }
             }
