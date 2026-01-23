@@ -6,7 +6,7 @@ function dmScreen() {
         combatants: [],
         round: 1,
         currentTurnIndex: 0,
-        
+
         // Modal & Selection
         selectedCombatant: null,
         selectedStatBlock: '',
@@ -28,9 +28,16 @@ function dmScreen() {
         init() {
             this.loadCharacters();
             this.loadSession();
-            this.characterModal = new bootstrap.Modal(document.getElementById('characterModal'));
-            
-            // Auto-save every 30 seconds or on change
+
+            // Initialization might happen before bootstrap is ready or modal is in DOM
+            this.$nextTick(() => {
+                const modalEl = document.getElementById('characterModal');
+                if (modalEl && window.bootstrap) {
+                    this.characterModal = new window.bootstrap.Modal(modalEl);
+                }
+            });
+
+            // Auto-save every 30 seconds
             setInterval(() => {
                 this.saveSession();
             }, 30000);
@@ -57,7 +64,7 @@ function dmScreen() {
                     saving_throws: {}
                 }
             };
-            this.characterModal.show();
+            this.showModal();
         },
 
         editCharacter(char) {
@@ -66,17 +73,31 @@ function dmScreen() {
                 id: char.id,
                 name: char.name,
                 type: char.type,
-                stats: JSON.parse(JSON.stringify(char.stats)) // Deep copy
+                stats: typeof char.stats === 'string' ? JSON.parse(char.stats) : JSON.parse(JSON.stringify(char.stats))
             };
-            this.characterModal.show();
+            this.showModal();
+        },
+
+        showModal() {
+            if (!this.characterModal) {
+                const modalEl = document.getElementById('characterModal');
+                if (modalEl && window.bootstrap) {
+                    this.characterModal = new window.bootstrap.Modal(modalEl);
+                }
+            }
+            if (this.characterModal) {
+                this.characterModal.show();
+            } else {
+                console.error('Bootstrap Modal not initialized.');
+            }
         },
 
         async saveCharacter() {
             const method = this.modalMode === 'create' ? 'POST' : 'PATCH';
-            const url = this.modalMode === 'create' 
-                ? '/dm/api/characters' 
+            const url = this.modalMode === 'create'
+                ? '/dm/api/characters'
                 : `/dm/api/characters/${this.characterForm.id}`;
-            
+
             // Token handling if not using axios global config
             const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -89,10 +110,10 @@ function dmScreen() {
                     },
                     body: JSON.stringify(this.characterForm)
                 });
-                
+
                 if (response.ok) {
                     await this.loadCharacters();
-                    this.characterModal.hide();
+                    if (this.characterModal) this.characterModal.hide();
                 } else {
                     alert('Error saving character');
                 }
@@ -108,30 +129,30 @@ function dmScreen() {
             // Robust parsing for "XdY+Z" or constant numbers
             if (!formula) return 0;
             formula = String(formula).toLowerCase().replace(/\s/g, '');
-            
+
             // If just a number
             if (/^\d+$/.test(formula)) return parseInt(formula);
 
             // Regex for XdY(+/-)Z
             // Capture groups: 1=numDice, 2=dieSize, 3=modifier(signed)
             // Example: 3d8+4 -> splits to [3, 8, +4] approx
-            
+
             // simple check: split by 'd'
             let parts = formula.split('d');
             if (parts.length !== 2) {
                 // Try parsing as simple math expression like "10+2"
-                 try {
+                try {
                     return eval(formula.replace(/[^0-9+\-]/g, ''));
-                 } catch { return 0; }
+                } catch { return 0; }
             }
 
             let numDice = parseInt(parts[0]) || 1;
             let rest = parts[1];
-            
+
             // Split rest by + or -
             let dieSize = 0;
             let modifier = 0;
-            
+
             let modIndex = rest.search(/[+\-]/);
             if (modIndex !== -1) {
                 dieSize = parseInt(rest.substring(0, modIndex));
@@ -144,7 +165,7 @@ function dmScreen() {
             for (let i = 0; i < numDice; i++) {
                 total += Math.floor(Math.random() * dieSize) + 1;
             }
-            
+
             return total + modifier;
         },
 
@@ -164,7 +185,7 @@ function dmScreen() {
 
             // Helper to count existing enemies of same name to add # number
             let count = this.combatants.filter(c => c.name === char.name).length;
-            
+
             let combatant = {
                 instanceId: Date.now() + Math.random(),
                 id: char.id,
@@ -181,15 +202,15 @@ function dmScreen() {
 
             // Insert into combatants list
             this.combatants.push(combatant);
-            
+
             // Dynamic insertion/sort
             // If we are in middle of combat, we want to maintain current turn if possible
             // but for simplicity, we insert, then sort.
-            
+
             // Check if we started combat (anyone has initiative)
             // If NPC was added, it has init. If Player, it has 0.
             // We'll leave the list unsorted until user clicks "Sort" or if we want auto-sort:
-            
+
             this.sortCombat();
             this.saveSession();
         },
@@ -198,7 +219,7 @@ function dmScreen() {
             // Store who is currently active to restore focus if possible
             let activeId = null;
             if (this.combatants.length > 0 && this.combatants[this.currentTurnIndex]) {
-                 activeId = this.combatants[this.currentTurnIndex].instanceId;
+                activeId = this.combatants[this.currentTurnIndex].instanceId;
             }
 
             this.combatants.sort((a, b) => {
@@ -220,7 +241,7 @@ function dmScreen() {
 
         nextTurn() {
             if (this.combatants.length === 0) return;
-            
+
             this.currentTurnIndex++;
             if (this.currentTurnIndex >= this.combatants.length) {
                 this.currentTurnIndex = 0;
@@ -230,18 +251,19 @@ function dmScreen() {
         },
 
         resetCombat() {
-            if(confirm('Clear all combatants?')) {
+            if (confirm('Clear all combatants?')) {
                 this.combatants = [];
                 this.round = 1;
                 this.currentTurnIndex = 0;
                 this.selectedCombatant = null;
+                this.selectedStatBlock = '';
                 this.saveSession();
             }
         },
 
         removeCombatant(index) {
             if (index === this.currentTurnIndex) {
-               // If removing current actor, move index back one so nextTurn works or handle gracefully
+                // If removing current actor, move index back one so nextTurn works or handle gracefully
             }
             if (index < this.currentTurnIndex) {
                 this.currentTurnIndex--;
@@ -254,7 +276,7 @@ function dmScreen() {
             combatant.hp += amount;
             this.saveSession();
         },
-        
+
         addStatus(combatant) {
             let status = prompt("Status name (e.g. Stunned):");
             if (status) {
@@ -265,7 +287,7 @@ function dmScreen() {
 
         async selectCombatant(combatant) {
             this.selectedCombatant = combatant;
-            
+
             // If it has a statblock/notes, render markdown
             if (combatant.notes) {
                 const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -273,7 +295,7 @@ function dmScreen() {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                         'X-CSRF-TOKEN': token
+                        'X-CSRF-TOKEN': token
                     },
                     body: JSON.stringify({ content: combatant.notes })
                 });
@@ -290,10 +312,10 @@ function dmScreen() {
             const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             await fetch('/dm/api/session', {
                 method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': token
-                    },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token
+                },
                 body: JSON.stringify({
                     data: {
                         combatants: this.combatants,

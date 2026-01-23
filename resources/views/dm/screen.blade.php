@@ -145,19 +145,21 @@
             <!-- RIGHT: Details Panel -->
             <div class="col-md-3 border-start vh-100 overflow-auto bg-dark p-3">
                 <h4 class="mb-3">📜 Details</h4>
-                <div x-show="selectedCombatant">
-                    <h3 x-text="selectedCombatant?.name"></h3>
+                <template x-if="selectedCombatant">
+                    <div>
+                        <h3 x-text="selectedCombatant.name"></h3>
 
-                    <div class="mb-3">
-                        <label>Notes / Temp HP / Conditions</label>
-                        <textarea class="form-control" rows="5" x-model="selectedCombatant?.notes"></textarea>
-                    </div>
+                        <div class="mb-3">
+                            <label>Notes / Temp HP / Conditions</label>
+                            <textarea class="form-control" rows="5" x-model="selectedCombatant.notes"></textarea>
+                        </div>
 
-                    <div class="mb-3">
-                        <h5>Stat Block</h5>
-                        <div x-html="selectedStatBlock" class="p-2 border bg-white rounded shadow-sm"></div>
+                        <div class="mb-3">
+                            <h5>Stat Block</h5>
+                            <div x-html="selectedStatBlock" class="p-2 border bg-white rounded shadow-sm text-dark"></div>
+                        </div>
                     </div>
-                </div>
+                </template>
                 <div x-show="!selectedCombatant" class="text-muted">
                     Select a combatant to view details.
                 </div>
@@ -217,7 +219,7 @@
 
     <!-- SCRIPTS -->
     <script src="//unpkg.com/alpinejs" defer></script>
-    <script src="{{ asset('js/dm-screen.js') }}"></script>
+    <script src="{{ asset('js/dm-screen.js') }}" defer></script>
     <style>
         .master-block {
             border-left: 3px solid gold;
