@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('name');
-            $table->enum('type', ['player', 'template'])->default('template');
+            $table->enum('type', ['player', 'template', 'group'])->default('template');
             $table->json('stats')->nullable(); // attributes, ac, hp_formula, saving_throws, notes, link
             $table->timestamps();
         });

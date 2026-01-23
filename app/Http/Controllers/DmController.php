@@ -36,7 +36,7 @@ class DmController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|in:player,template',
+            'type' => 'required|in:player,template,group',
             'stats' => 'nullable|array',
         ]);
 
@@ -58,7 +58,7 @@ class DmController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|in:player,template',
+            'type' => 'required|in:player,template,group',
             'stats' => 'nullable|array',
         ]);
 

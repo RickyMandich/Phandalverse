@@ -5,38 +5,43 @@
         <div class="row">
             <!-- SIDEBAR: Library & Templates -->
             <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3">
-                <h4 class="mb-3">📚 Library</h4>
+                <h4 class="mb-3 text-light">📚 Library</h4>
 
                 <ul class="nav nav-tabs mb-3" id="libraryTabs" role="tablist">
                     <li class="nav-item">
-                        <button class="nav-link active" id="templates-tab" data-bs-toggle="tab"
-                            data-bs-target="#templates-pane" type="button">Templates</button>
+                        <button class="nav-link active py-1 px-2" id="templates-tab" data-bs-toggle="tab"
+                            data-bs-target="#templates-pane" type="button">Monster</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" id="players-tab" data-bs-toggle="tab" data-bs-target="#players-pane"
-                            type="button">Players</button>
+                        <button class="nav-link py-1 px-2" id="players-tab" data-bs-toggle="tab"
+                            data-bs-target="#players-pane" type="button">Player</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link py-1 px-2" id="groups-tab" data-bs-toggle="tab"
+                            data-bs-target="#groups-pane" type="button">Group</button>
                     </li>
                 </ul>
 
-                <div class="tab-content">
-                    <!-- TEMPLATES (Monsters) -->
+                <div class="tab-content text-light">
+                    <!-- TEMPLATES -->
                     <div class="tab-pane fade show active" id="templates-pane">
                         <button class="btn btn-sm btn-success w-100 mb-2" @click="openCharacterModal('template')">+ New
-                            Template</button>
+                            Monster</button>
                         <div class="list-group list-group-flush">
                             <template x-for="char in templates" :key="char.id">
-                                <div
-                                    class="list-group-item list-group-item-action bg-dark border-secondary d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong x-text="char.name"></strong>
-                                        <div class="small text-muted" x-text="'HP: ' + (char.stats.hp_formula || 'N/A')">
-                                        </div>
+                                <div class="list-group-item list-group-item-action bg-dark border-secondary p-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <strong class="text-light" x-text="char.name"></strong>
+                                        <button class="btn btn-sm btn-outline-secondary border-0 p-0"
+                                            @click="openCharacterModal('template', char)"><i
+                                                class="bi bi-pencil small"></i></button>
                                     </div>
-                                    <div>
-                                        <button class="btn btn-sm btn-primary py-0" @click="addToCombat(char)"
-                                            title="Add to Combat"><i class="bi bi-plus-lg"></i></button>
-                                        <button class="btn btn-sm btn-outline-secondary py-0" @click="editCharacter(char)"
-                                            title="Edit"><i class="bi bi-pencil"></i></button>
+                                    <div class="d-flex align-items-center mt-1">
+                                        <input type="number"
+                                            class="form-control form-control-sm bg-secondary text-white border-0 w-25 me-1"
+                                            value="1" x-ref="'qty-' + char.id">
+                                        <button class="btn btn-sm btn-primary flex-grow-1 py-0"
+                                            @click="addToCombat(char, $refs['qty-' + char.id].value)">Add</button>
                                     </div>
                                 </div>
                             </template>
@@ -50,13 +55,33 @@
                         <div class="list-group list-group-flush">
                             <template x-for="char in players" :key="char.id">
                                 <div
-                                    class="list-group-item list-group-item-action bg-dark border-secondary d-flex justify-content-between align-items-center">
-                                    <span x-text="char.name"></span>
+                                    class="list-group-item list-group-item-action bg-dark border-secondary p-2 d-flex justify-content-between align-items-center">
+                                    <span class="text-light" x-text="char.name"></span>
                                     <div>
-                                        <button class="btn btn-sm btn-primary py-0" @click="addToCombat(char)"><i
-                                                class="bi bi-plus-lg"></i></button>
-                                        <button class="btn btn-sm btn-outline-secondary py-0"
-                                            @click="editCharacter(char)"><i class="bi bi-pencil"></i></button>
+                                        <button class="btn btn-sm btn-outline-secondary border-0 me-1"
+                                            @click="openCharacterModal('player', char)"><i
+                                                class="bi bi-pencil"></i></button>
+                                        <button class="btn btn-sm btn-primary py-0" @click="addToCombat(char)">Add</button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- GROUPS -->
+                    <div class="tab-pane fade" id="groups-pane">
+                        <button class="btn btn-sm btn-warning w-100 mb-2 text-dark" @click="openGroupModal()">+ New
+                            Group</button>
+                        <div class="list-group list-group-flush">
+                            <template x-for="group in groups" :key="group.id">
+                                <div
+                                    class="list-group-item list-group-item-action bg-dark border-secondary p-2 d-flex justify-content-between align-items-center">
+                                    <span class="text-light" x-text="group.name"></span>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-secondary border-0 me-1"
+                                            @click="openGroupModal(group)"><i class="bi bi-pencil"></i></button>
+                                        <button class="btn btn-sm btn-warning py-0 text-dark"
+                                            @click="addGroupToCombat(group)">Add Group</button>
                                     </div>
                                 </div>
                             </template>
@@ -66,40 +91,46 @@
             </div>
 
             <!-- CENTER: Combat Tracker -->
-            <div class="col-md-6 vh-100 overflow-auto p-3 main-combat-area">
+            <div class="col-md-6 vh-100 overflow-auto p-3 main-combat-area bg-secondary bg-opacity-10">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h2>⚔️ Combat Tracker <span class="badge bg-secondary" x-text="'Round ' + round"></span></h2>
-                    <div>
-                        <button class="btn btn-warning me-2" @click="nextTurn()">⏩ Next Turn</button>
-                        <button class="btn btn-danger" @click="resetCombat()">Reset</button>
+                    <h2 class="mb-0">⚔️ Tracker <span class="badge bg-dark" x-text="'R' + round"></span></h2>
+                    <div class="d-flex align-items-center">
+                        <div class="form-check form-switch me-3">
+                            <input class="form-check-input" type="checkbox" id="hideDeadSwitch" x-model="hideDead">
+                            <label class="form-check-label small" for="hideDeadSwitch">Hide Dead</label>
+                        </div>
+                        <button class="btn btn-sm btn-warning me-2 text-dark" @click="nextTurn()">⏩ Next Turn</button>
+                        <button class="btn btn-sm btn-danger" @click="resetCombat()">Reset</button>
                     </div>
                 </div>
 
                 <div class="combat-list">
                     <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
-                        <div class="card mb-2"
-                            :class="{'border-warning': currentTurnIndex === index, 'opacity-75': combatant.hp <= 0}"
-                            :id="'combatant-' + combatant.instanceId">
+                        <div class="card mb-2" x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
+                                    'border-3 border-warning shadow': currentTurnIndex === index, 
+                                    'bg-opacity-50 grayscale': combatant.hp <= 0,
+                                    'border-danger': combatant.hp <= 0 && combatant.type !== 'player'
+                                }" :id="'combatant-' + combatant.instanceId">
                             <div class="card-body p-2 d-flex align-items-center">
                                 <!-- INITIATIVE -->
                                 <div class="me-3 text-center" style="width: 50px;">
-                                    <label class="small text-muted">Init</label>
-                                    <input type="number" class="form-control form-control-sm text-center"
+                                    <label class="small text-muted" style="font-size: 0.7rem;">Init</label>
+                                    <input type="number" class="form-control form-control-sm text-center p-0"
                                         x-model.number="combatant.initiative" @change="sortCombat()"
                                         style="font-weight: bold;">
                                 </div>
 
                                 <!-- NAME & TYPE -->
                                 <div class="flex-grow-1" @click="selectCombatant(combatant)" style="cursor: pointer;">
-                                    <div class="fw-bold fs-5">
-                                        <span x-text="combatant.name"></span>
+                                    <div class="fw-bold d-flex align-items-center">
+                                        <span x-text="combatant.name"
+                                            :class="combatant.type === 'player' ? 'text-info' : ''"></span>
                                         <span class="badge bg-secondary ms-2" x-show="combatant.enemyCount"
                                             x-text="'#' + combatant.enemyCount"></span>
                                     </div>
-                                    <div class="small">
-                                        <span class="badge bg-success me-1" x-show="combatant.ac">AC: <span
+                                    <div class="small text-muted">
+                                        <span class="badge bg-dark me-1 border border-secondary">AC <span
                                                 x-text="combatant.ac"></span></span>
-                                        <!-- STATUS BADGES -->
                                         <template x-for="status in combatant.statuses" :key="status">
                                             <span class="badge bg-danger me-1" x-text="status"></span>
                                         </template>
@@ -107,28 +138,29 @@
                                 </div>
 
                                 <!-- HP CONTROLS -->
-                                <div class="d-flex align-items-center" style="width: 150px;">
-                                    <button class="btn btn-sm btn-outline-danger"
+                                <div class="d-flex align-items-center me-2" style="width: 140px;">
+                                    <button class="btn btn-sm btn-outline-danger px-1 py-0"
                                         @click="modifyHp(combatant, -1)">-</button>
-                                    <input type="number" class="form-control form-control-sm text-center mx-1"
+                                    <input type="number"
+                                        class="form-control form-control-sm text-center mx-1 p-0 fw-bold border-0 bg-transparent"
                                         x-model.number="combatant.hp"
-                                        :class="{'text-danger': combatant.hp < (combatant.maxHp/2), 'text-success': combatant.hp >= (combatant.maxHp/2)}">
-                                    <span class="text-muted small me-2">/<span x-text="combatant.maxHp"></span></span>
-                                    <button class="btn btn-sm btn-outline-success"
+                                        :class="{'text-danger': combatant.hp <= 0, 'text-warning': combatant.hp > 0 && combatant.hp < (combatant.maxHp/2)}">
+                                    <span class="text-muted small">/<span x-text="combatant.maxHp"></span></span>
+                                    <button class="btn btn-sm btn-outline-success px-1 py-0"
                                         @click="modifyHp(combatant, 1)">+</button>
                                 </div>
 
                                 <!-- ACTIONS -->
-                                <div class="ms-2 dropdown">
-                                    <button class="btn btn-sm btn-dark dropdown-toggle" type="button"
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-dark px-1 py-0" type="button"
                                         data-bs-toggle="dropdown">⋮</button>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="#" @click.prevent="addStatus(combatant)">Add
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item py-1" href="#" @click.prevent="addStatus(combatant)">Add
                                                 Status</a></li>
                                         <li>
-                                            <hr class="dropdown-divider">
+                                            <hr class="dropdown-divider my-1">
                                         </li>
-                                        <li><a class="dropdown-item text-danger" href="#"
+                                        <li><a class="dropdown-item text-danger py-1" href="#"
                                                 @click.prevent="removeCombatant(index)">Remove</a></li>
                                     </ul>
                                 </div>
@@ -143,74 +175,154 @@
             </div>
 
             <!-- RIGHT: Details Panel -->
-            <div class="col-md-3 border-start vh-100 overflow-auto bg-dark p-3">
+            <div class="col-md-3 border-start vh-100 overflow-auto bg-dark p-3 text-light">
                 <h4 class="mb-3">📜 Details</h4>
                 <template x-if="selectedCombatant">
                     <div>
-                        <h3 x-text="selectedCombatant.name"></h3>
+                        <h3 x-text="selectedCombatant.name"
+                            :class="selectedCombatant.type === 'player' ? 'text-info' : 'text-warning'"></h3>
 
-                        <div class="mb-3">
-                            <label>Notes / Temp HP / Conditions</label>
-                            <textarea class="form-control" rows="5" x-model="selectedCombatant.notes"></textarea>
+                        <!-- ATTRIBUTES GRID -->
+                        <div class="row g-1 mb-3 text-center">
+                            <template x-for="(val, stat) in selectedCombatant.stats.attributes" :key="stat">
+                                <div class="col-4">
+                                    <div class="bg-secondary bg-opacity-25 rounded p-1 border"
+                                        :class="selectedCombatant.stats.saves[stat] ? 'border-info' : 'border-secondary'">
+                                        <div class="text-uppercase small fw-bold" x-text="stat"></div>
+                                        <div class="fs-5" x-text="val"></div>
+                                        <div class="small"
+                                            x-text="(getStatModifier(val) >= 0 ? '+' : '') + getStatModifier(val)"></div>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
 
                         <div class="mb-3">
-                            <h5>Stat Block</h5>
-                            <div x-html="selectedStatBlock" class="p-2 border bg-white rounded shadow-sm text-dark"></div>
+                            <label class="small text-muted">Notes / Personal Notes</label>
+                            <textarea class="form-control bg-secondary text-white border-0" rows="4"
+                                x-model="selectedCombatant.notes"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <h5 class="border-bottom border-secondary pb-1">Stat Block</h5>
+                            <div x-html="selectedStatBlock"
+                                class="statblock-rendered p-2 bg-light text-dark rounded small shadow-sm"></div>
                         </div>
                     </div>
                 </template>
-                <div x-show="!selectedCombatant" class="text-muted">
-                    Select a combatant to view details.
+                <div x-show="!selectedCombatant" class="text-muted text-center pt-5">
+                    <i class="bi bi-info-circle fs-3"></i>
+                    <p>Select a combatant</p>
                 </div>
             </div>
         </div>
 
         <!-- MODAL: Add/Edit Character -->
         <div class="modal fade" id="characterModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content bg-dark text-white border-secondary shadow">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title" x-text="modalMode === 'create' ? 'Create' : 'Edit'"></h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <label class="small">Name</label>
+                                    <input type="text" class="form-control form-control-sm bg-secondary text-white border-0"
+                                        x-model="characterForm.name">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="small">AC</label>
+                                    <input type="number"
+                                        class="form-control form-control-sm bg-secondary text-white border-0"
+                                        x-model.number="characterForm.stats.ac">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="small"
+                                        x-text="characterForm.type === 'template' ? 'HP Formula (3d8+4)' : 'Default HP'"></label>
+                                    <input type="text" class="form-control form-control-sm bg-secondary text-white border-0"
+                                        x-model="characterForm.stats.hp_formula">
+                                </div>
+                            </div>
+                            <!-- STATS GRID -->
+                            <div class="col-md-6 border-start border-secondary">
+                                <label class="small mb-1 d-block text-center">Attributes & Saves</label>
+                                <div class="row g-2">
+                                    <template x-for="(val, stat) in characterForm.stats.attributes" :key="stat">
+                                        <div class="col-4 text-center">
+                                            <div class="text-uppercase small fw-bold" x-text="stat"></div>
+                                            <input type="number"
+                                                class="form-control form-control-sm bg-secondary text-white border-0 text-center"
+                                                x-model.number="characterForm.stats.attributes[stat]">
+                                            <div class="form-check form-check-inline mt-1">
+                                                <input class="form-check-input" type="checkbox"
+                                                    x-model="characterForm.stats.saves[stat]">
+                                                <label class="form-check-label x-small">Save</label>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="small">Stat Block (Markdown)</label>
+                            <textarea class="form-control bg-secondary text-white border-0" rows="6"
+                                x-model="characterForm.stats.notes"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" @click="saveCharacter()">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: Group Management -->
+        <div class="modal fade" id="groupModal" tabindex="-1">
             <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" x-text="modalMode === 'create' ? 'Create Character' : 'Edit Character'">
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-content bg-dark text-white border-secondary shadow">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title">Ensemble / Group</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label>Name</label>
-                            <input type="text" class="form-control" x-model="characterForm.name">
+                            <label>Group Name (e.g. The Brave Ones)</label>
+                            <input type="text" class="form-control bg-secondary text-white border-0"
+                                x-model="groupForm.name">
                         </div>
-                        <div class="mb-3">
-                            <label>Type</label>
-                            <select class="form-control" x-model="characterForm.type">
-                                <option value="template">Monster/Template</option>
-                                <option value="player">Player Character</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label>AC (Armor Class)</label>
-                            <input type="number" class="form-control" x-model.number="characterForm.stats.ac">
-                        </div>
-                        <div class="mb-3" x-show="characterForm.type === 'template'">
-                            <label>HP Formula (e.g. 3d8+4)</label>
-                            <input type="text" class="form-control" x-model="characterForm.stats.hp_formula">
-                        </div>
-                        <div class="mb-3" x-show="characterForm.type === 'player'">
-                            <label>Default HP</label>
-                            <input type="number" class="form-control" x-model.number="characterForm.stats.hp_formula">
-                        </div>
-                        <div class="mb-3">
-                            <label>Dexterity Modifier (for Initiative)</label>
-                            <input type="number" class="form-control" x-model.number="characterForm.stats.dex_mod">
-                        </div>
-                        <div class="mb-3">
-                            <label>Stat Block (Markdown)</label>
-                            <textarea class="form-control" rows="5" x-model="characterForm.stats.notes"></textarea>
-                        </div>
+                        <label class="small">Members</label>
+                        <template x-for="(member, idx) in groupForm.members" :key="idx">
+                            <div class="d-flex mb-2 align-items-center">
+                                <select class="form-control form-control-sm bg-secondary text-white border-0 me-1"
+                                    x-model="member.character_id">
+                                    <option value="">Select...</option>
+                                    <optgroup label="Players">
+                                        <template x-for="p in players" :key="p.id">
+                                            <option :value="p.id" x-text="p.name"></option>
+                                        </template>
+                                    </optgroup>
+                                    <optgroup label="Monsters">
+                                        <template x-for="t in templates" :key="t.id">
+                                            <option :value="t.id" x-text="t.name"></option>
+                                        </template>
+                                    </optgroup>
+                                </select>
+                                <input type="number"
+                                    class="form-control form-control-sm bg-secondary text-white border-0 w-25 me-1"
+                                    x-model.number="member.qty">
+                                <button class="btn btn-sm btn-outline-danger border-0" @click="removeGroupMember(idx)"><i
+                                        class="bi bi-trash"></i></button>
+                            </div>
+                        </template>
+                        <button class="btn btn-sm btn-outline-info w-100" @click="addGroupMember()">+ Add Member</button>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer border-secondary">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary" @click="saveCharacter()">Save</button>
+                        <button type="button" class="btn btn-primary" @click="saveGroup()">Save Group</button>
                     </div>
                 </div>
             </div>
@@ -221,10 +333,39 @@
     <script src="{{ asset('js/dm-screen.js') }}" defer></script>
     <script src="//unpkg.com/alpinejs" defer></script>
     <style>
-        .master-block {
-            border-left: 3px solid gold;
+        .grayscale {
+            filter: grayscale(80%);
+        }
+
+        .x-small {
+            font-size: 0.65rem;
+        }
+
+        .statblock-rendered blockquote {
+            border-left: 3px solid #ddd;
             padding-left: 10px;
-            background: rgba(255, 215, 0, 0.1);
+            color: #555;
+        }
+
+        .statblock-rendered table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        .statblock-rendered table td,
+        .statblock-rendered table th {
+            border: 1px solid #ddd;
+            padding: 4px;
+        }
+
+        .statblock-rendered h1,
+        .statblock-rendered h2,
+        .statblock-rendered h3 {
+            color: #822;
+            border-bottom: 2px solid #822;
+            margin-top: 15px;
+            margin-bottom: 5px;
         }
     </style>
 @endsection
