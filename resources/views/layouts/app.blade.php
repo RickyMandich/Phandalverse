@@ -104,6 +104,9 @@
                                         <a class="dropdown-item" href="{{ route('admin.logs') }}">
                                             <i class="fas fa-file-alt"></i> Log
                                         </a>
+                                        <a class="dropdown-item" href="{{ route('admin.database') }}">
+                                            <i class="bi bi-database"></i> Accedi al DB
+                                        </a>
                                         <div class="dropdown-divider"></div>
                                     @endif
 
@@ -128,7 +131,7 @@
 
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                         onclick="event.preventDefault();
-                                                                                         document.getElementById('logout-form').submit();">
+                                                                                             document.getElementById('logout-form').submit();">
                                         {{ __('Logout') }}
                                     </a>
 

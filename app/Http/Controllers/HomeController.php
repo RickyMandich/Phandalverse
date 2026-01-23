@@ -105,4 +105,41 @@ class HomeController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'Password aggiornata con successo');
     }
+    /**
+     * Request access to master utilities.
+     */
+    public function requestMasterUtils()
+    {
+        $user = Auth::user();
+
+        if ($user->isMasterUtils()) {
+            return redirect()->route('dashboard')->with('error', 'Hai già accesso agli strumenti da Master.');
+        }
+
+        if ($user->master_request) {
+            return redirect()->route('dashboard')->with('error', 'Hai già una richiesta in sospeso.');
+        }
+
+        $user->update(['master_request' => true]);
+
+        // Invia notifica agli admin
+        try {
+            $admins = \App\Models\User::getAdmins();
+            foreach ($admins as $admin) {
+                \App\Jobs\SendQueuedEmail::dispatch(new \App\Mail\MasterRequestNotification($user), $admin->email);
+            }
+
+            // Notifica Telegram diretta (opzionale, ma coerente con il resto dell'app)
+            if (env('TELEGRAM_BOT_TOKEN') && env('TELEGRAM_ADMIN_CHAT_ID')) {
+                \App\Services\TelegramService::notify(
+                    'Richiesta Strumenti Master',
+                    "L'utente {$user->name} ({$user->email}) ha richiesto l'accesso agli strumenti da Master."
+                );
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Errore durante l\'invio della notifica richiesta master: ' . $e->getMessage());
+        }
+
+        return redirect()->route('dashboard')->with('success', 'Richiesta inviata con successo. Un amministratore la valuterà a breve.');
+    }
 }

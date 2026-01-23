@@ -27,6 +27,7 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 Route::middleware(['auth'])->group(function () {
     Route::patch('/profile', [App\Http\Controllers\HomeController::class, 'updateProfile'])->name('profile.update');
     Route::patch('/profile/password', [App\Http\Controllers\HomeController::class, 'updatePassword'])->name('profile.password');
+    Route::post('/profile/request-master', [App\Http\Controllers\HomeController::class, 'requestMasterUtils'])->name('profile.request_master');
 });
 
 // ========== SEGNALAZIONI (pubbliche) ==========
@@ -82,12 +83,18 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::patch('/users/{user}', [AdminController::class, 'updateUser'])->name('admin.users.update');
     Route::patch('/users/{user}/password', [AdminController::class, 'updateUserPassword'])->name('admin.users.password');
     Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
+    Route::post('/users/{user}/approve-master', [AdminController::class, 'approveMasterRequest'])->name('admin.users.approve_master');
+    Route::post('/users/{user}/deny-master', [AdminController::class, 'denyMasterRequest'])->name('admin.users.deny_master');
 
     // Statistiche
     Route::get('/statistics', [AdminController::class, 'statistics'])->name('admin.statistics');
     Route::get('/statistics/export/csv', [AdminController::class, 'exportStatisticsCSV'])->name('admin.statistics.export.csv');
     Route::get('/statistics/export/json', [AdminController::class, 'exportStatisticsJSON'])->name('admin.statistics.export.json');
     Route::get('/statistics/details', [AdminController::class, 'statisticsDetails'])->name('admin.statistics.details');
+
+    // Database
+    Route::get('/database', [AdminController::class, 'database'])->name('admin.database');
+    Route::post('/database/query', [AdminController::class, 'executeQuery'])->name('admin.database.query');
 });
 
 // ========== JOB ROUTES ==========

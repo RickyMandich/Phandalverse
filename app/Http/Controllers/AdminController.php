@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
@@ -274,6 +276,31 @@ class AdminController extends Controller
 
         return redirect()->route('admin.users')->with('success', 'Utente eliminato con successo');
     }
+
+    /**
+     * Approve a master request
+     */
+    public function approveMasterRequest(User $user)
+    {
+        $user->update([
+            'master_utils' => true,
+            'master_request' => false,
+        ]);
+
+        return redirect()->route('admin.users')->with('success', "L'utente {$user->name} è ora un Master Utils.");
+    }
+
+    /**
+     * Deny a master request
+     */
+    public function denyMasterRequest(User $user)
+    {
+        $user->update([
+            'master_request' => false,
+        ]);
+
+        return redirect()->route('admin.users')->with('success', "Richiesta di {$user->name} negata.");
+    }
     // ========== STATISTICHE ==========
 
     /**
@@ -499,6 +526,68 @@ class AdminController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Display database query page
+     */
+    public function database()
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        return view('admin.database');
+    }
+
+    /**
+     * Execute a raw SQL query
+     */
+    public function executeQuery(Request $request)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $validated = $request->validate([
+            'query' => 'required|string',
+        ]);
+
+        $query = trim($validated['query']);
+        $isSelect = stripos($query, 'select') === 0 || stripos($query, 'show') === 0 || stripos($query, 'describe') === 0 || stripos($query, 'explain') === 0;
+
+        try {
+            if ($isSelect) {
+                $results = DB::select($query);
+                $affectedRows = count($results);
+            } else {
+                $affectedRows = DB::statement($query);
+                if (stripos($query, 'update') === 0 || stripos($query, 'delete') === 0 || stripos($query, 'insert') === 0) {
+                    $affectedRows = DB::affectingStatement($query);
+                }
+                $results = null;
+            }
+
+            Log::channel('admin')->info('SQL Query Executed', [
+                'user_id' => Auth::id(),
+                'user_email' => Auth::user()->email,
+                'query' => $query,
+                'affected_rows' => $affectedRows
+            ]);
+
+            return view('admin.database', [
+                'query' => $query,
+                'results' => $results,
+                'affectedRows' => $affectedRows,
+                'isSelect' => $isSelect,
+                'success' => 'Query eseguita con successo'
+            ]);
+        } catch (\Exception $e) {
+            return view('admin.database', [
+                'query' => $query,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }
 

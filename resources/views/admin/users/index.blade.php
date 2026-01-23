@@ -73,50 +73,70 @@
                                     @endif
                                     @if($user->master)
                                         <span class="badge bg-warning">Master</span>
+                                    @elseif($user->master_utils)
+                                        <span class="badge bg-info">Master Utils</span>
                                     @endif
-                                    @if(!$user->admin && !$user->master)
+                                    @if(!$user->admin && !$user->master && !$user->master_utils)
                                         <span class="badge bg-secondary">Utente</span>
+                                    @endif
+
+                                    @if($user->master_request)
+                                        <div class="mt-1">
+                                            <span class="badge bg-primary animate-pulse">
+                                                <i class="bi bi-star-fill"></i> Richiesta Master
+                                            </span>
+                                        </div>
                                     @endif
                                 </td>
                                 <td>
                                     @if($user->showEmbedLink)
-                                        <span class="text-success" style="font-size: 2rem;" title="Mostra link embed">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                                class="bi bi-check-circle" viewBox="0 0 16 16">
-                                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
-                                                <path
-                                                    d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.05-1.05z" />
-                                            </svg>
+                                        <span class="text-success" style="font-size: 1.2rem;" title="Mostra link embed">
+                                            <i class="bi bi-check-circle-fill"></i>
                                         </span>
                                     @endif
                                 </td>
                                 <td>
                                     @if($user->collapseEmbed)
-                                        <span class="text-secondary" style="font-size: 2rem;" title="Comprimi Embed di Default">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                                class="bi bi-check-circle" viewBox="0 0 16 16">
-                                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
-                                                <path
-                                                    d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.05-1.05z" />
-                                            </svg>
+                                        <span class="text-secondary" style="font-size: 1.2rem;" title="Comprimi Embed di Default">
+                                            <i class="bi bi-check-circle-fill"></i>
                                         </span>
                                     @endif
                                 </td>
                                 <td>{{ $user->created_at->format('d/m/Y H:i') }}</td>
                                 <td>
-                                    <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-pencil"></i> Modifica
-                                    </a>
-                                    @if($user->id !== Auth::id())
-                                        <form action="{{ route('admin.users.delete', $user) }}" method="POST" class="d-inline"
-                                            onsubmit="return confirm('Sei sicuro di voler eliminare questo utente?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i> Elimina
-                                            </button>
-                                        </form>
-                                    @endif
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-primary">
+                                            <i class="bi bi-pencil"></i> Modifica
+                                        </a>
+
+                                        @if($user->master_request)
+                                            <form action="{{ route('admin.users.approve_master', $user) }}" method="POST"
+                                                class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-success" title="Approva Richiesta Master">
+                                                    <i class="bi bi-person-check"></i>
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('admin.users.deny_master', $user) }}" method="POST"
+                                                class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-warning" title="Nega Richiesta Master">
+                                                    <i class="bi bi-person-x"></i>
+                                                </button>
+                                            </form>
+                                        @endif
+
+                                        @if($user->id !== Auth::id())
+                                            <form action="{{ route('admin.users.delete', $user) }}" method="POST" class="d-inline"
+                                                onsubmit="return confirm('Sei sicuro di voler eliminare questo utente?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty

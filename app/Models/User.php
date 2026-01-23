@@ -25,6 +25,7 @@ class User extends Authenticatable
         'admin',
         'master',
         'master_utils',
+        'master_request',
         'showEmbedLink',
         'collapseEmbed',
     ];
