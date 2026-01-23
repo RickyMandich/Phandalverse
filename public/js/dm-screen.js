@@ -104,7 +104,11 @@ function dmScreen(config = {}) {
         },
 
         async switchSession(session) {
-            this.currentSession = { id: session.id, name: session.name };
+            this.currentSession = {
+                id: session.id,
+                name: session.name,
+                share_code: session.share_code
+            };
             const data = typeof session.data === 'string' ? JSON.parse(session.data) : session.data;
             if (data) {
                 this.combatants = data.combatants || [];

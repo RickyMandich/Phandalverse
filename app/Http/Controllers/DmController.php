@@ -245,4 +245,10 @@ class DmController extends Controller
         // Use static toHtml method from MarkdownPreprocessor
         return response()->json(['html' => MarkdownPreprocessor::toHtml($content, 'DM Screen')]);
     }
+
+    public function playerView($share_code)
+    {
+        $session = DmSession::where('share_code', $share_code)->firstOrFail();
+        return view('dm.player', compact('session'));
+    }
 }

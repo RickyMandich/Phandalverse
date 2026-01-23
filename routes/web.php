@@ -23,6 +23,9 @@ Route::get('/vault/{note?}', [VaultController::class, 'show'])
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
 
+// ========== PLAYER VIEW (Pubblica) ==========
+Route::get('/dm/player/{share_code}', [DmController::class, 'playerView'])->name('dm.player');
+
 // ========== PROFILO UTENTE (autenticato) ==========
 Route::middleware(['auth'])->group(function () {
     Route::patch('/profile', [App\Http\Controllers\HomeController::class, 'updateProfile'])->name('profile.update');

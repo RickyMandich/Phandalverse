@@ -12,12 +12,33 @@ class DmSession extends Model
     protected $fillable = [
         'user_id',
         'name',
+        'share_code',
         'data',
     ];
 
     protected $casts = [
         'data' => 'array',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($session) {
+            if (!$session->share_code) {
+                $session->share_code = self::generateUniqueCode();
+            }
+        });
+    }
+
+    public static function generateUniqueCode()
+    {
+        do {
+            $code = strtoupper(\Illuminate\Support\Str::random(3)) . '-' . strtoupper(\Illuminate\Support\Str::random(3));
+        } while (self::where('share_code', $code)->exists());
+
+        return $code;
+    }
 
     public function user()
     {
