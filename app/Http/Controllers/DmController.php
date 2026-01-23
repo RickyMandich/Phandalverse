@@ -260,4 +260,10 @@ class DmController extends Controller
         $session = DmSession::where('share_code', $share_code)->firstOrFail();
         return view('dm.player', compact('session'));
     }
+
+    public function publicLoadSession($share_code)
+    {
+        $session = DmSession::where('share_code', $share_code)->firstOrFail();
+        return response()->json($session);
+    }
 }
