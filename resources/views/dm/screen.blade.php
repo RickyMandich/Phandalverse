@@ -99,7 +99,8 @@
                             <input class="form-check-input" type="checkbox" id="hideDeadSwitch" x-model="hideDead">
                             <label class="form-check-label small" for="hideDeadSwitch">Hide Dead</label>
                         </div>
-                        <button class="btn btn-sm btn-warning me-2 text-dark" @click="nextTurn()">⏩ Next Turn</button>
+                        <button class="btn btn-sm btn-success me-2" @click="startCombat()">⚔️ Start</button>
+                        <button class="btn btn-sm btn-warning me-2 text-dark" @click="nextTurn()">⏩ Next</button>
                         <button class="btn btn-sm btn-danger" @click="resetCombat()">Reset</button>
                     </div>
                 </div>
@@ -108,10 +109,10 @@
                     <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                         <div class="card mb-2 combatant-card"
                             x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                    'active-turn': currentTurnIndex === index, 
-                                    'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
-                                    'dead-combatant': combatant.hp <= 0 && combatant.type !== 'player'
-                                }" :id="'combatant-' + combatant.instanceId">
+                                        'active-turn': currentTurnIndex === index, 
+                                        'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
+                                        'dead-combatant': combatant.hp <= 0 && combatant.type !== 'player'
+                                    }" :id="'combatant-' + combatant.instanceId">
                             <div class="card-body p-2">
                                 <div class="d-flex align-items-center">
                                     <!-- INITIATIVE -->

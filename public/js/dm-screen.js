@@ -260,6 +260,13 @@ function dmScreen() {
             }
         },
 
+        startCombat() {
+            this.sortCombat();
+            this.round = 0;
+            this.currentTurnIndex = 0;
+            this.saveSession();
+        },
+
         nextTurn() {
             if (this.combatants.length === 0) return;
             this.currentTurnIndex++;
