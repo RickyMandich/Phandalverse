@@ -1,7 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container-fluid" x-data="dmScreen({ isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }} })">
+    <div class="container-fluid" x-data="dmScreen({ 
+            isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
+            isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
+        })">
         <div class="row">
             <!-- SIDEBAR: Libreria -->
             <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3">
@@ -136,10 +139,10 @@
                     <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                         <div class="card mb-2 combatant-card"
                             x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                                    'active-turn': currentTurnIndex === index, 
-                                                    'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
-                                                    'dead-combatant': combatant.hp <= 0 && combatant.type !== 'player'
-                                                }" :id="'combatant-' + combatant.instanceId">
+                                                            'active-turn': currentTurnIndex === index, 
+                                                            'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
+                                                            'dead-combatant': combatant.hp <= 0 && combatant.type !== 'player'
+                                                        }" :id="'combatant-' + combatant.instanceId">
                             <div class="card-body p-2">
                                 <div class="d-flex align-items-center">
                                     <!-- INIZIATIVA -->
@@ -173,16 +176,38 @@
                                     </div>
 
                                     <!-- HP CONTROLS -->
-                                    <div class="d-flex align-items-center me-2" style="width: 140px;">
-                                        <button class="btn btn-sm btn-outline-danger px-1 py-0"
-                                            @click="modifyHp(combatant, -1)">-</button>
-                                        <input type="number"
-                                            class="form-control form-control-sm text-center mx-1 p-0 fw-bold border-0 bg-transparent"
-                                            x-model.number="combatant.hp"
-                                            :class="{'text-danger': combatant.hp <= 0, 'text-warning': combatant.hp > 0 && combatant.hp < (combatant.maxHp/2)}">
-                                        <span class="text-muted small">/<span x-text="combatant.maxHp"></span></span>
-                                        <button class="btn btn-sm btn-outline-success px-1 py-0"
-                                            @click="modifyHp(combatant, 1)">+</button>
+                                    <div class="d-flex align-items-center me-2 bg-dark bg-opacity-50 rounded px-2 py-1 shadow-sm"
+                                        style="min-width: 220px;">
+                                        <!-- HP Attuali -->
+                                        <div class="d-flex align-items-center">
+                                            <button class="btn btn-sm btn-outline-danger border-0 p-0 me-1"
+                                                style="width: 20px;" @click="modifyHp(combatant, -1)">-</button>
+                                            <input type="number"
+                                                class="form-control form-control-sm text-center p-0 fw-bold border-0 bg-transparent"
+                                                style="width: 35px; outline: none; box-shadow: none;"
+                                                x-model.number="combatant.hp"
+                                                :class="{'text-danger': combatant.hp <= 0, 'text-warning': combatant.hp > 0 && combatant.hp < (combatant.maxHp/2), 'text-success': combatant.hp >= (combatant.maxHp/2)}">
+
+                                            <span class="text-muted mx-1">/</span>
+
+                                            <!-- HP Massimi (Editabili) -->
+                                            <input type="number"
+                                                class="form-control form-control-sm text-center p-0 border-0 bg-transparent text-muted"
+                                                style="width: 35px; font-size: 0.85rem;" x-model.number="combatant.maxHp"
+                                                @change="saveSession()">
+
+                                            <button class="btn btn-sm btn-outline-success border-0 p-0 ms-1"
+                                                style="width: 20px;" @click="modifyHp(combatant, 1)">+</button>
+                                        </div>
+
+                                        <!-- HP Bonus / Temporanei -->
+                                        <div class="ms-2 ps-2 border-start border-secondary d-flex align-items-center">
+                                            <span class="small text-info me-1">+</span>
+                                            <input type="number"
+                                                class="form-control form-control-sm text-center p-0 border-0 bg-transparent text-info fw-bold"
+                                                style="width: 30px; font-size: 0.85rem;" placeholder="0"
+                                                x-model.number="combatant.tempHp" @change="saveSession()">
+                                        </div>
                                     </div>
 
                                     <!-- AZIONI -->

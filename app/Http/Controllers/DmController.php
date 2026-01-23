@@ -49,7 +49,7 @@ class DmController extends Controller
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        if (!$isMaster) {
+        if (!$user->isMasterUtils()) {
             $characters->each(function ($char) {
                 if ($char->stats && isset($char->stats['notes'])) {
                     $stats = $char->stats;
@@ -57,13 +57,16 @@ class DmController extends Controller
                     $char->stats = $stats;
                 }
             });
+        }
 
-            $sessions->each(function ($session) {
+        // Only full Master sees personalNotes in session combatants
+        if (!$isMaster) {
+            $sessions->each(function ($session) use ($user, $isMaster) {
                 if ($session->data && isset($session->data['combatants'])) {
                     $data = $session->data;
                     foreach ($data['combatants'] as &$c) {
                         unset($c['personalNotes']);
-                        if (isset($c['stats']['notes'])) {
+                        if (!$user->isMasterUtils() && isset($c['stats']['notes'])) {
                             $c['stats']['notes'] = '[ACCESSO LIMITATO]';
                         }
                     }
@@ -92,7 +95,7 @@ class DmController extends Controller
             ->orderBy('name')
             ->get();
 
-        if (!$isMaster) {
+        if (!Auth::user()->isMasterUtils()) {
             $characters->each(function ($char) {
                 if ($char->stats && isset($char->stats['notes'])) {
                     $stats = $char->stats;
@@ -234,8 +237,8 @@ class DmController extends Controller
 
     public function renderStatBlock(Request $request)
     {
-        if (!Auth::user()->isMaster()) {
-            return response()->json(['html' => '<div class="alert alert-warning small">Accesso limitato: solo i Dungeon Master possono vedere i dettagli dello Stat Block.</div>']);
+        if (!Auth::user()->isMasterUtils()) {
+            return response()->json(['html' => '<div class="alert alert-warning small">Accesso limitato: solo i Master possono vedere i dettagli dello Stat Block.</div>']);
         }
 
         $content = $request->input('content');

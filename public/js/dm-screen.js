@@ -3,6 +3,7 @@ function dmScreen(config = {}) {
     return {
         // --- DATA PROPERTIES ---
         isMaster: config.isMaster || false,
+        isMasterUtils: config.isMasterUtils || false,
         templates: [],
         players: [],
         groups: [],
@@ -292,7 +293,7 @@ function dmScreen(config = {}) {
                     alias: '',
                     type: char.type,
                     ac: stats.ac || 10,
-                    maxHp: hp, hp: hp,
+                    maxHp: hp, hp: hp, tempHp: 0,
                     initiative: init,
                     statuses: [],
                     personalNotes: '',
@@ -362,7 +363,26 @@ function dmScreen(config = {}) {
         },
 
         modifyHp(combatant, amount) {
-            combatant.hp += amount;
+            if (amount < 0) {
+                let damage = Math.abs(amount);
+                // First reduce temporary HP
+                if (combatant.tempHp > 0) {
+                    if (combatant.tempHp >= damage) {
+                        combatant.tempHp -= damage;
+                        damage = 0;
+                    } else {
+                        damage -= combatant.tempHp;
+                        combatant.tempHp = 0;
+                    }
+                }
+                // Then reduce actual HP
+                combatant.hp -= damage;
+                if (combatant.hp < 0) combatant.hp = 0;
+            } else {
+                // Simple addition for healing
+                combatant.hp = (combatant.hp || 0) + amount;
+                // Optional: we could cap at maxHp but sometimes DMs want to track "overhealing" or special cases
+            }
             this.saveSession();
         },
 
