@@ -107,12 +107,17 @@
                                         <div class="dropdown-divider"></div>
                                     @endif
 
-                                    @if(Auth::user()->master)
+                                    @if(Auth::user()->isMasterUtils())
                                         <h6 class="dropdown-header">
-                                            <i class="bi bi-dice-6"></i> Dungeon Master
+                                            <i
+                                                class="bi {{ Auth::user()->isMaster() ? 'bi-dice-6' : 'bi-gear-wide-connected' }}"></i>
+                                            {{ Auth::user()->isMaster() ? 'Dungeon Master' : 'DM Utilities' }}
                                         </h6>
                                         <a class="dropdown-item" href="{{ route('dm.screen') }}">
                                             <i class="bi bi-person-badge"></i> DM Screen
+                                        </a>
+                                        <a class="dropdown-item" href="{{ route('dm.manage') }}">
+                                            <i class="bi bi-gear"></i> Gestione Risorse
                                         </a>
                                         <div class="dropdown-divider"></div>
                                     @endif
@@ -123,7 +128,7 @@
 
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                         onclick="event.preventDefault();
-                                                                                 document.getElementById('logout-form').submit();">
+                                                                                         document.getElementById('logout-form').submit();">
                                         {{ __('Logout') }}
                                     </a>
 

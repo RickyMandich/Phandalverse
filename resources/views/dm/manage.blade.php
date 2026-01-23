@@ -1,0 +1,243 @@
+@extends('layouts.app')
+
+@section('content')
+    <div class="container" x-data="dmManage()">
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="display-5">🛠️ Gestione Risorse Master</h1>
+                <p class="text-muted">Gestisci i tuoi personaggi, gruppi, sessioni e mostri pubblici.</p>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col">
+                <ul class="nav nav-pills bg-dark p-2 rounded shadow-sm" id="manageTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active px-4" :class="activeTab === 'characters' ? 'active' : ''"
+                            @click="activeTab = 'characters'">👤 Personaggi & Mostri</button>
+                    </li>
+                    <li class="nav-item ms-2">
+                        <button class="nav-link px-4" :class="activeTab === 'sessions' ? 'active' : ''"
+                            @click="activeTab = 'sessions'">💾 Sessioni Salvate</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- TABS CONTENT -->
+        <div class="tab-content border border-secondary rounded p-4 bg-dark bg-opacity-25 shadow-sm">
+
+            <!-- CHARACTERS TAB -->
+            <div x-show="activeTab === 'characters'">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>Personaggi e Modelli</h3>
+                    <div class="input-group w-50">
+                        <span class="input-group-text bg-secondary border-0 text-white"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control bg-dark text-white border-0"
+                            placeholder="Filtra per nome o tipo..." x-model="charFilter">
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle shadow-sm">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>Nome</th>
+                                <th>Tipo</th>
+                                <th>Creatore</th>
+                                <th>CA</th>
+                                <th>HP</th>
+                                <th class="text-end">Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="char in filteredCharacters" :key="char.id">
+                                <tr>
+                                    <td class="fw-bold" x-text="char.name"></td>
+                                    <td>
+                                        <span class="badge"
+                                            :class="{'bg-danger': char.type==='template', 'bg-info': char.type==='player', 'bg-warning text-dark': char.type==='group'}"
+                                            x-text="char.type === 'template' ? 'Mostro' : (char.type === 'player' ? 'Giocatore' : 'Gruppo')"></span>
+                                    </td>
+                                    <td class="small text-muted"
+                                        x-text="char.user_id === {{ Auth::id() }} ? 'Tu' : 'Pubblico (Master ID:'+char.user_id+')'">
+                                    </td>
+                                    <td x-text="getStats(char).ac || '-'"></td>
+                                    <td x-text="getStats(char).hp_formula || '-'"></td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-info" @click="editChar(char)"
+                                            x-show="canEdit(char)">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger ms-1" @click="deleteChar(char.id)"
+                                            x-show="canEdit(char)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SESSIONS TAB -->
+            <div x-show="activeTab === 'sessions'">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>Le tue Sessioni</h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>Nome Sessione</th>
+                                <th>Ultimo Salvataggio</th>
+                                <th>Round</th>
+                                <th>Combattenti</th>
+                                <th class="text-end">Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="s in sessions" :key="s.id">
+                                <tr>
+                                    <td class="fw-bold" x-text="s.name"></td>
+                                    <td class="small" x-text="formatDate(s.updated_at)"></td>
+                                    <td x-text="getData(s).round || '1'"></td>
+                                    <td x-text="(getData(s).combatants || []).length"></td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-info" @click="renameSession(s)">
+                                            <i class="bi bi-chat-left-text"></i> Rinomina
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger ms-1" @click="deleteSession(s.id)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function dmManage() {
+            return {
+                activeTab: 'characters',
+                characters: [],
+                sessions: [],
+                charFilter: '',
+
+                init() {
+                    this.reloadData();
+                },
+
+                async reloadData() {
+                    const response = await fetch('/dm/api/manage-data');
+                    const data = await response.json();
+                    this.characters = data.characters;
+                    this.sessions = data.sessions;
+                },
+
+                get filteredCharacters() {
+                    if (!this.charFilter) return this.characters;
+                    const f = this.charFilter.toLowerCase();
+                    return this.characters.filter(c =>
+                        c.name.toLowerCase().includes(f) || c.type.toLowerCase().includes(f)
+                    );
+                },
+
+                getStats(char) {
+                    return typeof char.stats === 'string' ? JSON.parse(char.stats) : (char.stats || {});
+                },
+
+                getData(session) {
+                    return typeof session.data === 'string' ? JSON.parse(session.data) : (session.data || {});
+                },
+
+                canEdit(char) {
+                    return char.user_id === {{ Auth::id() }} || {{ Auth::user()->isAdmin() ? 'true' : 'false' }};
+                },
+
+                formatDate(dateStr) {
+                    return new Date(dateStr).toLocaleString('it-IT');
+                },
+
+                async editChar(char) {
+                    // Reindirizza allo schermo DM con il modal aperto? 
+                    // O meglio: informiamo l'utente di farlo dallo schermo DM perché lì c'è tutta la logica di parsing HP/Saves
+                    alert("Puoi modificare i dettagli dei personaggi direttamente dallo 'DM Screen' cliccando sull'icona della matita nella libreria.");
+                },
+
+                async deleteChar(id) {
+                    if (!confirm('Eliminare definitivamente questo personaggio?')) return;
+                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    await fetch(`/dm/api/characters/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-TOKEN': token }
+                    });
+                    this.reloadData();
+                },
+
+                async renameSession(s) {
+                    const newName = prompt("Nuovo nome per la sessione:", s.name);
+                    if (!newName || newName === s.name) return;
+                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    await fetch(`/dm/api/sessions/${s.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+                        body: JSON.stringify({ name: newName, data: this.getData(s) })
+                    });
+                    this.reloadData();
+                },
+
+                async deleteSession(id) {
+                    if (!confirm('Eliminare definitivamente questa sessione?')) return;
+                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    await fetch(`/dm/api/sessions/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-TOKEN': token }
+                    });
+                    this.reloadData();
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .nav-pills .nav-link {
+            color: #aaa;
+            transition: all 0.2s;
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: #ffc107;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .nav-pills .nav-link:hover:not(.active) {
+            background-color: #444;
+            color: #fff;
+        }
+
+        .table-dark {
+            --bs-table-bg: transparent;
+        }
+
+        .table-secondary {
+            --bs-table-bg: #444;
+            color: #fff;
+            border-bottom: 0;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+    </style>
+@endsection

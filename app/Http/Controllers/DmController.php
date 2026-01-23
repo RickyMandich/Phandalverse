@@ -22,13 +22,84 @@ class DmController extends Controller
         return view('dm.screen');
     }
 
+    public function manage()
+    {
+        return view('dm.manage');
+    }
+
+    public function getManagementData()
+    {
+        $userId = Auth::id();
+        $user = Auth::user();
+        $isMaster = $user->isMaster();
+        $isAdmin = $user->isAdmin();
+
+        $characters = DmCharacter::when(!$isAdmin, function ($q) use ($userId) {
+            $q->where('user_id', $userId)
+                ->orWhere('type', 'template');
+        })
+            ->orderBy('type')
+            ->orderBy('name')
+            ->get();
+
+        $sessions = DmSession::when(!$isAdmin, function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        if (!$isMaster) {
+            $characters->each(function ($char) {
+                if ($char->stats && isset($char->stats['notes'])) {
+                    $stats = $char->stats;
+                    $stats['notes'] = '[ACCESSO LIMITATO]';
+                    $char->stats = $stats;
+                }
+            });
+
+            $sessions->each(function ($session) {
+                if ($session->data && isset($session->data['combatants'])) {
+                    $data = $session->data;
+                    foreach ($data['combatants'] as &$c) {
+                        unset($c['personalNotes']);
+                        if (isset($c['stats']['notes'])) {
+                            $c['stats']['notes'] = '[ACCESSO LIMITATO]';
+                        }
+                    }
+                    $session->data = $data;
+                }
+            });
+        }
+
+        return response()->json([
+            'characters' => $characters,
+            'sessions' => $sessions
+        ]);
+    }
+
     // API Methods for AJAX calls
 
     public function getCharacters()
     {
-        $characters = DmCharacter::where('user_id', Auth::id())
+        $userId = Auth::id();
+        $isMaster = Auth::user()->isMaster();
+
+        // Public templates + User's own players/groups
+        $characters = DmCharacter::where('type', 'template')
+            ->orWhere('user_id', $userId)
             ->orderBy('name')
             ->get();
+
+        if (!$isMaster) {
+            $characters->each(function ($char) {
+                if ($char->stats && isset($char->stats['notes'])) {
+                    $stats = $char->stats;
+                    $stats['notes'] = '[ACCESSO LIMITATO]';
+                    $char->stats = $stats;
+                }
+            });
+        }
+
         return response()->json($characters);
     }
 
@@ -52,7 +123,7 @@ class DmController extends Controller
 
     public function updateCharacter(Request $request, DmCharacter $character)
     {
-        if ($character->user_id !== Auth::id()) {
+        if ($character->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
             abort(403);
         }
 
@@ -69,7 +140,7 @@ class DmController extends Controller
 
     public function destroyCharacter(DmCharacter $character)
     {
-        if ($character->user_id !== Auth::id()) {
+        if ($character->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
             abort(403);
         }
 
@@ -104,7 +175,7 @@ class DmController extends Controller
 
     public function loadSession(DmSession $session)
     {
-        if ($session->user_id !== Auth::id()) {
+        if ($session->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
             abort(403);
         }
         return response()->json($session);
@@ -112,7 +183,7 @@ class DmController extends Controller
 
     public function updateSession(Request $request, DmSession $session)
     {
-        if ($session->user_id !== Auth::id()) {
+        if ($session->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
             abort(403);
         }
 
@@ -128,7 +199,7 @@ class DmController extends Controller
 
     public function destroySession(DmSession $session)
     {
-        if ($session->user_id !== Auth::id()) {
+        if ($session->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
             abort(403);
         }
 
@@ -161,6 +232,10 @@ class DmController extends Controller
 
     public function renderStatBlock(Request $request)
     {
+        if (!Auth::user()->isMaster()) {
+            return response()->json(['html' => '<div class="alert alert-warning small">Accesso limitato: solo i Dungeon Master possono vedere i dettagli dello Stat Block.</div>']);
+        }
+
         $content = $request->input('content');
         // Use static toHtml method from MarkdownPreprocessor
         return response()->json(['html' => MarkdownPreprocessor::toHtml($content, 'DM Screen')]);

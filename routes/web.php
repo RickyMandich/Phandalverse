@@ -33,9 +33,11 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/report', [ReportController::class, 'create'])->name('report.create');
 Route::post('/report', [ReportController::class, 'store'])->name('report.store');
 
-// ========== DM SCREEN (solo master) ==========
-Route::middleware(['auth', 'master'])->prefix('dm')->group(function () {
+// ========== DM SCREEN (solo master o master_utils) ==========
+Route::middleware(['auth', 'master_utils'])->prefix('dm')->group(function () {
     Route::get('/', [DmController::class, 'index'])->name('dm.screen');
+    Route::get('/manage', [DmController::class, 'manage'])->name('dm.manage');
+    Route::get('/api/manage-data', [DmController::class, 'getManagementData'])->name('dm.api.manage-data');
     Route::get('/api/characters', [DmController::class, 'getCharacters'])->name('dm.api.characters.index');
     Route::post('/api/characters', [DmController::class, 'storeCharacter'])->name('dm.api.characters.store');
     Route::patch('/api/characters/{character}', [DmController::class, 'updateCharacter'])->name('dm.api.characters.update');

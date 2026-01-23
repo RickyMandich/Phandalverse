@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container-fluid" x-data="dmScreen()">
+    <div class="container-fluid" x-data="dmScreen({ isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }} })">
         <div class="row">
             <!-- SIDEBAR: Libreria -->
             <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3">
@@ -95,7 +95,7 @@
             <div class="col-md-6 vh-100 overflow-auto p-3 main-combat-area bg-secondary bg-opacity-10">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div class="d-flex align-items-center">
-                        <h2 class="mb-0 me-3">⚔️ Tracker <span class="badge bg-dark" x-text="'R' + round"></span></h2>
+                        <h2 class="mb-0 me-3">⚔️ Tracciatore <span class="badge bg-dark" x-text="'R' + round"></span></h2>
                         <!-- Session Switcher -->
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
@@ -136,10 +136,10 @@
                     <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                         <div class="card mb-2 combatant-card"
                             x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                    'active-turn': currentTurnIndex === index, 
-                                    'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
-                                    'dead-combatant': combatant.hp <= 0 && combatant.type !== 'player'
-                                }" :id="'combatant-' + combatant.instanceId">
+                                                    'active-turn': currentTurnIndex === index, 
+                                                    'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
+                                                    'dead-combatant': combatant.hp <= 0 && combatant.type !== 'player'
+                                                }" :id="'combatant-' + combatant.instanceId">
                             <div class="card-body p-2">
                                 <div class="d-flex align-items-center">
                                     <!-- INIZIATIVA -->
@@ -166,7 +166,7 @@
                                             <template x-for="status in combatant.statuses" :key="status">
                                                 <span class="badge bg-danger me-1" x-text="status"></span>
                                             </template>
-                                            <i class="bi bi-journal-text ms-2" x-show="combatant.personalNotes"
+                                            <i class="bi bi-journal-text ms-2" x-show="combatant.personalNotes && isMaster"
                                                 @click.stop="combatant.showNotesInline = !combatant.showNotesInline"
                                                 :class="combatant.showNotesInline ? 'text-info' : ''"></i>
                                         </div>
@@ -205,7 +205,7 @@
                                 </div>
 
                                 <!-- NOTE RAPIDE -->
-                                <div x-show="combatant.showNotesInline" x-transition
+                                <div x-show="combatant.showNotesInline && isMaster" x-transition
                                     class="mt-2 p-2 bg-dark rounded border border-secondary">
                                     <textarea class="form-control form-control-sm bg-transparent text-light border-0"
                                         rows="2" placeholder="Note rapide..." x-model="combatant.personalNotes"></textarea>
@@ -254,7 +254,7 @@
                         </div>
 
                         <!-- NOTE PERSONALI -->
-                        <div class="mb-3">
+                        <div class="mb-3" x-show="isMaster">
                             <label class="small text-info fw-bold mb-1"><i class="bi bi-pencil-square"></i> Note Personali
                                 DM</label>
                             <textarea class="form-control bg-secondary text-white border-0" rows="5"

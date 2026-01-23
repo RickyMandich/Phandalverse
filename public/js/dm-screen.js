@@ -1,7 +1,8 @@
 
-function dmScreen() {
+function dmScreen(config = {}) {
     return {
         // --- DATA PROPERTIES ---
+        isMaster: config.isMaster || false,
         templates: [],
         players: [],
         groups: [],

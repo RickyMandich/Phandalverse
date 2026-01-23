@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'master' => \App\Http\Middleware\MasterMiddleware::class,
+            'master_utils' => \App\Http\Middleware\MasterUtilsMiddleware::class,
         ]);
 
         // Aggiungi middleware per tracciare statistiche su tutte le richieste web

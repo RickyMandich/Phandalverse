@@ -72,7 +72,18 @@
                                        {{ old('master', $user->master) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="master">
                                     <span class="badge bg-warning">Master</span>
-                                    <small class="text-muted d-block">Ruolo Master (DM)</small>
+                                    <small class="text-muted d-block">Dungeon Master (Accesso completo e Note)</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="master_utils" name="master_utils" value="1"
+                                       {{ old('master_utils', $user->master_utils) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="master_utils">
+                                    <span class="badge bg-secondary">Master Utils</span>
+                                    <small class="text-muted d-block">Accesso a Tracker e Sessioni (Senza Note)</small>
                                 </label>
                             </div>
                         </div>

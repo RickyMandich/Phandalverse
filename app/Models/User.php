@@ -24,6 +24,7 @@ class User extends Authenticatable
         'password',
         'admin',
         'master',
+        'master_utils',
         'showEmbedLink',
         'collapseEmbed',
     ];
@@ -47,6 +48,8 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'master_utils' => 'boolean',
+            'master' => 'boolean',
             // 'password' => 'hashed', riga rimossa per gestire l'hashing in maniera personalizzata
         ];
     }
@@ -77,6 +80,22 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->admin == 1;
+    }
+
+    /**
+     * Check if user can use master utils
+     */
+    public function isMasterUtils(): bool
+    {
+        return $this->master || $this->master_utils;
+    }
+
+    /**
+     * Check if user is full master
+     */
+    public function isMaster(): bool
+    {
+        return $this->master;
     }
 
     /**

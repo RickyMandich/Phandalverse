@@ -149,6 +149,7 @@ class AdminController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'admin' => 'boolean',
             'master' => 'boolean',
+            'master_utils' => 'boolean',
             'showEmbedLink' => 'boolean',
             'collapseEmbed' => 'boolean',
         ]);
@@ -159,6 +160,7 @@ class AdminController extends Controller
             'password' => Hash::make($validated['password']),
             'admin' => $request->has('admin'),
             'master' => $request->has('master'),
+            'master_utils' => $request->has('master_utils'),
             'showEmbedLink' => $request->has('showEmbedLink'),
             'collapseEmbed' => $request->has('collapseEmbed'),
         ]);
@@ -196,6 +198,7 @@ class AdminController extends Controller
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'admin' => 'boolean',
             'master' => 'boolean',
+            'master_utils' => 'boolean',
             'showEmbedLink' => 'boolean',
             'collapseEmbed' => 'boolean',
         ]);
@@ -205,6 +208,7 @@ class AdminController extends Controller
             'email' => $validated['email'],
             'admin' => $request->has('admin'),
             'master' => $request->has('master'),
+            'master_utils' => $request->has('master_utils'),
             'showEmbedLink' => $request->has('showEmbedLink'),
             'collapseEmbed' => $request->has('collapseEmbed'),
         ]);
