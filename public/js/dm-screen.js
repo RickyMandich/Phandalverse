@@ -10,6 +10,9 @@ function dmScreen() {
         currentTurnIndex: 0,
         hideDead: false,
 
+        availableSessions: [],
+        currentSession: { id: null, name: 'Nuova Sessione' },
+
         selectedCombatant: null,
         selectedStatBlock: '',
         characterModal: null,
@@ -25,7 +28,7 @@ function dmScreen() {
                 hp_formula: '1d8',
                 attributes: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
                 saves: { str: false, dex: false, con: false, int: false, wis: false, cha: false },
-                notes: '' // Reale Stat Block Markdown
+                notes: ''
             }
         },
 
@@ -38,7 +41,8 @@ function dmScreen() {
         // --- INITIALIZATION ---
         init() {
             this.loadCharacters();
-            this.loadSession();
+            this.loadSessionsList();
+            this.loadDefaultSession();
 
             this.$nextTick(() => {
                 this.initModals();
@@ -65,12 +69,75 @@ function dmScreen() {
                 this.players = data.filter(c => c.type === 'player').map(c => ({ ...c, qty: 1 }));
                 this.groups = data.filter(c => c.type === 'group');
             } catch (e) {
-                console.error("Library load error:", e);
+                console.error("Errore caricamento libreria:", e);
             }
         },
 
         getStatModifier(val) {
             return Math.floor((parseInt(val || 10) - 10) / 2);
+        },
+
+        // --- SESSION MANAGEMENT ---
+        async loadSessionsList() {
+            const response = await fetch('/dm/api/sessions');
+            this.availableSessions = await response.json();
+        },
+
+        async createSession() {
+            let name = prompt("Nome della nuova sessione:");
+            if (!name) return;
+
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const response = await fetch('/dm/api/sessions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+                body: JSON.stringify({ name: name, data: { combatants: [], round: 1, currentTurnIndex: 0, hideDead: false } })
+            });
+
+            if (response.ok) {
+                const newSession = await response.json();
+                this.switchSession(newSession);
+                await this.loadSessionsList();
+            }
+        },
+
+        async switchSession(session) {
+            this.currentSession = { id: session.id, name: session.name };
+            const data = typeof session.data === 'string' ? JSON.parse(session.data) : session.data;
+            if (data) {
+                this.combatants = data.combatants || [];
+                this.round = data.round || 1;
+                this.currentTurnIndex = data.currentTurnIndex || 0;
+                this.hideDead = data.hideDead || false;
+            } else {
+                this.combatants = [];
+                this.round = 1;
+                this.currentTurnIndex = 0;
+            }
+            this.selectedCombatant = null;
+            this.selectedStatBlock = '';
+        },
+
+        async loadDefaultSession() {
+            const response = await fetch('/dm/api/session');
+            const session = await response.json();
+            if (session) {
+                this.switchSession(session);
+            }
+        },
+
+        async deleteSession(id) {
+            if (!confirm('Eliminare questa sessione?')) return;
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            await fetch(`/dm/api/sessions/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': token }
+            });
+            await this.loadSessionsList();
+            if (this.currentSession.id === id) {
+                this.currentSession = { id: null, name: 'Nessuna Sessione' };
+                this.combatants = [];
+            }
         },
 
         // --- MODAL TRIGGERS ---
@@ -130,7 +197,7 @@ function dmScreen() {
         showModal(modalObj) {
             if (!modalObj) this.initModals();
             if (modalObj) modalObj.show();
-            else alert('Bootstrap Modal error.');
+            else alert('Errore Modal Bootstrap.');
         },
 
         async saveCharacter() {
@@ -221,15 +288,15 @@ function dmScreen() {
                     instanceId: Date.now() + Math.random(),
                     id: char.id,
                     name: char.name,
-                    alias: '', // Alias opzionale
+                    alias: '',
                     type: char.type,
                     ac: stats.ac || 10,
                     maxHp: hp, hp: hp,
                     initiative: init,
                     statuses: [],
-                    personalNotes: '', // Note personali del DM (separate dallo statblock)
-                    showNotesInline: false, // Toggle per mostrare note nella card
-                    stats: stats // Qui rimane 'notes' che è lo statblock statico
+                    personalNotes: '',
+                    showNotesInline: false,
+                    stats: stats
                 });
             }
             this.sortCombat();
@@ -262,7 +329,7 @@ function dmScreen() {
 
         startCombat() {
             this.sortCombat();
-            this.round = 0;
+            this.round = 1;
             this.currentTurnIndex = 0;
             this.saveSession();
         },
@@ -278,7 +345,7 @@ function dmScreen() {
         },
 
         resetCombat() {
-            if (confirm('Reset combat?')) {
+            if (confirm('Resettare il combattimento?')) {
                 this.combatants = []; this.round = 1; this.currentTurnIndex = 0;
                 this.selectedCombatant = null; this.selectedStatBlock = '';
                 this.saveSession();
@@ -299,13 +366,12 @@ function dmScreen() {
         },
 
         addStatus(combatant) {
-            let status = prompt("Status:");
+            let status = prompt("Stato (es. Intontito):");
             if (status) { combatant.statuses.push(status); this.saveSession(); }
         },
 
         async selectCombatant(combatant) {
             this.selectedCombatant = combatant;
-            // Carica lo Stat Block (dalle stats originali del template)
             if (combatant.stats && combatant.stats.notes) {
                 const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                 const response = await fetch('/dm/api/render-stat-block', {
@@ -319,32 +385,21 @@ function dmScreen() {
         },
 
         async saveSession() {
-            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            await fetch('/dm/api/session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
-                body: JSON.stringify({
-                    data: {
-                        combatants: this.combatants,
-                        round: this.round,
-                        currentTurnIndex: this.currentTurnIndex,
-                        hideDead: this.hideDead
-                    }
-                })
-            });
-        },
+            if (!this.currentSession.id) return;
 
-        async loadSession() {
-            try {
-                const response = await fetch('/dm/api/session');
-                const data = await response.json();
-                if (data) {
-                    this.combatants = data.combatants || [];
-                    this.round = data.round || 1;
-                    this.currentTurnIndex = data.currentTurnIndex || 0;
-                    this.hideDead = data.hideDead || false;
-                }
-            } catch (e) { console.error("Session load error:", e); }
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const data = {
+                combatants: this.combatants,
+                round: this.round,
+                currentTurnIndex: this.currentTurnIndex,
+                hideDead: this.hideDead
+            };
+
+            await fetch(`/dm/api/sessions/${this.currentSession.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+                body: JSON.stringify({ data: data })
+            });
         }
     }
 }

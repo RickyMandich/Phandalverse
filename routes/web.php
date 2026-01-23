@@ -41,8 +41,14 @@ Route::middleware(['auth', 'master'])->prefix('dm')->group(function () {
     Route::patch('/api/characters/{character}', [DmController::class, 'updateCharacter'])->name('dm.api.characters.update');
     Route::delete('/api/characters/{character}', [DmController::class, 'destroyCharacter'])->name('dm.api.characters.destroy');
 
+    Route::get('/api/sessions', [DmController::class, 'getSessions'])->name('dm.api.sessions.index');
+    Route::post('/api/sessions', [DmController::class, 'storeSession'])->name('dm.api.sessions.store');
+    Route::get('/api/sessions/{session}', [DmController::class, 'loadSession'])->name('dm.api.sessions.load');
+    Route::patch('/api/sessions/{session}', [DmController::class, 'updateSession'])->name('dm.api.sessions.update');
+    Route::delete('/api/sessions/{session}', [DmController::class, 'destroySession'])->name('dm.api.sessions.destroy');
+
     Route::post('/api/session', [DmController::class, 'saveSession'])->name('dm.api.session.save');
-    Route::get('/api/session', [DmController::class, 'loadSession'])->name('dm.api.session.load');
+    Route::get('/api/session', [DmController::class, 'legacyLoadSession'])->name('dm.api.session.load');
 
     Route::post('/api/render-stat-block', [DmController::class, 'renderStatBlock'])->name('dm.api.render-stat-block');
 });

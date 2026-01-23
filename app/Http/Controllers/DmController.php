@@ -78,24 +78,85 @@ class DmController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function getSessions()
+    {
+        $sessions = DmSession::where('user_id', Auth::id())
+            ->orderBy('updated_at', 'desc')
+            ->get();
+        return response()->json($sessions);
+    }
+
+    public function storeSession(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'data' => 'nullable|array',
+        ]);
+
+        $session = DmSession::create([
+            'user_id' => Auth::id(),
+            'name' => $validated['name'],
+            'data' => $validated['data'] ?? [],
+        ]);
+
+        return response()->json($session);
+    }
+
+    public function loadSession(DmSession $session)
+    {
+        if ($session->user_id !== Auth::id()) {
+            abort(403);
+        }
+        return response()->json($session);
+    }
+
+    public function updateSession(Request $request, DmSession $session)
+    {
+        if ($session->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'data' => 'required|array',
+        ]);
+
+        $session->update($validated);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function destroySession(DmSession $session)
+    {
+        if ($session->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $session->delete();
+
+        return response()->json(['success' => true]);
+    }
+
     public function saveSession(Request $request)
     {
+        // Keep this for legacy or simple auto-save without ID if needed, 
+        // but preferred to use updateSession now.
         $validated = $request->validate([
             'data' => 'required|array',
         ]);
 
         $session = DmSession::updateOrCreate(
-            ['user_id' => Auth::id()],
+            ['user_id' => Auth::id(), 'name' => 'Default Session'],
             ['data' => $validated['data']]
         );
 
-        return response()->json(['success' => true]);
+        return response()->json($session);
     }
 
-    public function loadSession()
+    public function legacyLoadSession()
     {
-        $session = DmSession::where('user_id', Auth::id())->first();
-        return response()->json($session ? $session->data : null);
+        $session = DmSession::where('user_id', Auth::id())->orderBy('updated_at', 'desc')->first();
+        return response()->json($session);
     }
 
     public function renderStatBlock(Request $request)
