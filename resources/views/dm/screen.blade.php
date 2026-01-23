@@ -143,7 +143,7 @@
             </div>
 
             <!-- RIGHT: Details Panel -->
-            <div class="col-md-3 border-start vh-100 overflow-auto bg-light p-3">
+            <div class="col-md-3 border-start vh-100 overflow-auto bg-dark p-3">
                 <h4 class="mb-3">📜 Details</h4>
                 <div x-show="selectedCombatant">
                     <h3 x-text="selectedCombatant?.name"></h3>
