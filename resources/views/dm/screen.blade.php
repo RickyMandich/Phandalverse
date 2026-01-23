@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container-fluid" x-data="dmScreen">
+    <div class="container-fluid" x-data="dmScreen()">
         <div class="row">
             <!-- SIDEBAR: Library & Templates -->
             <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3">
@@ -39,9 +39,9 @@
                                     <div class="d-flex align-items-center mt-1">
                                         <input type="number"
                                             class="form-control form-control-sm bg-secondary text-white border-0 w-25 me-1"
-                                            value="1" x-ref="'qty-' + char.id">
+                                            x-model.number="char.qty">
                                         <button class="btn btn-sm btn-primary flex-grow-1 py-0"
-                                            @click="addToCombat(char, $refs['qty-' + char.id].value)">Add</button>
+                                            @click="addToCombat(char)">Add</button>
                                     </div>
                                 </div>
                             </template>
@@ -241,7 +241,7 @@
                                 </div>
                                 <div class="mb-2">
                                     <label class="small"
-                                        x-text="characterForm.type === 'template' ? 'HP Formula (3d8+4)' : 'Default HP'"></label>
+                                        x-text="characterForm.stats.type === 'template' ? 'HP Formula (3d8+4)' : 'Default HP'"></label>
                                     <input type="text" class="form-control form-control-sm bg-secondary text-white border-0"
                                         x-model="characterForm.stats.hp_formula">
                                 </div>

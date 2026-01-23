@@ -1,6 +1,6 @@
 
-document.addEventListener('alpine:init', () => {
-    Alpine.data('dmScreen', () => ({
+function dmScreen() {
+    return {
         templates: [],
         players: [],
         groups: [],
@@ -23,12 +23,8 @@ document.addEventListener('alpine:init', () => {
             stats: {
                 ac: 10,
                 hp_formula: '1d8',
-                attributes: {
-                    str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10
-                },
-                saves: {
-                    str: false, dex: false, con: false, int: false, wis: false, cha: false
-                },
+                attributes: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+                saves: { str: false, dex: false, con: false, int: false, wis: false, cha: false },
                 notes: ''
             }
         },
@@ -36,38 +32,45 @@ document.addEventListener('alpine:init', () => {
         groupForm: {
             id: null,
             name: '',
-            members: [] // { character_id: X, qty: Y }
+            members: []
         },
 
         init() {
             this.loadCharacters();
             this.loadSession();
 
+            // Inizializzazione modal con controllo esistenza bootstrap
             this.$nextTick(() => {
-                const modalEl = document.getElementById('characterModal');
-                if (modalEl && window.bootstrap) {
-                    this.characterModal = new window.bootstrap.Modal(modalEl);
-                }
-                const groupModalEl = document.getElementById('groupModal');
-                if (groupModalEl && window.bootstrap) {
-                    this.groupModal = new window.bootstrap.Modal(groupModalEl);
-                }
+                this.initModals();
             });
 
             setInterval(() => {
                 this.saveSession();
-            }, 10000); // More frequent auto-save (10s)
+            }, 10000);
+        },
+
+        initModals() {
+            const modalEl = document.getElementById('characterModal');
+            if (modalEl && window.bootstrap) {
+                this.characterModal = new window.bootstrap.Modal(modalEl);
+            }
+            const groupModalEl = document.getElementById('groupModal');
+            if (groupModalEl && window.bootstrap) {
+                this.groupModal = new window.bootstrap.Modal(groupModalEl);
+            }
         },
 
         async loadCharacters() {
-            const response = await fetch('/dm/api/characters');
-            const data = await response.json();
-            this.templates = data.filter(c => c.type === 'template');
-            this.players = data.filter(c => c.type === 'player');
-            // Groups are saved as templates but we can identify them by a flag in stats or a naming convention
-            // Better: use the 'type' field if we update the migration/enum, or just a flag in JSON.
-            // For now, let's assume we use a specific type if possible, or filter from templates.
-            this.groups = data.filter(c => c.type === 'group');
+            try {
+                const response = await fetch('/dm/api/characters');
+                const data = await response.json();
+                // Aggiungiamo qty: 1 a ogni elemento per gestire l'input di inserimento multiplo
+                this.templates = data.filter(c => c.type === 'template').map(c => ({ ...c, qty: 1 }));
+                this.players = data.filter(c => c.type === 'player').map(c => ({ ...c, qty: 1 }));
+                this.groups = data.filter(c => c.type === 'group');
+            } catch (e) {
+                console.error("Errore caricamento libreria:", e);
+            }
         },
 
         getStatModifier(val) {
@@ -77,15 +80,19 @@ document.addEventListener('alpine:init', () => {
         openCharacterModal(type, char = null) {
             this.modalMode = char ? 'edit' : 'create';
             if (char) {
+                const stats = typeof char.stats === 'string' ? JSON.parse(char.stats) : (char.stats || {});
                 this.characterForm = {
                     id: char.id,
                     name: char.name,
                     type: char.type,
-                    stats: typeof char.stats === 'string' ? JSON.parse(char.stats) : JSON.parse(JSON.stringify(char.stats))
+                    stats: {
+                        ac: stats.ac || 10,
+                        hp_formula: stats.hp_formula || '10',
+                        attributes: stats.attributes || { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+                        saves: stats.saves || { str: false, dex: false, con: false, int: false, wis: false, cha: false },
+                        notes: stats.notes || ''
+                    }
                 };
-                // Ensure nested structures exist
-                if (!this.characterForm.stats.attributes) this.characterForm.stats.attributes = { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
-                if (!this.characterForm.stats.saves) this.characterForm.stats.saves = { str: false, dex: false, con: false, int: false, wis: false, cha: false };
             } else {
                 this.characterForm = {
                     id: null,
@@ -106,7 +113,7 @@ document.addEventListener('alpine:init', () => {
         openGroupModal(group = null) {
             this.modalMode = group ? 'edit' : 'create';
             if (group) {
-                const stats = typeof group.stats === 'string' ? JSON.parse(group.stats) : group.stats;
+                const stats = typeof group.stats === 'string' ? JSON.parse(group.stats) : (group.stats || {});
                 this.groupForm = {
                     id: group.id,
                     name: group.name,
@@ -131,19 +138,17 @@ document.addEventListener('alpine:init', () => {
         },
 
         showModal(modalObj) {
+            if (!modalObj) this.initModals();
             if (modalObj) {
                 modalObj.show();
             } else {
-                console.error('Modal not initialized.');
+                alert('Impossibile caricare il modal. Riprova tra un istante.');
             }
         },
 
         async saveCharacter() {
             const method = this.modalMode === 'create' ? 'POST' : 'PATCH';
-            const url = this.modalMode === 'create'
-                ? '/dm/api/characters'
-                : `/dm/api/characters/${this.characterForm.id}`;
-
+            const url = this.modalMode === 'create' ? '/dm/api/characters' : `/dm/api/characters/${this.characterForm.id}`;
             const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             try {
                 const response = await fetch(url, {
@@ -160,17 +165,13 @@ document.addEventListener('alpine:init', () => {
 
         async saveGroup() {
             const method = this.modalMode === 'create' ? 'POST' : 'PATCH';
-            const url = this.modalMode === 'create'
-                ? '/dm/api/characters'
-                : `/dm/api/characters/${this.groupForm.id}`;
-
+            const url = this.modalMode === 'create' ? '/dm/api/characters' : `/dm/api/characters/${this.groupForm.id}`;
             const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             const payload = {
                 name: this.groupForm.name,
                 type: 'group',
                 stats: { members: this.groupForm.members }
             };
-
             try {
                 const response = await fetch(url, {
                     method: method,
@@ -183,8 +184,6 @@ document.addEventListener('alpine:init', () => {
                 }
             } catch (e) { console.error(e); }
         },
-
-        // --- COMBAT LOGIC ---
 
         resolveFormula(formula) {
             if (!formula) return 0;
@@ -217,38 +216,39 @@ document.addEventListener('alpine:init', () => {
             return total + modifier;
         },
 
-        addToCombat(char, qty = 1) {
-            qty = parseInt(qty) || 1;
+        addToCombat(char, qty = null) {
+            // Se qty è null, prendiamo quello dall'oggetto (popolato da x-model)
+            const countToAdd = qty !== null ? parseInt(qty) : (parseInt(char.qty) || 1);
 
-            for (let i = 0; i < qty; i++) {
+            for (let i = 0; i < countToAdd; i++) {
                 let init = 0;
-                let dexVal = (char.stats.attributes && char.stats.attributes.dex) ? char.stats.attributes.dex : 10;
+                let stats = typeof char.stats === 'string' ? JSON.parse(char.stats) : (char.stats || {});
+                let dexVal = (stats.attributes && stats.attributes.dex) ? stats.attributes.dex : 10;
                 let dexMod = this.getStatModifier(dexVal);
 
                 if (char.type === 'player') {
-                    init = 0; // Manual input for players
+                    init = 0;
                 } else {
                     init = Math.floor(Math.random() * 20) + 1 + dexMod;
                 }
 
-                let hp = this.resolveFormula(char.stats.hp_formula);
-                let count = this.combatants.filter(c => c.name === char.name).length;
+                let hp = this.resolveFormula(stats.hp_formula);
+                let countSameName = this.combatants.filter(c => c.name === char.name).length;
 
                 let combatant = {
                     instanceId: Date.now() + Math.random(),
                     id: char.id,
                     name: char.name,
                     type: char.type,
-                    ac: char.stats.ac,
+                    ac: stats.ac || 10,
                     maxHp: hp,
                     hp: hp,
                     initiative: init,
                     statuses: [],
-                    notes: char.stats.notes || '',
-                    enemyCount: char.type === 'template' ? count + 1 : null,
-                    stats: char.stats // Keep ref to attributes/saves
+                    notes: stats.notes || '',
+                    enemyCount: char.type === 'template' ? countSameName + 1 : null,
+                    stats: stats
                 };
-
                 this.combatants.push(combatant);
             }
             this.sortCombat();
@@ -256,9 +256,8 @@ document.addEventListener('alpine:init', () => {
         },
 
         addGroupToCombat(group) {
-            const stats = typeof group.stats === 'string' ? JSON.parse(group.stats) : group.stats;
+            const stats = typeof group.stats === 'string' ? JSON.parse(group.stats) : (group.stats || {});
             const members = stats.members || [];
-
             members.forEach(m => {
                 const char = [...this.templates, ...this.players].find(c => c.id == m.character_id);
                 if (char) {
@@ -272,15 +271,12 @@ document.addEventListener('alpine:init', () => {
             if (this.combatants.length > 0 && this.combatants[this.currentTurnIndex]) {
                 activeId = this.combatants[this.currentTurnIndex].instanceId;
             }
-
             this.combatants.sort((a, b) => {
                 if (b.initiative !== a.initiative) return b.initiative - a.initiative;
-                // Tie breaker: higher Dex mod
                 let modA = this.getStatModifier(a.stats?.attributes?.dex || 10);
                 let modB = this.getStatModifier(b.stats?.attributes?.dex || 10);
                 return modB - modA;
             });
-
             if (activeId) {
                 let newIndex = this.combatants.findIndex(c => c.instanceId === activeId);
                 if (newIndex !== -1) {
@@ -364,14 +360,19 @@ document.addEventListener('alpine:init', () => {
         },
 
         async loadSession() {
-            const response = await fetch('/dm/api/session');
-            const data = await response.json();
-            if (data) {
-                this.combatants = data.combatants || [];
-                this.round = data.round || 1;
-                this.currentTurnIndex = data.currentTurnIndex || 0;
-                this.hideDead = data.hideDead || false;
+            try {
+                const response = await fetch('/dm/api/session');
+                const data = await response.json();
+                if (data) {
+                    this.combatants = data.combatants || [];
+                    this.round = data.round || 1;
+                    this.currentTurnIndex = data.currentTurnIndex || 0;
+                    this.hideDead = data.hideDead || false;
+                }
+            } catch (e) {
+                console.error("Errore caricamento sessione:", e);
             }
         }
-    }));
-});
+    }
+}
+window.dmScreen = dmScreen;
