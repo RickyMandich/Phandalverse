@@ -5,9 +5,9 @@
 
 @section('content')
     <div x-data="dmScreen({ 
-                isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
-                isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
-            })">
+                    isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
+                    isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
+                })">
         <div class="row gx-0">
             <!-- SIDEBAR LEFT: Libreria -->
             <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3 custom-scrollbar">
@@ -167,15 +167,15 @@
                         <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                             <div class="list-group-item mb-2 rounded border-0 shadow-sm combatant-card p-0 overflow-hidden"
                                 x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                        'active-turn': currentTurnIndex === index,
-                                        'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
-                                        'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
-                                    }" @click="selectCombatant(combatant)">
+                                            'active-turn': currentTurnIndex === index,
+                                            'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
+                                            'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
+                                        }" @click="selectCombatant(combatant)">
 
                                 <div class="d-flex align-items-center p-2">
                                     <!-- INITIATIVE -->
                                     <div class="me-3 text-center" style="width: 45px;">
-                                        <div class="initiative-badge rounded-circle d-flex align-items-center justify-content-center mx-auto"
+                                        <div class="initiative-badge rounded-pill d-flex align-items-center justify-content-center mx-auto"
                                             style="width: 32px; height: 32px;"
                                             :class="currentTurnIndex === index ? 'bg-warning text-dark shadow' : 'bg-dark text-white border border-secondary'">
                                             <input type="number"
@@ -320,7 +320,7 @@
 
     <!-- MODALS -->
     <!-- (Il resto dei modali e degli stili rimane invariato rispetto alla versione precedente per brevità, 
-              ma inclusi qui per integrità del database di conoscenza se necessario) -->
+                  ma inclusi qui per integrità del database di conoscenza se necessario) -->
 
     <!-- MODAL: Crea/Modifica Personaggio -->
     <div class="modal fade" id="characterModal" tabindex="-1">
