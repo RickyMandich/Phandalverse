@@ -1,6 +1,6 @@
 
-function dmScreen() {
-    return {
+document.addEventListener('alpine:init', () => {
+    Alpine.data('dmScreen', () => ({
         templates: [],
         players: [],
         combatants: [],
@@ -98,7 +98,6 @@ function dmScreen() {
                 ? '/dm/api/characters'
                 : `/dm/api/characters/${this.characterForm.id}`;
 
-            // Token handling if not using axios global config
             const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
             try {
@@ -126,33 +125,21 @@ function dmScreen() {
         // --- COMBAT LOGIC ---
 
         resolveFormula(formula) {
-            // Robust parsing for "XdY+Z" or constant numbers
             if (!formula) return 0;
             formula = String(formula).toLowerCase().replace(/\s/g, '');
-
-            // If just a number
             if (/^\d+$/.test(formula)) return parseInt(formula);
 
-            // Regex for XdY(+/-)Z
-            // Capture groups: 1=numDice, 2=dieSize, 3=modifier(signed)
-            // Example: 3d8+4 -> splits to [3, 8, +4] approx
-
-            // simple check: split by 'd'
             let parts = formula.split('d');
             if (parts.length !== 2) {
-                // Try parsing as simple math expression like "10+2"
                 try {
-                    return eval(formula.replace(/[^0-9+\-]/g, ''));
+                    return Function('"use strict";return (' + formula.replace(/[^0-9+\-*\/()]/g, '') + ')')();
                 } catch { return 0; }
             }
 
             let numDice = parseInt(parts[0]) || 1;
             let rest = parts[1];
-
-            // Split rest by + or -
             let dieSize = 0;
             let modifier = 0;
-
             let modIndex = rest.search(/[+\-]/);
             if (modIndex !== -1) {
                 dieSize = parseInt(rest.substring(0, modIndex));
@@ -165,25 +152,19 @@ function dmScreen() {
             for (let i = 0; i < numDice; i++) {
                 total += Math.floor(Math.random() * dieSize) + 1;
             }
-
             return total + modifier;
         },
 
         addToCombat(char) {
-            // Determine Initiative
             let init = 0;
             if (char.type === 'player') {
-                init = 0; // Placeholder for manual entry
+                init = 0;
             } else {
-                // Roll d20 + dex_mod
                 let mod = parseInt(char.stats.dex_mod) || 0;
                 init = Math.floor(Math.random() * 20) + 1 + mod;
             }
 
-            // Determine HP
             let hp = this.resolveFormula(char.stats.hp_formula);
-
-            // Helper to count existing enemies of same name to add # number
             let count = this.combatants.filter(c => c.name === char.name).length;
 
             let combatant = {
@@ -200,37 +181,19 @@ function dmScreen() {
                 enemyCount: char.type === 'template' ? count + 1 : null
             };
 
-            // Insert into combatants list
             this.combatants.push(combatant);
-
-            // Dynamic insertion/sort
-            // If we are in middle of combat, we want to maintain current turn if possible
-            // but for simplicity, we insert, then sort.
-
-            // Check if we started combat (anyone has initiative)
-            // If NPC was added, it has init. If Player, it has 0.
-            // We'll leave the list unsorted until user clicks "Sort" or if we want auto-sort:
-
             this.sortCombat();
             this.saveSession();
         },
 
         sortCombat() {
-            // Store who is currently active to restore focus if possible
             let activeId = null;
             if (this.combatants.length > 0 && this.combatants[this.currentTurnIndex]) {
                 activeId = this.combatants[this.currentTurnIndex].instanceId;
             }
 
-            this.combatants.sort((a, b) => {
-                if (b.initiative !== a.initiative) {
-                    return b.initiative - a.initiative;
-                }
-                // Tie-breaker: Dex mod (not stored on instance currently, defaulting to random stability)
-                return 0;
-            });
+            this.combatants.sort((a, b) => b.initiative - a.initiative);
 
-            // Try to find where the active player went
             if (activeId) {
                 let newIndex = this.combatants.findIndex(c => c.instanceId === activeId);
                 if (newIndex !== -1) {
@@ -241,7 +204,6 @@ function dmScreen() {
 
         nextTurn() {
             if (this.combatants.length === 0) return;
-
             this.currentTurnIndex++;
             if (this.currentTurnIndex >= this.combatants.length) {
                 this.currentTurnIndex = 0;
@@ -262,9 +224,6 @@ function dmScreen() {
         },
 
         removeCombatant(index) {
-            if (index === this.currentTurnIndex) {
-                // If removing current actor, move index back one so nextTurn works or handle gracefully
-            }
             if (index < this.currentTurnIndex) {
                 this.currentTurnIndex--;
             }
@@ -287,8 +246,6 @@ function dmScreen() {
 
         async selectCombatant(combatant) {
             this.selectedCombatant = combatant;
-
-            // If it has a statblock/notes, render markdown
             if (combatant.notes) {
                 const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                 const response = await fetch('/dm/api/render-stat-block', {
@@ -305,8 +262,6 @@ function dmScreen() {
                 this.selectedStatBlock = '';
             }
         },
-
-        // --- SESSION PERSISTENCE ---
 
         async saveSession() {
             const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -335,5 +290,5 @@ function dmScreen() {
                 this.currentTurnIndex = data.currentTurnIndex || 0;
             }
         }
-    }
-}
+    }));
+});

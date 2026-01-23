@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container-fluid" x-data="dmScreen()" x-init="init()">
+    <div class="container-fluid" x-data="dmScreen">
         <div class="row">
             <!-- SIDEBAR: Library & Templates -->
             <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3">
@@ -218,8 +218,8 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="//unpkg.com/alpinejs" defer></script>
     <script src="{{ asset('js/dm-screen.js') }}" defer></script>
+    <script src="//unpkg.com/alpinejs" defer></script>
     <style>
         .master-block {
             border-left: 3px solid gold;
