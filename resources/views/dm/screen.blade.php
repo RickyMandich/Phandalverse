@@ -5,9 +5,9 @@
 
 @section('content')
     <div x-data="dmScreen({ 
-                                    isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
-                                    isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
-                                })">
+                                            isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
+                                            isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
+                                        })">
         <div class="row gx-0">
             <!-- SIDEBAR LEFT: Libreria -->
             <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3 custom-scrollbar">
@@ -169,10 +169,10 @@
                         <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                             <div class="list-group-item mb-2 rounded border-0 shadow-sm combatant-card p-0 overflow-hidden"
                                 x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                                            'active-turn': currentTurnIndex === index,
-                                                            'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
-                                                            'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
-                                                        }" @click="selectCombatant(combatant)">
+                                                                    'active-turn': currentTurnIndex === index,
+                                                                    'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
+                                                                    'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
+                                                                }" @click="selectCombatant(combatant)">
 
                                 <div class="d-flex align-items-center p-2">
                                     <!-- INITIATIVE -->
@@ -210,20 +210,37 @@
 
                                     <!-- HP -->
                                     <div class="d-flex align-items-center bg-dark bg-opacity-25 rounded px-2 py-1 mx-2"
-                                        style="min-width: 170px;">
+                                        style="min-width: 210px;">
                                         <button class="btn btn-sm text-danger p-0 border-0 shadow-none"
-                                            @click.stop="modifyHp(combatant, -1)">-</button>
-                                        <input type="number"
-                                            class="form-control form-control-sm text-center p-0 fw-bold border-0 bg-transparent mx-1 text-white"
-                                            style="width: 35px;" x-model.number="combatant.hp"
-                                            :class="{'text-danger': combatant.hp <= 0, 'text-warning': combatant.hp > 0 && combatant.hp < (combatant.maxHp/2), 'text-success': combatant.hp >= (combatant.maxHp/2)}">
-                                        <span class="text-muted x-small">/</span>
-                                        <input type="number"
-                                            class="form-control form-control-sm text-center p-0 border-0 bg-transparent text-muted ms-1"
-                                            style="width: 35px; font-size: 0.8rem;" x-model.number="combatant.maxHp"
-                                            @change="saveSession()">
-                                        <button class="btn btn-sm text-success p-0 border-0 shadow-none"
-                                            @click.stop="modifyHp(combatant, 1)">+</button>
+                                            @click.stop="modifyHp(combatant, -1)">
+                                            <i class="bi bi-dash-circle"></i>
+                                        </button>
+
+                                        <div class="d-flex align-items-center mx-1">
+                                            <input type="number"
+                                                class="form-control form-control-sm text-center p-0 fw-bold border-0 bg-transparent text-white"
+                                                style="width: 45px; font-size: 1.1rem;" x-model.number="combatant.hp"
+                                                :class="{'text-danger': combatant.hp <= 0, 'text-warning': combatant.hp > 0 && combatant.hp < (combatant.maxHp/2), 'text-success': combatant.hp >= (combatant.maxHp/2)}">
+                                            <span class="text-muted x-small">/</span>
+                                            <input type="number"
+                                                class="form-control form-control-sm text-center p-0 border-0 bg-transparent text-muted ms-1"
+                                                style="width: 40px; font-size: 0.85rem;" x-model.number="combatant.maxHp"
+                                                @change="saveSession()">
+                                        </div>
+
+                                        <!-- TEMP HP -->
+                                        <div class="ms-2 ps-2 border-start border-secondary d-flex align-items-center">
+                                            <span class="x-small text-info me-1">+</span>
+                                            <input type="number"
+                                                class="form-control form-control-sm text-center p-0 border-0 bg-transparent text-info fw-bold"
+                                                style="width: 30px; font-size: 0.85rem;" x-model.number="combatant.tempHp"
+                                                @change="saveSession()">
+                                        </div>
+
+                                        <button class="btn btn-sm text-success p-0 border-0 shadow-none ms-1"
+                                            @click.stop="modifyHp(combatant, 1)">
+                                            <i class="bi bi-plus-circle"></i>
+                                        </button>
                                     </div>
 
                                     <!-- MENU -->
@@ -322,59 +339,105 @@
 
     <!-- MODALS -->
     <!-- (Il resto dei modali e degli stili rimane invariato rispetto alla versione precedente per brevità, 
-                                  ma inclusi qui per integrità del database di conoscenza se necessario) -->
+                                          ma inclusi qui per integrità del database di conoscenza se necessario) -->
 
     <!-- MODAL: Crea/Modifica Personaggio -->
-    <div class="modal fade" id="characterModal" tabindex="-1">
+    <div class="modal fade" id="characterModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content bg-dark text-white border-secondary shadow">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title" x-text="modalMode === 'create' ? 'Crea' : 'Modifica'"></h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-content bg-dark text-white border-secondary shadow-lg">
+                <div class="modal-header border-secondary bg-black bg-opacity-25">
+                    <h5 class="modal-title d-flex align-items-center">
+                        <i class="bi bi-person-badge me-2 text-warning"></i>
+                        <span x-text="modalMode === 'create' ? 'Nuovo' : 'Modifica'"></span>
+                        <span class="ms-1" x-text="characterForm.type === 'template' ? 'Mostro/NPC' : 'Giocatore'"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-2 text-white">
-                                <label class="small">Nome</label>
-                                <input type="text" class="form-control form-control-sm bg-secondary text-white border-0"
-                                    x-model="characterForm.name">
+                <div class="modal-body p-4">
+                    <div class="row g-4">
+                        <!-- Left Column: Basic Info -->
+                        <div class="col-md-5">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Nome</label>
+                                <input type="text"
+                                    class="form-control bg-secondary bg-opacity-25 text-white border-secondary"
+                                    x-model="characterForm.name" placeholder="Es: Drago Rosso, Pippo...">
                             </div>
-                            <div class="mb-2">
-                                <label class="small">Classe Armatura (CA)</label>
-                                <input type="number" class="form-control form-control-sm bg-secondary text-white border-0"
-                                    x-model.number="characterForm.stats.ac">
+
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-uppercase text-muted">CA</label>
+                                        <input type="number"
+                                            class="form-control bg-secondary bg-opacity-25 text-white border-secondary text-center"
+                                            x-model.number="characterForm.stats.ac">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-uppercase text-muted"
+                                            x-text="characterForm.type === 'template' ? 'HP (Formula)' : 'HP Max'"></label>
+                                        <input type="text"
+                                            class="form-control bg-secondary bg-opacity-25 text-white border-secondary text-center"
+                                            x-model="characterForm.stats.hp_formula"
+                                            :placeholder="characterForm.type === 'template' ? '2d8+4' : '25'">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="mb-2">
-                                <label class="small"
-                                    x-text="characterForm.type === 'template' ? 'Formula HP (es. 3d8+4)' : 'HP Iniziali'"></label>
-                                <input type="text" class="form-control form-control-sm bg-secondary text-white border-0"
-                                    x-model="characterForm.stats.hp_formula">
+
+                            <div class="mt-2 p-3 bg-black bg-opacity-25 rounded border border-secondary">
+                                <label
+                                    class="form-label small fw-bold text-uppercase text-info mb-2 d-flex align-items-center">
+                                    <i class="bi bi-file-earmark-text me-2"></i> Stat Block (Markdown)
+                                </label>
+                                <textarea class="form-control bg-dark text-white border-0 font-monospace small" rows="8"
+                                    x-model="characterForm.stats.notes"
+                                    placeholder="# Statistiche...&#10;**Azione:** Colpo di coda..."></textarea>
+                                <div class="mt-2 x-small text-muted">Usa il Markdown per formattare blocchi di testo,
+                                    tabelle o liste.</div>
                             </div>
                         </div>
-                        <div class="col-md-6 border-start border-secondary">
-                            <label class="small mb-1 d-block text-center">Caratteristiche e T.S.</label>
-                            <div class="row g-2">
+
+                        <!-- Right Column: Stats & Saves -->
+                        <div class="col-md-7 border-start border-secondary">
+                            <label
+                                class="form-label d-block text-center small fw-bold text-uppercase text-muted mb-3">Caratteristiche
+                                e Tiri Salvezza</label>
+
+                            <div class="row g-3">
                                 <template x-for="(val, stat) in characterForm.stats.attributes" :key="stat">
-                                    <div class="col-4 text-center">
-                                        <div class="text-uppercase x-small fw-bold" x-text="stat"></div>
-                                        <input type="number"
-                                            class="form-control form-control-sm bg-secondary text-white border-0 text-center"
-                                            x-model.number="characterForm.stats.attributes[stat]">
-                                        <div class="form-check form-check-inline mt-1">
-                                            <input class="form-check-input" type="checkbox"
-                                                x-model="characterForm.stats.saves[stat]">
-                                            <label class="form-check-label x-small">T.S.</label>
+                                    <div class="col-4">
+                                        <div
+                                            class="stat-input-group p-2 rounded bg-secondary bg-opacity-10 border border-secondary text-center">
+                                            <div class="text-uppercase fw-bold text-warning small mb-1" x-text="stat"></div>
+                                            <input type="number"
+                                                class="form-control form-control-sm bg-dark text-white border-0 text-center fw-bold fs-5"
+                                                x-model.number="characterForm.stats.attributes[stat]">
+
+                                            <div class="form-check d-inline-block mt-1">
+                                                <input class="form-check-input" type="checkbox" :id="'ts-'+stat"
+                                                    x-model="characterForm.stats.saves[stat]">
+                                                <label class="form-check-label x-small text-muted"
+                                                    :for="'ts-'+stat">TS</label>
+                                            </div>
                                         </div>
                                     </div>
                                 </template>
                             </div>
+
+                            <div class="mt-4 alert alert-info bg-opacity-10 py-2 border-info text-info small">
+                                <i class="bi bi-info-circle me-2"></i> I Tiri Salvezza (TS) selezionati verranno evidenziati
+                                nel pannello dettagli.
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
-                    <button type="button" class="btn btn-primary shadow" @click="saveCharacter()">Salva</button>
+                <div class="modal-footer border-secondary bg-black bg-opacity-25">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Annulla</button>
+                    <button type="button" class="btn btn-warning text-dark fw-bold px-4 shadow" @click="saveCharacter()">
+                        <i class="bi bi-check-lg me-1"></i> Salva Personaggio
+                    </button>
                 </div>
             </div>
         </div>
@@ -473,6 +536,18 @@
 
         .x-small {
             font-size: 0.7rem;
+        }
+
+        .stat-input-group {
+            transition: all 0.2s;
+        }
+
+        .stat-input-group:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .initiative-badge {
+            border-radius: 8px !important;
         }
 
         .statblock-rendered {
