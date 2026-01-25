@@ -52,7 +52,7 @@ function dmScreen(config = {}) {
 
             setInterval(() => {
                 this.saveSession();
-            }, 10000);
+            }, 15000);
         },
 
         initModals() {
@@ -149,29 +149,33 @@ function dmScreen(config = {}) {
         // --- MODAL TRIGGERS ---
         openCharacterModal(type, char = null) {
             this.modalMode = char ? 'edit' : 'create';
+
+            const defaults = {
+                ac: 10,
+                hp_formula: type === 'template' ? '1d8' : '10',
+                attributes: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+                saves: { str: false, dex: false, con: false, int: false, wis: false, cha: false },
+                notes: ''
+            };
+
             if (char) {
-                const stats = typeof char.stats === 'string' ? JSON.parse(char.stats) : (char.stats || {});
+                const s = typeof char.stats === 'string' ? JSON.parse(char.stats) : (char.stats || {});
                 this.characterForm = {
                     id: char.id,
                     name: char.name,
                     type: char.type,
                     stats: {
-                        ac: stats.ac || 10,
-                        hp_formula: stats.hp_formula || '10',
-                        attributes: stats.attributes || { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
-                        saves: stats.saves || { str: false, dex: false, con: false, int: false, wis: false, cha: false },
-                        notes: stats.notes || ''
+                        ac: s.ac || defaults.ac,
+                        hp_formula: s.hp_formula || defaults.hp_formula,
+                        attributes: { ...defaults.attributes, ...(s.attributes || {}) },
+                        saves: { ...defaults.saves, ...(s.saves || {}) },
+                        notes: s.notes || ''
                     }
                 };
             } else {
                 this.characterForm = {
                     id: null, name: '', type: type,
-                    stats: {
-                        ac: 10, hp_formula: type === 'template' ? '1d8' : '10',
-                        attributes: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
-                        saves: { str: false, dex: false, con: false, int: false, wis: false, cha: false },
-                        notes: ''
-                    }
+                    stats: defaults
                 };
             }
             this.showModal(this.characterModal);
@@ -219,6 +223,9 @@ function dmScreen(config = {}) {
                 if (response.ok) {
                     await this.loadCharacters();
                     if (this.characterModal) this.characterModal.hide();
+                } else {
+                    const err = await response.json();
+                    alert("Errore: " + (err.message || "Salvataggio fallito"));
                 }
             } catch (e) { console.error(e); }
         },
@@ -288,7 +295,6 @@ function dmScreen(config = {}) {
                 else init = Math.floor(Math.random() * 20) + 1 + dexMod;
 
                 let hp = this.resolveFormula(stats.hp_formula);
-                let countSameName = this.combatants.filter(c => c.name === char.name).length;
 
                 this.combatants.push({
                     instanceId: Date.now() + Math.random(),
@@ -369,7 +375,6 @@ function dmScreen(config = {}) {
         modifyHp(combatant, amount) {
             if (amount < 0) {
                 let damage = Math.abs(amount);
-                // First reduce temporary HP
                 if (combatant.tempHp > 0) {
                     if (combatant.tempHp >= damage) {
                         combatant.tempHp -= damage;
@@ -379,13 +384,10 @@ function dmScreen(config = {}) {
                         combatant.tempHp = 0;
                     }
                 }
-                // Then reduce actual HP
                 combatant.hp -= damage;
                 if (combatant.hp < 0) combatant.hp = 0;
             } else {
-                // Simple addition for healing
                 combatant.hp = (combatant.hp || 0) + amount;
-                // Optional: we could cap at maxHp but sometimes DMs want to track "overhealing" or special cases
             }
             this.saveSession();
         },
@@ -419,8 +421,6 @@ function dmScreen(config = {}) {
                 currentTurnIndex: this.currentTurnIndex,
                 hideDead: this.hideDead
             };
-
-            console.log("DM Screen Saving Session:", data);
 
             await fetch(`/dm/api/sessions/${this.currentSession.id}`, {
                 method: 'PATCH',
