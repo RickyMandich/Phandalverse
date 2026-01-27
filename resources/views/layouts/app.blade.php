@@ -29,7 +29,8 @@
     <div id="app" class="d-flex flex-column justify-content-between min-vh-100">
         <nav class="navbar navbar-expand-md shadow-sm bg-secondary">
             <div class="container">
-                <a class="navbar-brand" href="{{ url('/') }}">
+                <a class="navbar-brand d-flex align-items-center" href="{{ url('/') }}">
+                    <img src="/favicon.ico?v={{ time() }}" alt="Logo" style="height: 1.5rem;" class="me-2">
                     {{ config('app.name', 'Laravel') }}
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -139,7 +140,7 @@
 
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                         onclick="event.preventDefault();
-                                                                                                         document.getElementById('logout-form').submit();">
+                                                                                                                 document.getElementById('logout-form').submit();">
                                         {{ __('Logout') }}
                                     </a>
 
