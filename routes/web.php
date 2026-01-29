@@ -17,6 +17,9 @@ Route::get('/', function () {
 
 Route::get('/vault/search', [VaultController::class, 'search'])->name('vault.search');
 
+Route::get('/vault/changelog', [App\Http\Controllers\ChangelogController::class, 'index'])->name('vault.changelog.index');
+Route::get('/vault/changelog/{version}', [App\Http\Controllers\ChangelogController::class, 'show'])->name('vault.changelog.show');
+
 Route::get('/vault/{note?}', [VaultController::class, 'show'])
     ->where('note', '.*')
     ->name('vault.show');

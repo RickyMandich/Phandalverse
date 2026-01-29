@@ -168,7 +168,7 @@ class VaultController extends Controller
      * 
      * @param string|null $basePath Path relativo della cartella da cui partire
      */
-    private function buildFileTree(?string $basePath = null, $note = ''): array
+    public function buildFileTree(?string $basePath = null, $note = ''): array
     {
         $map = VaultHelper::getMap($note);
         $tree = [];

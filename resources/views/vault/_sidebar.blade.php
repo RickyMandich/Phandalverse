@@ -175,6 +175,13 @@
 
         </div>
         <hr class="border-secondary">
+        <div class="mb-3">
+            <a href="{{ route('vault.changelog.index') }}"
+                class="text-warning text-decoration-none d-flex align-items-center gap-2 hover-underline fw-bold">
+                <i class="bi bi-clock-history"></i> Cronologia Modifiche
+            </a>
+        </div>
+        <hr class="border-secondary">
         <h5 class="text-warning mb-3 fw-bold">📣 Legenda</h5>
         <div class="legenda bg-dark-subtle p-3 rounded small font-monospace">
             <ul class="list-unstyled m-0">
