@@ -111,4 +111,24 @@ class CustomLogger
 
         @file_put_contents($filePath, $line, FILE_APPEND | LOCK_EX);
     }
+    /**
+     * Scrive un log relativo al Bot Telegram.
+     */
+    public static function telegram(string $message, string $level = 'info'): void
+    {
+        $dir = storage_path('logs' . DIRECTORY_SEPARATOR . 'telegram');
+        self::ensureDirectory($dir);
+
+        $key = 'telegram_logs';
+        if (!isset(self::$files[$key])) {
+            $filename = date('Y-m-d') . '_telegram.log';
+            self::$files[$key] = $dir . DIRECTORY_SEPARATOR . $filename;
+        }
+
+        $filePath = self::$files[$key];
+        $time = date('Y-m-d H:i:s');
+        $line = "[{$time}] {" . strtoupper($level) . "}: {$message}" . PHP_EOL;
+
+        @file_put_contents($filePath, $line, FILE_APPEND | LOCK_EX);
+    }
 }

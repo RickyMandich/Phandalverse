@@ -52,7 +52,7 @@ class TelegramBotController extends Controller
                 }
             }
 
-            Log::info("Telegram Webhook receive: " . json_encode($update));
+            \App\Services\CustomLogger::telegram("Webhook received: " . json_encode($update));
 
             if (str_starts_with($text, '/start')) {
                 // Gestione deep linking: /start view_slug
@@ -86,7 +86,7 @@ class TelegramBotController extends Controller
         } catch (\Throwable $e) {
             // In caso di errore (es. DB non pronto), logghiamo e notifichiamo l'admin una volta.
             // Ritorniamo comunque OK a Telegram per evitare che continui a riprovare all'infinito (retry).
-            Log::error("Errore nel Webhook Telegram: " . $e->getMessage());
+            \App\Services\CustomLogger::telegram("Errore nel Webhook Telegram: " . $e->getMessage(), 'error');
 
             // Notifica manuale per evitare che si perda il primo errore
             TelegramService::notifyError($e, $request->fullUrl());
@@ -334,6 +334,8 @@ class TelegramBotController extends Controller
         }
 
         $versionSlug = str_replace([' ', '.'], '_', strtolower(trim($version)));
+        // Codifichiamo per sicurezza (anche se gli underscore sono ok)
+        $encodedVersionSlug = rawurlencode($versionSlug);
 
         // --- LOGICA URL SICURA PER MINI APP ---
         $baseUrl = config('app.url');
@@ -344,7 +346,7 @@ class TelegramBotController extends Controller
                 $baseUrl = str_replace('http://', 'https://', $baseUrl);
             }
         }
-        $url = rtrim($baseUrl, '/') . "/vault/changelog/" . $versionSlug;
+        $url = rtrim($baseUrl, '/') . "/vault/changelog/" . $encodedVersionSlug;
 
         $message = "🚀 <b>Nuovo aggiornamento disponibile!</b>\n";
         $message .= "Il Vault è stato aggiornato alla versione: <b>$version</b>\n\n";

@@ -52,12 +52,15 @@ class TelegramService
             }
 
             if ($replyMarkup) {
-                $payload['reply_markup'] = $replyMarkup;
+                // Telegram richiede che reply_markup sia una stringa JSON-serializzata
+                $payload['reply_markup'] = is_string($replyMarkup) ? $replyMarkup : json_encode($replyMarkup);
             }
 
             if ($threadId) {
                 $payload['message_thread_id'] = $threadId;
             }
+
+            \App\Services\CustomLogger::telegram("Sending payload: " . json_encode($payload));
 
             $response = Http::post(self::getApiUrl() . '/sendMessage', $payload);
 
@@ -65,11 +68,10 @@ class TelegramService
                 return true;
             }
 
-            Log::error('Telegram API error (ChatID: ' . $chatId . '): ' . $response->body());
+            \App\Services\CustomLogger::telegram("API Response Error (ChatID: $chatId): " . $response->body(), 'error');
             return false;
-
-        } catch (\Exception $e) {
-            Log::error('TelegramService errore: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            \App\Services\CustomLogger::telegram("Exception in sendToChat: " . $e->getMessage(), 'error');
             return false;
         }
     }
