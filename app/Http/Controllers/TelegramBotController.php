@@ -231,6 +231,10 @@ class TelegramBotController extends Controller
         }, $content);
 
         // 3. Formattazione Markdown di base
+
+        // Rimuovi Tabelle (Telegram non le supporta e causano errori di parsing se contengono tag HTML)
+        $content = preg_replace('/^\|.+\|$\n^\|[-:| ]+\|$\n(^\|.+\|$\n?)+/m', "\n<i>[Tabella rimossa - visualizzala sul sito]</i>\n", $content);
+
         // Grassetti
         $content = preg_replace('/\*\*(.+?)\*\*/', '<b>$1</b>', $content);
         // Corsivi
@@ -259,7 +263,12 @@ class TelegramBotController extends Controller
         $url = rtrim($baseUrl, '/') . "/vault/" . $encodedSlug;
 
         $message = "📖 <b>" . htmlspecialchars($title) . "</b>\n\n";
-        $message .= trim($content) . $suffix;
+
+        // Pulizia finale: Telegram supporta solo pochi tag HTML. 
+        // strip_tags rimuove tutto il resto (come <table>, <div>, ecc.) che può causare errori 400.
+        $cleanContent = strip_tags($content, '<b><i><a><code><s><u>');
+
+        $message .= trim($cleanContent) . $suffix;
 
         $replyMarkup = [
             'inline_keyboard' => [
