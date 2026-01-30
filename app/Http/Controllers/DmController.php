@@ -268,8 +268,12 @@ class DmController extends Controller
 
     public function playerView($share_code)
     {
-        $session = DmSession::where('share_code', $share_code)->firstOrFail();
-        return view('dm.player', compact('session'));
+        try {
+            $session = DmSession::where('share_code', $share_code)->firstOrFail();
+            return view('dm.player', compact('session'));
+        } catch (\Exception $e) {
+            return redirect()->route('dm.player.index')->with('error', 'Sessione non trovata');
+        }
     }
 
     public function publicLoadSession($share_code)
