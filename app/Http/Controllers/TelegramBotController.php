@@ -126,7 +126,7 @@ class TelegramBotController extends Controller
             $url = config('app.url') . "/vault/" . $encodedSlug;
 
             $message .= "📑 *{$result['original']}*\n";
-            $message .= "🔗 [Apri sul Sito]($url)\n";
+            $message .= "🔗 [Apri sul Sito]($url)  s\n";
             $message .= "📖 /view $slug\n\n";
         }
 
