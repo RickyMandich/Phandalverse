@@ -31,7 +31,17 @@ class TelegramBotController extends Controller
             $chatId = $message['chat']['id'];
             $threadId = $message['message_thread_id'] ?? null;
             $text = $message['text'] ?? '';
-            $username = $message['from']['username'] ?? ($message['from']['first_name'] ?? 'User');
+
+            // Determiniamo il nome da visualizzare/salvare
+            $chat = $message['chat'];
+            if ($chat['type'] === 'private') {
+                $displayName = $message['from']['username'] ?? ($message['from']['first_name'] ?? 'User');
+            } else {
+                $displayName = $chat['title'] ?? 'Gruppo';
+                if ($threadId) {
+                    $displayName .= " / Topic";
+                }
+            }
 
             Log::info("Telegram Webhook receive: " . json_encode($update));
 
@@ -46,9 +56,9 @@ class TelegramBotController extends Controller
                         return $this->handleView($chatId, $slug, $threadId);
                     }
                 }
-                $this->handleStart($chatId, $username, $threadId);
+                $this->handleStart($chatId, $displayName, $threadId);
             } elseif (str_starts_with($text, '/subscribe')) {
-                $this->handleSubscribe($chatId, $username, $threadId);
+                $this->handleSubscribe($chatId, $displayName, $threadId);
             } elseif (str_starts_with($text, '/unsubscribe')) {
                 $this->handleUnsubscribe($chatId, $threadId);
             } elseif (str_starts_with($text, '/search')) {
