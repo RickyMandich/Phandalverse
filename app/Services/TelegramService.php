@@ -25,7 +25,7 @@ class TelegramService
     /**
      * Invia un messaggio a un chat ID specifico
      */
-    public static function sendToChat(string $chatId, string $message, bool $parseHtml = true): bool
+    public static function sendToChat(string $chatId, string $message, $parseMode = 'HTML'): bool
     {
         try {
             $token = self::getBotToken();
@@ -35,14 +35,20 @@ class TelegramService
                 return false;
             }
 
+            // Gestione legacy per parametro booleano
+            if ($parseMode === true)
+                $parseMode = 'HTML';
+            if ($parseMode === false)
+                $parseMode = null;
+
             $payload = [
                 'chat_id' => $chatId,
                 'text' => $message,
-                'disable_web_page_preview' => false, // For search links, preview is good
+                'disable_web_page_preview' => false,
             ];
 
-            if ($parseHtml) {
-                $payload['parse_mode'] = 'HTML';
+            if ($parseMode) {
+                $payload['parse_mode'] = $parseMode;
             }
 
             $response = Http::post(self::getApiUrl() . '/sendMessage', $payload);

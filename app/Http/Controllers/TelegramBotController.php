@@ -120,9 +120,13 @@ class TelegramBotController extends Controller
 
         foreach ($limitedResults as $result) {
             $slug = str_replace('.md', '', VaultController::pathToCamelCase($result['path']));
-            $url = config('app.url') . "/vault/" . $slug;
-            $message .= "📑 <b>" . $result['original'] . "</b>\n";
-            $message .= "🔗 <a href=\"$url\">Apri sul Sito</a>\n";
+
+            // Codifichiamo lo slug per l'URL (per gestire spazi e caratteri speciali)
+            $encodedSlug = implode('/', array_map('rawurlencode', explode('/', $slug)));
+            $url = config('app.url') . "/vault/" . $encodedSlug;
+
+            $message .= "📑 *{$result['original']}*\n";
+            $message .= "🔗 [Apri sul Sito]($url)\n";
             $message .= "📖 /view $slug\n\n";
         }
 
@@ -130,7 +134,7 @@ class TelegramBotController extends Controller
             $message .= "...e altri " . (count($results) - 5) . " risultati.";
         }
 
-        TelegramService::sendToChat($chatId, $message);
+        TelegramService::sendToChat($chatId, $message, 'Markdown');
     }
 
     protected function handleView($chatId, $slug)
