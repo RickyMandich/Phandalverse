@@ -47,6 +47,11 @@
                                 <i class="bi bi-folder2-open"></i> {{ __('Vault') }}
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('vault.changelog.index') }}">
+                                <i class="bi bi-clock-history"></i> {{ __('Changelog') }}
+                            </a>
+                        </li>
                     </ul>
 
                     <!-- Search Form -->
@@ -140,7 +145,7 @@
 
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                         onclick="event.preventDefault();
-                                                                                                                 document.getElementById('logout-form').submit();">
+                                                                                                                     document.getElementById('logout-form').submit();">
                                         {{ __('Logout') }}
                                     </a>
 

@@ -14,7 +14,7 @@ class ChangelogController extends Controller
      */
     public function index(Request $request)
     {
-        $indexPath = base_path('Vault/.normalize/changelogs/index.json');
+        $indexPath = base_path('Vault/.normalize/changelog/index.json');
 
         if (!File::exists($indexPath)) {
             $versions = [];
@@ -41,7 +41,7 @@ class ChangelogController extends Controller
     {
         // Sanitize input: allow only alphanumeric and underscore (v_1_2_3 format)
         $versionFile = preg_replace('/[^a-zA-Z0-9_]/', '', $version);
-        $changelogPath = base_path("Vault/.normalize/changelogs/{$versionFile}.json");
+        $changelogPath = base_path("Vault/.normalize/changelog/{$versionFile}.json");
 
         if (!File::exists($changelogPath)) {
             abort(404, 'Versione non trovata');

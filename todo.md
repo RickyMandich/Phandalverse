@@ -1,20 +1,22 @@
 # già fatto
-- aggiungere il nome della nota come titolo
-- migliorare la vista della profondità nella vista ad albero
-- creare vista a grafo
-- aggiungere orario al footer (niente js, solo generato con php nel server)
-- modificare la navigazione del vault per ottenere un pannello laterale con la vista ad albero e la vista a grafo nell'home page del vault (per cui rimuovere la scelta tra vista ad albero e vista a grafo per admin e master)
-- ricontrollare la generazione del grafo per fare in modo che la configurazione estetica non sia statica ma venga fatta prendendo i dati della directory vault/.obsidian
-- creare un sistema di notifiche (preferibilmente mail, alternativamente bot telegram, nel mio server non posso mettere SMTP)
-- sistemare visualizzazione foto
-- sistemare l'elaborazione del css delle sezioni master
-- creare un sistema di ricerca note
-- aggiungere la renderizzazione dei numeri romani (regex: `\bM{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})\b`)
-- sistemare generazione wikilink
-- pagina di fallback in caso la nota non esista
-- aggiungere il topic `contenuto` alle segnalazioni
-- sistemare autore segnalazione
-- attiva redirect login
-- link senza alias => nome originale
-- modificare il grafo per usare le informazioni nella cartella .obsidian (è presente un esempio di cartella .obsidian nella cartella example, ricorda che come i file del vault anche la cartella obsidian è presente sul server di produzione ma non qui, nel server si trova in /vault/.obsidian)
+- [X] aggiungere il nome della nota come titolo
+- [X] migliorare la vista della profondità nella vista ad albero
+- [X] creare vista a grafo
+- [X] aggiungere orario al footer (niente js, solo generato con php nel server)
+- [X] modificare la navigazione del vault per ottenere un pannello laterale con la vista ad albero e la vista a grafo nell'home page del vault (per cui rimuovere la scelta tra vista ad albero e vista a grafo per admin e master)
+- [X] ricontrollare la generazione del grafo per fare in modo che la configurazione estetica non sia statica ma venga fatta prendendo i dati della directory vault/.obsidian
+- [X] creare un sistema di notifiche (preferibilmente mail, alternativamente bot telegram, nel mio server non posso mettere SMTP)
+- [X] sistemare visualizzazione foto
+- [X] sistemare l'elaborazione del css delle sezioni master
+- [X] creare un sistema di ricerca note
+- [X] aggiungere la renderizzazione dei numeri romani (regex: `\bM{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})\b`)
+- [X] sistemare generazione wikilink
+- [X] pagina di fallback in caso la nota non esista
+- [X] aggiungere il topic `contenuto` alle segnalazioni
+- [X] sistemare autore segnalazione
+- [X] attiva redirect login
+- [X] link senza alias => nome originale
+- [X] modificare il grafo per usare le informazioni nella cartella .obsidian (è presente un esempio di cartella .obsidian nella cartella example, ricorda che come i file del vault anche la cartella obsidian è presente sul server di produzione ma non qui, nel server si trova in /vault/.obsidian)
 # da fare
+- [] fixare pagina di changelog
+- [] creare bot telegram per ricerca e gestione notifiche (prompt per antigravity già pronto su WA ma da rileggere)
