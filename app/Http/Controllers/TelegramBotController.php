@@ -207,29 +207,71 @@ class TelegramBotController extends Controller
 
         $content = \Illuminate\Support\Facades\File::get($fullPath);
 
-        // Rimuoviamo i marker #dm e i blocchi master per sicurezza (se non vogliamo che siano pubblici)
-        // Ma qui il bot è usato da chi ha il link, decidiamo se filtrare.
-        // Se è per uso personale/master, mostriamo tutto. Se è per i giocatori, filtriamo.
-        // Dato che non c'è auth sul bot (chiunque può avviarlo se sa il nome), meglio filtrare.
-
+        // Rimuoviamo i marker #dm e i blocchi master
         $content = \App\Services\MarkdownPreprocessor::filterMasterBlocks($content);
         $content = \App\Services\MarkdownPreprocessor::stripDmMarker($content);
 
-        // Pulizia minima per Telegram (rimuoviamo wikilinks complessi e limitiamo lunghezza)
-        $content = preg_replace('/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/', '$2', $content); // Sostituisce [[Link|Alias]] con Alias
-        $content = preg_replace('/\[\[([^\]]+)\]\]/', '$1', $content); // Sostituisce [[Link]] con Link
+        // Rimuovi frontmatter YAML
+        $content = preg_replace('/^---\s*\n.*?\n---\s*\n/s', '', $content);
 
-        $maxLen = 3500;
+        // --- ELABORAZIONE CONTENUTO PER TELEGRAM ---
+
+        // 1. Elaborazione Embed: ![[Note#Section|Alias]] -> 📎 <b>Note</b>
+        $content = preg_replace_callback('/!\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/', function ($m) use ($path) {
+            $alias = !empty($m[2]) ? $m[2] : null;
+            $noteName = $alias ?: VaultHelper::getOriginalName(trim($m[1]) . ".md", "telegram_view");
+            return "\n📎 <b>" . htmlspecialchars($noteName) . "</b> (Embed)\n";
+        }, $content);
+
+        // 2. Elaborazione Wikilink: [[Note#Section|Alias]] -> <b>Alias</b>
+        $content = preg_replace_callback('/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/', function ($m) use ($path) {
+            $alias = !empty($m[2]) ? $m[2] : null;
+            $noteName = $alias ?: VaultHelper::getOriginalName(trim($m[1]) . ".md", "telegram_view");
+            return "<b>" . htmlspecialchars($noteName) . "</b>";
+        }, $content);
+
+        // 3. Formattazione Markdown di base
+        // Grassetti
+        $content = preg_replace('/\*\*(.+?)\*\*/', '<b>$1</b>', $content);
+        // Corsivi
+        $content = preg_replace('/\*(.+?)\*/', '<i>$1</i>', $content);
+        // Titoli (trasformati in grassetto)
+        $content = preg_replace('/^#+\s+(.+)$/m', "\n<b>$1</b>", $content);
+        // Liste
+        $content = preg_replace('/^\s*[\-\*]\s+(.+)$/m', "• $1", $content);
+
+        // Limitiamo lunghezza per evitare errori Telegram (max 4096)
+        $maxLen = 3800;
         $suffix = "";
         if (strlen($content) > $maxLen) {
             $content = substr($content, 0, $maxLen);
-            $suffix = "\n\n... (contenuto troncato, leggi sul sito per la versione completa)";
+            $suffix = "\n\n... (contenuto troncato, leggi sul sito)";
         }
 
         $title = VaultHelper::getOriginalName($path . ".md", "telegram_view");
-        $message = "📖 <b>$title</b>\n\n";
-        $message .= htmlspecialchars($content) . $suffix;
 
-        TelegramService::sendToChat($chatId, $message);
+        // Prepariamo l'URL per il pulsante
+        $encodedSlug = implode('/', array_map('rawurlencode', explode('/', $slug)));
+        $baseUrl = config('app.url');
+        if ($baseUrl === 'http://localhost' || str_contains($baseUrl, 'localhost')) {
+            $baseUrl = request()->getSchemeAndHttpHost();
+        }
+        $url = rtrim($baseUrl, '/') . "/vault/" . $encodedSlug;
+
+        $message = "📖 <b>" . htmlspecialchars($title) . "</b>\n\n";
+        $message .= trim($content) . $suffix;
+
+        $replyMarkup = [
+            'inline_keyboard' => [
+                [
+                    [
+                        'text' => '🌍 Apri nel Sito',
+                        'web_app' => ['url' => $url]
+                    ]
+                ]
+            ]
+        ];
+
+        TelegramService::sendToChat($chatId, $message, 'HTML', $replyMarkup);
     }
 }
