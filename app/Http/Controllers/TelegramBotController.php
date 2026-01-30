@@ -207,44 +207,46 @@ class TelegramBotController extends Controller
 
         $content = \Illuminate\Support\Facades\File::get($fullPath);
 
-        // Rimuoviamo i marker #dm e i blocchi master
+        // 1. Pulizia Blocchi DM e Frontmatter
         $content = \App\Services\MarkdownPreprocessor::filterMasterBlocks($content);
         $content = \App\Services\MarkdownPreprocessor::stripDmMarker($content);
-
-        // Rimuovi frontmatter YAML
         $content = preg_replace('/^---\s*\n.*?\n---\s*\n/s', '', $content);
 
-        // --- ELABORAZIONE CONTENUTO PER TELEGRAM ---
+        // 2. RIMOZIONE DRASTICA TABELLE (Sia HTML che Markdown)
+        // Rimuove tag <table>...</table>
+        $content = preg_replace('/<table[^>]*>.*?<\/table>/is', "\n<i>[Tabella rimossa - visualizzala sul sito]</i>\n", $content);
+        // Rimuove tabelle Markdown classiche
+        $content = preg_replace('/(\n|^)\|.+\|\r?\n\|[-:| ]+\|\r?\n(\|.+\|(\r?\n|$))+/m', "\n<i>[Tabella rimossa - visualizzala sul sito]</i>\n", $content);
 
-        // 1. Elaborazione Embed: ![[Note#Section|Alias]] -> 📎 <b>Note</b>
-        $content = preg_replace_callback('/!\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/', function ($m) use ($path) {
-            $alias = !empty($m[2]) ? $m[2] : null;
-            $noteName = $alias ?: VaultHelper::getOriginalName(trim($m[1]) . ".md", "telegram_view");
+        // 3. ESCAPE HTML GLOBALE
+        $content = htmlspecialchars($content, ENT_QUOTES, 'UTF-8');
+
+        // 4. ELABORAZIONE WIKILINK ED EMBED
+        // Embed ![[NomeNota]]
+        $content = preg_replace_callback('/!\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/', function ($m) {
+            $alias = !empty($m[2]) ? html_entity_decode($m[2]) : null;
+            $fileName = trim($m[1]);
+            // Se finisce con estensione immagine, cerchiamo il nome pulito
+            $hasExt = preg_match('/\.(png|jpg|jpeg|gif|webp|svg|avif)$/i', $fileName);
+            $lookupPath = $hasExt ? $fileName : $fileName . ".md";
+            $noteName = $alias ?: VaultHelper::getOriginalName($lookupPath, "telegram_view");
             return "\n📎 <b>" . htmlspecialchars($noteName) . "</b> (Embed)\n";
         }, $content);
 
-        // 2. Elaborazione Wikilink: [[Note#Section|Alias]] -> <b>Alias</b>
-        $content = preg_replace_callback('/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/', function ($m) use ($path) {
-            $alias = !empty($m[2]) ? $m[2] : null;
+        // Wikilink [[NomeNota]]
+        $content = preg_replace_callback('/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/', function ($m) {
+            $alias = !empty($m[2]) ? html_entity_decode($m[2]) : null;
             $noteName = $alias ?: VaultHelper::getOriginalName(trim($m[1]) . ".md", "telegram_view");
             return "<b>" . htmlspecialchars($noteName) . "</b>";
         }, $content);
 
-        // 3. Formattazione Markdown di base
-
-        // Rimuovi Tabelle (Telegram non le supporta e causano errori di parsing se contengono tag HTML)
-        $content = preg_replace('/^\|.+\|$\n^\|[-:| ]+\|$\n(^\|.+\|$\n?)+/m', "\n<i>[Tabella rimossa - visualizzala sul sito]</i>\n", $content);
-
-        // Grassetti
+        // 5. FORMATTAZIONE MARKDOWN SU TESTO ESCAPATO
         $content = preg_replace('/\*\*(.+?)\*\*/', '<b>$1</b>', $content);
-        // Corsivi
         $content = preg_replace('/\*(.+?)\*/', '<i>$1</i>', $content);
-        // Titoli (trasformati in grassetto)
         $content = preg_replace('/^#+\s+(.+)$/m', "\n<b>$1</b>", $content);
-        // Liste
         $content = preg_replace('/^\s*[\-\*]\s+(.+)$/m', "• $1", $content);
 
-        // Limitiamo lunghezza per evitare errori Telegram (max 4096)
+        // 6. LIMITAZIONE LUNGHEZZA
         $maxLen = 3800;
         $suffix = "";
         if (strlen($content) > $maxLen) {
@@ -263,12 +265,7 @@ class TelegramBotController extends Controller
         $url = rtrim($baseUrl, '/') . "/vault/" . $encodedSlug;
 
         $message = "📖 <b>" . htmlspecialchars($title) . "</b>\n\n";
-
-        // Pulizia finale: Telegram supporta solo pochi tag HTML. 
-        // strip_tags rimuove tutto il resto (come <table>, <div>, ecc.) che può causare errori 400.
-        $cleanContent = strip_tags($content, '<b><i><a><code><s><u>');
-
-        $message .= trim($cleanContent) . $suffix;
+        $message .= trim($content) . $suffix;
 
         $replyMarkup = [
             'inline_keyboard' => [
