@@ -54,31 +54,38 @@ class TelegramBotController extends Controller
 
             \App\Services\CustomLogger::telegram("Webhook received: " . json_encode($update));
 
-            if (str_starts_with($text, '/start')) {
-                // Gestione deep linking: /start view_slug
-                if (str_contains($text, ' ')) {
-                    $param = explode(' ', $text)[1];
-                    if (str_starts_with($param, 'view_')) {
-                        $slug = str_replace('view_', '', $param);
-                        // Se lo slug è codificato con underscore al posto di slash
+            // Gestione Comandi
+            if (str_starts_with($text, '/')) {
+                // Separiamo comando e parametri
+                $parts = explode(' ', $text, 2);
+                $fullCommand = strtolower($parts[0]);
+                $params = trim($parts[1] ?? '');
+
+                // Rimuoviamo il tag del bot se presente (es. /search@phandalverseBot -> /search)
+                $command = explode('@', $fullCommand)[0];
+
+                if ($command === '/start') {
+                    // Gestione deep linking nel parametro
+                    if (!empty($params) && str_starts_with($params, 'view_')) {
+                        $slug = str_replace('view_', '', $params);
                         $slug = str_replace(['___', '__'], '/', $slug);
                         return $this->handleView($chatId, $slug, $threadId);
                     }
+                    $this->handleStart($chatId, $displayName, $threadId);
+                } elseif ($command === '/subscribe') {
+                    $this->handleSubscribe($chatId, $displayName, $threadId);
+                } elseif ($command === '/unsubscribe') {
+                    $this->handleUnsubscribe($chatId, $threadId);
+                } elseif ($command === '/search') {
+                    $this->handleSearch($chatId, $params, $threadId);
+                } elseif ($command === '/view') {
+                    $this->handleView($chatId, $params, $threadId);
                 }
-                $this->handleStart($chatId, $displayName, $threadId);
-            } elseif (str_starts_with($text, '/subscribe')) {
-                $this->handleSubscribe($chatId, $displayName, $threadId);
-            } elseif (str_starts_with($text, '/unsubscribe')) {
-                $this->handleUnsubscribe($chatId, $threadId);
-            } elseif (str_starts_with($text, '/search')) {
-                $query = trim(str_replace('/search', '', $text));
-                $this->handleSearch($chatId, $query, $threadId);
-            } elseif (str_starts_with($text, '/view')) {
-                $slug = trim(str_replace('/view', '', $text));
-                $this->handleView($chatId, $slug, $threadId);
             } else {
-                // Se non è un comando, lo trattiamo come una ricerca
-                $this->handleSearch($chatId, $text, $threadId);
+                // Se non è un comando (non inizia con /), lo trattiamo come una ricerca
+                if (!empty($text)) {
+                    $this->handleSearch($chatId, $text, $threadId);
+                }
             }
 
             return response('OK');

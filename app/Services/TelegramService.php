@@ -52,15 +52,16 @@ class TelegramService
             }
 
             if ($replyMarkup) {
-                // Telegram richiede che reply_markup sia una stringa JSON-serializzata
-                $payload['reply_markup'] = is_string($replyMarkup) ? $replyMarkup : json_encode($replyMarkup);
+                // Telegram richiede che reply_markup sia una stringa JSON-serializzata.
+                // Usiamo JSON_UNESCAPED_SLASHES per evitare problemi con gli URL.
+                $payload['reply_markup'] = is_string($replyMarkup) ? $replyMarkup : json_encode($replyMarkup, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             }
 
             if ($threadId) {
-                $payload['message_thread_id'] = $threadId;
+                $payload['message_thread_id'] = (int) $threadId;
             }
 
-            \App\Services\CustomLogger::telegram("Sending payload: " . json_encode($payload));
+            \App\Services\CustomLogger::telegram("Sending payload: " . json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
             $response = Http::post(self::getApiUrl() . '/sendMessage', $payload);
 
