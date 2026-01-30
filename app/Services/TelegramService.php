@@ -25,7 +25,7 @@ class TelegramService
     /**
      * Invia un messaggio a un chat ID specifico
      */
-    public static function sendToChat(string $chatId, string $message, $parseMode = 'HTML'): bool
+    public static function sendToChat(string $chatId, string $message, $parseMode = 'HTML', $replyMarkup = null): bool
     {
         try {
             $token = self::getBotToken();
@@ -49,6 +49,10 @@ class TelegramService
 
             if ($parseMode) {
                 $payload['parse_mode'] = $parseMode;
+            }
+
+            if ($replyMarkup) {
+                $payload['reply_markup'] = $replyMarkup;
             }
 
             $response = Http::post(self::getApiUrl() . '/sendMessage', $payload);
@@ -137,6 +141,18 @@ class TelegramService
         $message .= "\n<i>" . now()->format('d/m/Y H:i:s') . "</i>";
 
         self::send($message);
+    }
+
+    /**
+     * Risponde a una callback query (per togliere il caricamento sul tasto)
+     */
+    public static function answerCallbackQuery(string $callbackQueryId, ?string $text = null): void
+    {
+        $payload = ['callback_query_id' => $callbackQueryId];
+        if ($text)
+            $payload['text'] = $text;
+
+        Http::post(self::getApiUrl() . '/answerCallbackQuery', $payload);
     }
 }
 

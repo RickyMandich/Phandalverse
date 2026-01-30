@@ -18,6 +18,11 @@ class TelegramBotController extends Controller
         try {
             $update = $request->all();
 
+            // Gestione Callback Queries (dai pulsanti inline)
+            if (isset($update['callback_query'])) {
+                return $this->handleCallback($update['callback_query']);
+            }
+
             if (!isset($update['message'])) {
                 return response('OK');
             }
@@ -30,6 +35,16 @@ class TelegramBotController extends Controller
             Log::info("Telegram Webhook receive: " . json_encode($update));
 
             if (str_starts_with($text, '/start')) {
+                // Gestione deep linking: /start view_slug
+                if (str_contains($text, ' ')) {
+                    $param = explode(' ', $text)[1];
+                    if (str_starts_with($param, 'view_')) {
+                        $slug = str_replace('view_', '', $param);
+                        // Se lo slug è codificato con underscore al posto di slash
+                        $slug = str_replace(['___', '__'], '/', $slug);
+                        return $this->handleView($chatId, $slug);
+                    }
+                }
                 $this->handleStart($chatId, $username);
             } elseif (str_starts_with($text, '/subscribe')) {
                 $this->handleSubscribe($chatId, $username);
@@ -58,6 +73,23 @@ class TelegramBotController extends Controller
 
             return response('OK');
         }
+    }
+
+    /**
+     * Gestisce i click sui pulsanti inline
+     */
+    protected function handleCallback($callbackQuery)
+    {
+        $chatId = $callbackQuery['message']['chat']['id'];
+        $data = $callbackQuery['data'];
+
+        if (str_starts_with($data, 'view:')) {
+            $slug = str_replace('view:', '', $data);
+            $this->handleView($chatId, $slug);
+        }
+
+        TelegramService::answerCallbackQuery($callbackQuery['id']);
+        return response('OK');
     }
 
     protected function handleStart($chatId, $username)
@@ -113,10 +145,10 @@ class TelegramBotController extends Controller
             return;
         }
 
-        $message = "🔍 Risultati della ricerca per '$query':\n\n";
+        TelegramService::sendToChat($chatId, "🔍 Risultati della ricerca per '<b>$query</b>':");
 
-        // Limitiamo a 5 risultati per non intasare la chat
-        $limitedResults = array_slice($results, 0, 5);
+        // Limitiamo a 3 risultati per non intasare la chat con messaggi multipli
+        $limitedResults = array_slice($results, 0, 3);
 
         foreach ($limitedResults as $result) {
             $slug = str_replace('.md', '', VaultController::pathToCamelCase($result['path']));
@@ -124,7 +156,7 @@ class TelegramBotController extends Controller
             // Codifichiamo lo slug per l'URL (per gestire spazi e caratteri speciali)
             $encodedSlug = implode('/', array_map('rawurlencode', explode('/', $slug)));
 
-            // Usiamo l'Host corrente della richiesta se APP_URL è localhost, per evitare link rotti
+            // Usiamo l'Host corrente della richiesta se APP_URL è localhost
             $baseUrl = config('app.url');
             if ($baseUrl === 'http://localhost' || str_contains($baseUrl, 'localhost')) {
                 $baseUrl = request()->getSchemeAndHttpHost();
@@ -132,16 +164,30 @@ class TelegramBotController extends Controller
 
             $url = rtrim($baseUrl, '/') . "/vault/" . $encodedSlug;
 
-            $message .= "📑 <b>" . htmlspecialchars($result['original']) . "</b>\n";
-            $message .= "🔗 <a href=\"$url\">Apri sul Sito</a>\n";
-            $message .= "📖 /view $slug\n\n";
+            $message = "📑 <b>" . htmlspecialchars($result['original']) . "</b>\n";
+            $message .= "<code>/view $slug</code>";
+
+            $replyMarkup = [
+                'inline_keyboard' => [
+                    [
+                        [
+                            'text' => '🌍 Apri Sito (Mini App)',
+                            'web_app' => ['url' => $url]
+                        ],
+                        [
+                            'text' => '📖 Leggi qui',
+                            'callback_data' => 'view:' . $slug
+                        ]
+                    ]
+                ]
+            ];
+
+            TelegramService::sendToChat($chatId, $message, 'HTML', $replyMarkup);
         }
 
-        if (count($results) > 5) {
-            $message .= "...e altri " . (count($results) - 5) . " risultati.";
+        if (count($results) > 3) {
+            TelegramService::sendToChat($chatId, "...e altri " . (count($results) - 3) . " risultati.");
         }
-
-        TelegramService::sendToChat($chatId, $message, 'HTML');
     }
 
     protected function handleView($chatId, $slug)
