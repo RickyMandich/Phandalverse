@@ -235,9 +235,11 @@
                                 </div>
                                 <div class="d-flex align-items-center gap-3">
                                     @if($change['status'] !== 'Deleted')
-                                        <a href="/vault/{{ $change['file'] }}" class="view-file-link"
-                                            onclick="event.stopPropagation()">
-                                            <i class="bi bi-eye"></i> Visualizza file
+                                        @php
+                                            $slug = str_replace('.md', '', \App\Http\Controllers\VaultController::pathToCamelCase($change['file']));
+                                        @endphp
+                                        <a href="/vault/{{ $slug }}" class="view-file-link" onclick="event.stopPropagation()">
+                                            <i class="bi bi-eye"></i> Visualizza nota
                                         </a>
                                     @endif
                                     <i class="bi bi-chevron-down text-secondary"></i>

@@ -7,6 +7,7 @@ use App\Services\TelegramService;
 use App\Models\TelegramSubscriber;
 use App\Helpers\VaultHelper;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\File;
 
 class TelegramBotController extends Controller
 {
@@ -305,5 +306,57 @@ class TelegramBotController extends Controller
         ];
 
         TelegramService::sendToChat($chatId, $message, 'HTML', $replyMarkup, $threadId);
+    }
+
+    /**
+     * Invia la notifica di aggiornamento a tutti gli iscritti.
+     */
+    public function notifyUpdate(Request $request)
+    {
+        if ($request->query('token') !== env('JOB_TOKEN')) {
+            abort(403);
+        }
+
+        // Recuperiamo l'ultima versione dal file index.json del Vault
+        $indexPath = base_path('Vault/.normalize/changelogs/index.json');
+        if (!File::exists($indexPath)) {
+            $indexPath = base_path('vault/.normalize/changelogs/index.json');
+        }
+
+        $version = env('APP_VERSION', '3.1.7'); // Fallback
+
+        if (File::exists($indexPath)) {
+            $content = File::get($indexPath);
+            $data = json_decode($content, true);
+            if (isset($data['versions'][0]['version'])) {
+                $version = $data['versions'][0]['version'];
+            }
+        }
+
+        $versionSlug = str_replace([' ', '.'], '_', strtolower(trim($version)));
+        $url = config('app.url') . "/vault/changelog/" . $versionSlug;
+
+        $message = "🚀 <b>Nuovo aggiornamento disponibile!</b>\n";
+        $message .= "Il Vault è stato aggiornato alla versione: <b>$version</b>\n\n";
+        $message .= "Clicca il pulsante sotto per leggere le novità direttamente qui!";
+
+        $replyMarkup = [
+            'inline_keyboard' => [
+                [
+                    [
+                        'text' => '📄 Leggi Changelog (Mini App)',
+                        'web_app' => ['url' => $url]
+                    ]
+                ]
+            ]
+        ];
+
+        TelegramService::broadcast($message, true, $replyMarkup);
+
+        return response()->json([
+            'status' => 'success',
+            'version' => $version,
+            'notified' => true
+        ]);
     }
 }

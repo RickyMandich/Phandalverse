@@ -90,11 +90,11 @@ class TelegramService
     /**
      * Invia un messaggio a tutti gli iscritti
      */
-    public static function broadcast(string $message, bool $parseHtml = true): void
+    public static function broadcast(string $message, bool $parseHtml = true, $replyMarkup = null): void
     {
         $subscribers = \App\Models\TelegramSubscriber::all();
         foreach ($subscribers as $subscriber) {
-            self::sendToChat($subscriber->chat_id, $message, $parseHtml, null, $subscriber->thread_id);
+            self::sendToChat($subscriber->chat_id, $message, $parseHtml, $replyMarkup, $subscriber->thread_id);
         }
     }
 
