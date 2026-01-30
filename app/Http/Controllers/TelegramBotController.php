@@ -334,7 +334,17 @@ class TelegramBotController extends Controller
         }
 
         $versionSlug = str_replace([' ', '.'], '_', strtolower(trim($version)));
-        $url = config('app.url') . "/vault/changelog/" . $versionSlug;
+
+        // --- LOGICA URL SICURA PER MINI APP ---
+        $baseUrl = config('app.url');
+        if ($baseUrl === 'http://localhost' || str_contains($baseUrl, 'localhost') || !str_starts_with($baseUrl, 'https')) {
+            $baseUrl = $request->getSchemeAndHttpHost();
+            // Forza HTTPS se siamo in produzione (necessario per Mini App Telegram)
+            if (!str_contains($baseUrl, 'localhost')) {
+                $baseUrl = str_replace('http://', 'https://', $baseUrl);
+            }
+        }
+        $url = rtrim($baseUrl, '/') . "/vault/changelog/" . $versionSlug;
 
         $message = "🚀 <b>Nuovo aggiornamento disponibile!</b>\n";
         $message .= "Il Vault è stato aggiornato alla versione: <b>$version</b>\n\n";

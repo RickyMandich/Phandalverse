@@ -20,3 +20,4 @@
 - [X] fixare pagina di changelog
 - [X] creare bot telegram per ricerca e gestione notifiche (prompt per antigravity già pronto su WA ma da rileggere)
 # da fare
+- [] rimuovere cronologia modifiche dalla sideboard
