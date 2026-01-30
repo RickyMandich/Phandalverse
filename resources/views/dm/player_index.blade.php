@@ -9,6 +9,11 @@
                         <h3 class="mb-0 text-center fw-bold"><i class="bi bi-shield-lock me-2"></i> Accesso Giocatori</h3>
                     </div>
                     <div class="card-body p-4 p-lg-5">
+                        @if (session('error'))
+                            <div class="alert alert-danger border-0 shadow-sm mb-4 text-center fw-bold">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ session('error') }}
+                            </div>
+                        @endif
                         <p class="text-white-50 text-center mb-4">
                             Inserisci il codice fornito dal tuo Dungeon Master per seguire l'iniziativa e gli stati del
                             combattimento in tempo reale.
