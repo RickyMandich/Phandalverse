@@ -5,9 +5,9 @@
 
 @section('content')
     <div x-data="dmScreen({ 
-                                                isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
-                                                isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
-                                            })">
+                                                        isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
+                                                        isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
+                                                    })">
         <div class="row gx-0">
             <!-- SIDEBAR LEFT: Libreria -->
             <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3 custom-scrollbar">
@@ -167,12 +167,12 @@
                 <div class="flex-grow-1 overflow-auto p-3 custom-scrollbar">
                     <div class="list-group">
                         <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
-                            <div class="list-group-item mb-2 rounded border-0 shadow-sm combatant-card p-0 overflow-hidden"
+                            <div class="list-group-item mb-2 rounded border-0 shadow-sm combatant-card p-0"
                                 x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                                                        'active-turn': currentTurnIndex === index,
-                                                                        'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
-                                                                        'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
-                                                                    }" @click="selectCombatant(combatant)">
+                                                                                'active-turn': currentTurnIndex === index,
+                                                                                'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
+                                                                                'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
+                                                                            }" @click="selectCombatant(combatant)">
 
                                 <div class="d-flex align-items-center p-2">
                                     <!-- INITIATIVE -->
@@ -246,7 +246,7 @@
                                     <!-- MENU -->
                                     <div class="dropdown">
                                         <button class="btn btn-sm btn-dark px-1 py-0 border-0 shadow-none" type="button"
-                                            data-bs-toggle="dropdown">⋮</button>
+                                            data-bs-toggle="dropdown" @click.stop="">⋮</button>
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-secondary">
                                             <li><a class="dropdown-item py-1 small" href="#"
                                                     @click.prevent="addStatus(combatant)">Stato</a></li>
@@ -286,15 +286,23 @@
                 <h4 class="mb-3">📜 Dettagli</h4>
                 <template x-if="selectedCombatant">
                     <div class="animate-fade-in">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
                                 <h4 class="mb-0 fw-bold" x-text="selectedCombatant.alias || selectedCombatant.name"
                                     :class="selectedCombatant.type === 'player' ? 'text-info' : 'text-warning'"></h4>
-                                <p class="x-small text-muted" x-show="selectedCombatant.alias">Orig: <span
+                                <p class="x-small text-muted mb-0" x-show="selectedCombatant.alias">Orig: <span
                                         x-text="selectedCombatant.name"></span></p>
                             </div>
-                            <span class="badge bg-secondary border border-secondary shadow-sm">CA <span
-                                    x-text="selectedCombatant.ac"></span></span>
+                            <div class="text-end">
+                                <div class="badge bg-secondary border border-secondary shadow-sm mb-1 px-2 d-block">
+                                    CA <span x-text="selectedCombatant.ac"></span>
+                                </div>
+                                <div class="badge border border-success shadow-sm px-2 d-block"
+                                    :class="selectedCombatant.hp <= 0 ? 'bg-danger border-danger' : 'bg-success bg-opacity-25 text-success'">
+                                    HP <span x-text="selectedCombatant.hp"></span> / <span
+                                        x-text="selectedCombatant.maxHp"></span>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- STATS -->
@@ -412,6 +420,10 @@
                                                 <input type="number"
                                                     class="form-control form-control-sm bg-dark text-white border-0 text-center fw-bold fs-5"
                                                     x-model.number="characterForm.stats.attributes[stat]">
+
+                                                <div class="text-muted x-small"
+                                                    x-text="(getStatModifier(characterForm.stats.attributes[stat]) >= 0 ? '+' : '') + getStatModifier(characterForm.stats.attributes[stat])">
+                                                </div>
 
                                                 <div class="form-check d-inline-block mt-1">
                                                     <input class="form-check-input" type="checkbox" :id="'ts-'+stat"
@@ -571,6 +583,15 @@
 
         .animate-fade-in {
             animation: fadeIn 0.3s ease-in;
+        }
+
+        /* Fix clipping for dropdowns in scrollable list */
+        .dropdown-menu {
+            z-index: 1060 !important;
+        }
+
+        .combatant-card {
+            overflow: visible !important;
         }
 
         @keyframes fadeIn {

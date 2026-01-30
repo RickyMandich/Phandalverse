@@ -174,8 +174,10 @@ function dmScreen(config = {}) {
                 };
             } else {
                 this.characterForm = {
-                    id: null, name: '', type: type,
-                    stats: defaults
+                    id: null,
+                    name: '',
+                    type: type,
+                    stats: JSON.parse(JSON.stringify(defaults))
                 };
             }
             this.showModal(this.characterModal);
