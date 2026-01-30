@@ -39,7 +39,15 @@ class TelegramBotController extends Controller
             } else {
                 $displayName = $chat['title'] ?? 'Gruppo';
                 if ($threadId) {
-                    $displayName .= " / Topic";
+                    // Proviamo a recuperare il nome del topic se il messaggio è una risposta al messaggio di creazione
+                    $topicName = $message['reply_to_message']['forum_topic_created']['name'] ?? null;
+
+                    if ($topicName) {
+                        $displayName .= " / " . $topicName;
+                    } else {
+                        // Fallback: se non troviamo il nome, usiamo l'ID del topic
+                        $displayName .= " / Topic " . $threadId;
+                    }
                 }
             }
 
