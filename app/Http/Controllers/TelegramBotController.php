@@ -15,37 +15,49 @@ class TelegramBotController extends Controller
      */
     public function webhook(Request $request)
     {
-        $update = $request->all();
+        try {
+            $update = $request->all();
 
-        if (!isset($update['message'])) {
+            if (!isset($update['message'])) {
+                return response('OK');
+            }
+
+            $message = $update['message'];
+            $chatId = $message['chat']['id'];
+            $text = $message['text'] ?? '';
+            $username = $message['from']['username'] ?? ($message['from']['first_name'] ?? 'User');
+
+            Log::info("Telegram Webhook receive: " . json_encode($update));
+
+            if (str_starts_with($text, '/start')) {
+                $this->handleStart($chatId, $username);
+            } elseif (str_starts_with($text, '/subscribe')) {
+                $this->handleSubscribe($chatId, $username);
+            } elseif (str_starts_with($text, '/unsubscribe')) {
+                $this->handleUnsubscribe($chatId);
+            } elseif (str_starts_with($text, '/search')) {
+                $query = trim(str_replace('/search', '', $text));
+                $this->handleSearch($chatId, $query);
+            } elseif (str_starts_with($text, '/view')) {
+                $slug = trim(str_replace('/view', '', $text));
+                $this->handleView($chatId, $slug);
+            } else {
+                // Se non è un comando, lo trattiamo come una ricerca
+                $this->handleSearch($chatId, $text);
+            }
+
+            return response('OK');
+
+        } catch (\Throwable $e) {
+            // In caso di errore (es. DB non pronto), logghiamo e notifichiamo l'admin una volta.
+            // Ritorniamo comunque OK a Telegram per evitare che continui a riprovare all'infinito (retry).
+            Log::error("Errore nel Webhook Telegram: " . $e->getMessage());
+
+            // Notifica manuale per evitare che si perda il primo errore
+            TelegramService::notifyError($e, $request->fullUrl());
+
             return response('OK');
         }
-
-        $message = $update['message'];
-        $chatId = $message['chat']['id'];
-        $text = $message['text'] ?? '';
-        $username = $message['from']['username'] ?? ($message['from']['first_name'] ?? 'User');
-
-        Log::info("Telegram Webhook receive: " . json_encode($update));
-
-        if (str_starts_with($text, '/start')) {
-            $this->handleStart($chatId, $username);
-        } elseif (str_starts_with($text, '/subscribe')) {
-            $this->handleSubscribe($chatId, $username);
-        } elseif (str_starts_with($text, '/unsubscribe')) {
-            $this->handleUnsubscribe($chatId);
-        } elseif (str_starts_with($text, '/search')) {
-            $query = trim(str_replace('/search', '', $text));
-            $this->handleSearch($chatId, $query);
-        } elseif (str_starts_with($text, '/view')) {
-            $slug = trim(str_replace('/view', '', $text));
-            $this->handleView($chatId, $slug);
-        } else {
-            // Se non è un comando, lo trattiamo come una ricerca
-            $this->handleSearch($chatId, $text);
-        }
-
-        return response('OK');
     }
 
     protected function handleStart($chatId, $username)
@@ -90,7 +102,7 @@ class TelegramBotController extends Controller
     protected function handleSearch($chatId, $query)
     {
         if (empty($query)) {
-            TelegramService::sendToChat($chatId, "Per favore, specifica cosa vuoi cercare. Esempio: /search Lucrezia");
+            TelegramService::sendToChat($chatId, "Per favore, specifica cosa vuoi cercare. Esempio: /search Than");
             return;
         }
 
@@ -124,7 +136,7 @@ class TelegramBotController extends Controller
     protected function handleView($chatId, $slug)
     {
         if (empty($slug)) {
-            TelegramService::sendToChat($chatId, "Specifica la nota da leggere. Esempio: /view pg/lucrezia");
+            TelegramService::sendToChat($chatId, "Specifica la nota da leggere. Esempio: /view personaggi/giocanti/than-warlock-tiefling-30");
             return;
         }
 
