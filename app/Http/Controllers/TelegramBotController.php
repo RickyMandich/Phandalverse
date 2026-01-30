@@ -201,10 +201,15 @@ class TelegramBotController extends Controller
             $message = "📑 <b>" . htmlspecialchars($result['original']) . "</b>\n";
             $message .= "<code>/view $slug</code>";
 
+            $isGroup = str_starts_with((string) $chatId, '-');
+
             $replyMarkup = [
                 'inline_keyboard' => [
                     [
-                        [
+                        $isGroup ? [
+                            'text' => '🌍 Apri nel Sito',
+                            'url' => $url
+                        ] : [
                             'text' => '🌍 Apri Sito (Mini App)',
                             'web_app' => ['url' => $url]
                         ],
@@ -301,10 +306,15 @@ class TelegramBotController extends Controller
         $message = "📖 <b>" . htmlspecialchars($title) . "</b>\n\n";
         $message .= trim($content) . $suffix;
 
+        $isGroup = str_starts_with((string) $chatId, '-');
+
         $replyMarkup = [
             'inline_keyboard' => [
                 [
-                    [
+                    $isGroup ? [
+                        'text' => '🌍 Apri nel Sito',
+                        'url' => $url
+                    ] : [
                         'text' => '🌍 Apri nel Sito',
                         'web_app' => ['url' => $url]
                     ]
@@ -359,17 +369,21 @@ class TelegramBotController extends Controller
         $message .= "Il Vault è stato aggiornato alla versione: <b>$version</b>\n\n";
         $message .= "Clicca il pulsante sotto per leggere le novità direttamente qui!";
 
+        $isGroup = true; // Nel broadcast verso gruppi, forziamo il link normale per compatibilità
+
         $replyMarkup = [
             'inline_keyboard' => [
                 [
                     [
-                        'text' => '📄 Leggi Changelog (Mini App)',
-                        'web_app' => ['url' => $url]
+                        'text' => '📄 Leggi Changelog',
+                        'url' => $url
                     ]
                 ]
             ]
         ];
 
+        // Se vogliamo mantenere la Mini App per chi riceve la notifica in privato, 
+        // dovremmo ciclare e distinguere, ma per ora il link standard è la scelta più sicura per il broadcast massivo.
         TelegramService::broadcast($message, true, $replyMarkup);
 
         return response()->json([
