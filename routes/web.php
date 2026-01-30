@@ -8,6 +8,7 @@ use App\Http\Controllers\JobController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 Auth::routes();
 
@@ -112,6 +113,27 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 // Route per il processore email (protetta da JOB_TOKEN)
 Route::get("/job/ProcessEmailQueue", [JobController::class, 'processEmailQueue'])
     ->name("job.processEmailQueue");
+
+// ========== TELEGRAM BOT ROUTES ==========
+Route::post('/telegram/webhook', [App\Http\Controllers\TelegramBotController::class, 'webhook']);
+
+// Route per notificare manualmente i cambiamenti (chiamabile dallo script di upload)
+Route::get('/api/notify-update', function (Request $request) {
+    if ($request->query('token') !== env('JOB_TOKEN')) {
+        abort(403);
+    }
+
+    $version = env('APP_VERSION', '3.1.7'); // Fallback to current
+    $url = config('app.url') . "/vault/changelog/" . str_replace([' ', '.'], '_', strtolower(trim($version)));
+
+    $message = "🚀 <b>Nuovo aggiornamento disponibile!</b>\n";
+    $message .= "La versione del server è stata aggiornata alla: <b>$version</b>\n\n";
+    $message .= "🔗 <a href=\"$url\">Leggi il Changelog</a>";
+
+    \App\Services\TelegramService::broadcast($message);
+
+    return response()->json(['status' => 'success', 'notified' => true]);
+})->middleware('web'); // Usiamo web per semplicità, ma protetto da token
 
 Route::fallback(function () {
     return view('errors.404');

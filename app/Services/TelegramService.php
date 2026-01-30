@@ -23,50 +23,64 @@ class TelegramService
     }
 
     /**
-     * Invia un messaggio al chat admin configurato nel .env
+     * Invia un messaggio a un chat ID specifico
      */
-    public static function send(string $message, bool $parseHtml = true): bool
+    public static function sendToChat(string $chatId, string $message, bool $parseHtml = true): bool
     {
         try {
             $token = self::getBotToken();
-            $chatId = self::getAdminChatId();
 
             if (!$token) {
                 Log::error('TelegramService: TELEGRAM_BOT_TOKEN non configurato');
                 return false;
             }
 
-            if (!$chatId) {
-                Log::error('TelegramService: TELEGRAM_ADMIN_CHAT_ID non configurato');
-                return false;
-            }
-
-            // costruisci payload evitando di inviare parse_mode quando non necessario
             $payload = [
                 'chat_id' => $chatId,
                 'text' => $message,
-                'disable_web_page_preview' => true,
+                'disable_web_page_preview' => false, // For search links, preview is good
             ];
 
             if ($parseHtml) {
-                // manda parse_mode solo se effettivamente richiesto
                 $payload['parse_mode'] = 'HTML';
             }
 
             $response = Http::post(self::getApiUrl() . '/sendMessage', $payload);
 
             if ($response->successful()) {
-                Log::info("Telegram: messaggio inviato");
                 return true;
             }
 
-            // log della risposta (utile per debugging)
-            Log::error('Telegram API error: ' . $response->body());
+            Log::error('Telegram API error (ChatID: ' . $chatId . '): ' . $response->body());
             return false;
 
         } catch (\Exception $e) {
             Log::error('TelegramService errore: ' . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Invia un messaggio al chat admin configurato nel .env
+     */
+    public static function send(string $message, bool $parseHtml = true): bool
+    {
+        $chatId = self::getAdminChatId();
+        if (!$chatId) {
+            Log::error('TelegramService: TELEGRAM_ADMIN_CHAT_ID non configurato');
+            return false;
+        }
+        return self::sendToChat($chatId, $message, $parseHtml);
+    }
+
+    /**
+     * Invia un messaggio a tutti gli iscritti
+     */
+    public static function broadcast(string $message, bool $parseHtml = true): void
+    {
+        $subscribers = \App\Models\TelegramSubscriber::all();
+        foreach ($subscribers as $subscriber) {
+            self::sendToChat($subscriber->chat_id, $message, $parseHtml);
         }
     }
 
