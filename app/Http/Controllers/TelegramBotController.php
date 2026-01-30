@@ -81,11 +81,6 @@ class TelegramBotController extends Controller
                 } elseif ($command === '/view') {
                     $this->handleView($chatId, $params, $threadId);
                 }
-            } else {
-                // Se non è un comando (non inizia con /), lo trattiamo come una ricerca
-                if (!empty($text)) {
-                    $this->handleSearch($chatId, $text, $threadId);
-                }
             }
 
             return response('OK');
