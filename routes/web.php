@@ -123,17 +123,37 @@ Route::get('/api/notify-update', function (Request $request) {
         abort(403);
     }
 
-    $version = env('APP_VERSION', '3.1.7'); // Fallback to current
-    $url = config('app.url') . "/vault/changelog/" . str_replace([' ', '.'], '_', strtolower(trim($version)));
+    // Recuperiamo l'ultima versione dal file index.json del Vault
+    $indexPath = base_path('Vault/.normalize/changelogs/index.json');
+    if (!File::exists($indexPath)) {
+        $indexPath = base_path('vault/.normalize/changelogs/index.json');
+    }
+
+    $version = env('APP_VERSION', '3.1.7'); // Fallback
+
+    if (File::exists($indexPath)) {
+        $content = File::get($indexPath);
+        $data = json_decode($content, true);
+        if (isset($data['versions'][0]['version'])) {
+            $version = $data['versions'][0]['version'];
+        }
+    }
+
+    $versionSlug = str_replace([' ', '.'], '_', strtolower(trim($version)));
+    $url = config('app.url') . "/vault/changelog/" . $versionSlug;
 
     $message = "🚀 <b>Nuovo aggiornamento disponibile!</b>\n";
-    $message .= "La versione del server è stata aggiornata alla: <b>$version</b>\n\n";
+    $message .= "Il Vault è stato aggiornato alla versione: <b>$version</b>\n\n";
     $message .= "🔗 <a href=\"$url\">Leggi il Changelog</a>";
 
     \App\Services\TelegramService::broadcast($message);
 
-    return response()->json(['status' => 'success', 'notified' => true]);
-})->middleware('web'); // Usiamo web per semplicità, ma protetto da token
+    return response()->json([
+        'status' => 'success',
+        'version' => $version,
+        'notified' => true
+    ]);
+})->middleware('web');
 
 Route::fallback(function () {
     return view('errors.404');
