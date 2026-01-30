@@ -25,7 +25,7 @@ class TelegramService
     /**
      * Invia un messaggio a un chat ID specifico
      */
-    public static function sendToChat(string $chatId, string $message, $parseMode = 'HTML', $replyMarkup = null): bool
+    public static function sendToChat(string $chatId, string $message, $parseMode = 'HTML', $replyMarkup = null, ?string $threadId = null): bool
     {
         try {
             $token = self::getBotToken();
@@ -53,6 +53,10 @@ class TelegramService
 
             if ($replyMarkup) {
                 $payload['reply_markup'] = $replyMarkup;
+            }
+
+            if ($threadId) {
+                $payload['message_thread_id'] = $threadId;
             }
 
             $response = Http::post(self::getApiUrl() . '/sendMessage', $payload);
@@ -90,7 +94,7 @@ class TelegramService
     {
         $subscribers = \App\Models\TelegramSubscriber::all();
         foreach ($subscribers as $subscriber) {
-            self::sendToChat($subscriber->chat_id, $message, $parseHtml);
+            self::sendToChat($subscriber->chat_id, $message, $parseHtml, null, $subscriber->thread_id);
         }
     }
 

@@ -29,6 +29,7 @@ class TelegramBotController extends Controller
 
             $message = $update['message'];
             $chatId = $message['chat']['id'];
+            $threadId = $message['message_thread_id'] ?? null;
             $text = $message['text'] ?? '';
             $username = $message['from']['username'] ?? ($message['from']['first_name'] ?? 'User');
 
@@ -42,23 +43,23 @@ class TelegramBotController extends Controller
                         $slug = str_replace('view_', '', $param);
                         // Se lo slug è codificato con underscore al posto di slash
                         $slug = str_replace(['___', '__'], '/', $slug);
-                        return $this->handleView($chatId, $slug);
+                        return $this->handleView($chatId, $slug, $threadId);
                     }
                 }
-                $this->handleStart($chatId, $username);
+                $this->handleStart($chatId, $username, $threadId);
             } elseif (str_starts_with($text, '/subscribe')) {
-                $this->handleSubscribe($chatId, $username);
+                $this->handleSubscribe($chatId, $username, $threadId);
             } elseif (str_starts_with($text, '/unsubscribe')) {
-                $this->handleUnsubscribe($chatId);
+                $this->handleUnsubscribe($chatId, $threadId);
             } elseif (str_starts_with($text, '/search')) {
                 $query = trim(str_replace('/search', '', $text));
-                $this->handleSearch($chatId, $query);
+                $this->handleSearch($chatId, $query, $threadId);
             } elseif (str_starts_with($text, '/view')) {
                 $slug = trim(str_replace('/view', '', $text));
-                $this->handleView($chatId, $slug);
+                $this->handleView($chatId, $slug, $threadId);
             } else {
                 // Se non è un comando, lo trattiamo come una ricerca
-                $this->handleSearch($chatId, $text);
+                $this->handleSearch($chatId, $text, $threadId);
             }
 
             return response('OK');
@@ -81,18 +82,19 @@ class TelegramBotController extends Controller
     protected function handleCallback($callbackQuery)
     {
         $chatId = $callbackQuery['message']['chat']['id'];
+        $threadId = $callbackQuery['message']['message_thread_id'] ?? null;
         $data = $callbackQuery['data'];
 
         if (str_starts_with($data, 'view:')) {
             $slug = str_replace('view:', '', $data);
-            $this->handleView($chatId, $slug);
+            $this->handleView($chatId, $slug, $threadId);
         }
 
         TelegramService::answerCallbackQuery($callbackQuery['id']);
         return response('OK');
     }
 
-    protected function handleStart($chatId, $username)
+    protected function handleStart($chatId, $username, $threadId = null)
     {
         $message = "Ciao $username! Benvenuto nel bot di Phandalverse. 🌌\n\n";
         $message .= "Comandi disponibili:\n";
@@ -101,51 +103,57 @@ class TelegramBotController extends Controller
         $message .= "🔍 /search <nome> - Cerca una nota nel vault\n\n";
         $message .= "Puoi anche semplicemente scrivere il nome di una nota per cercarla.";
 
-        TelegramService::sendToChat($chatId, $message);
+        TelegramService::sendToChat($chatId, $message, 'HTML', null, $threadId);
     }
 
-    protected function handleSubscribe($chatId, $username)
+    protected function handleSubscribe($chatId, $username, $threadId = null)
     {
-        $subscriber = TelegramSubscriber::where('chat_id', $chatId)->first();
+        // Cerchiamo se l'iscrizione esiste già per la combinazione Chat e Topic
+        $subscriber = TelegramSubscriber::where('chat_id', $chatId)
+            ->where('thread_id', $threadId)
+            ->first();
 
         if ($subscriber) {
-            TelegramService::sendToChat($chatId, "Sei già iscritto alle notifiche! ✅");
+            TelegramService::sendToChat($chatId, "Questa chat/topic è già iscritta alle notifiche! ✅", 'HTML', null, $threadId);
         } else {
             TelegramSubscriber::create([
                 'chat_id' => $chatId,
+                'thread_id' => $threadId,
                 'username' => $username
             ]);
-            TelegramService::sendToChat($chatId, "Iscrizione completata! Riceverai una notifica ogni volta che ci saranno aggiornamenti sul server. 🔔");
+            TelegramService::sendToChat($chatId, "Iscrizione completata per questo topic! Riceverete una notifica ogni volta che ci saranno aggiornamenti sul server. 🔔", 'HTML', null, $threadId);
         }
     }
 
-    protected function handleUnsubscribe($chatId)
+    protected function handleUnsubscribe($chatId, $threadId = null)
     {
-        $subscriber = TelegramSubscriber::where('chat_id', $chatId)->first();
+        $subscriber = TelegramSubscriber::where('chat_id', $chatId)
+            ->where('thread_id', $threadId)
+            ->first();
 
         if ($subscriber) {
             $subscriber->delete();
-            TelegramService::sendToChat($chatId, "Ti sei disiscritto dalle notifiche. 📴");
+            TelegramService::sendToChat($chatId, "Notifiche disattivate per questo topic. 📴", 'HTML', null, $threadId);
         } else {
-            TelegramService::sendToChat($chatId, "Non sei iscritto alle notifiche.");
+            TelegramService::sendToChat($chatId, "Non ci sono iscrizioni attive per questo topic.", 'HTML', null, $threadId);
         }
     }
 
-    protected function handleSearch($chatId, $query)
+    protected function handleSearch($chatId, $query, $threadId = null)
     {
         if (empty($query)) {
-            TelegramService::sendToChat($chatId, "Per favore, specifica cosa vuoi cercare. Esempio: /search Than");
+            TelegramService::sendToChat($chatId, "Per favore, specifica cosa vuoi cercare. Esempio: /search Than", 'HTML', null, $threadId);
             return;
         }
 
         $results = VaultHelper::searchNotes($query, "telegram_search");
 
         if (empty($results)) {
-            TelegramService::sendToChat($chatId, "Nessun risultato trovato per: " . $query);
+            TelegramService::sendToChat($chatId, "Nessun risultato trovato per: " . $query, 'HTML', null, $threadId);
             return;
         }
 
-        TelegramService::sendToChat($chatId, "🔍 Risultati della ricerca per '<b>$query</b>':");
+        TelegramService::sendToChat($chatId, "🔍 Risultati della ricerca per '<b>$query</b>':", 'HTML', null, $threadId);
 
         // Limitiamo a 3 risultati per non intasare la chat con messaggi multipli
         $limitedResults = array_slice($results, 0, 3);
@@ -182,18 +190,18 @@ class TelegramBotController extends Controller
                 ]
             ];
 
-            TelegramService::sendToChat($chatId, $message, 'HTML', $replyMarkup);
+            TelegramService::sendToChat($chatId, $message, 'HTML', $replyMarkup, $threadId);
         }
 
         if (count($results) > 3) {
-            TelegramService::sendToChat($chatId, "...e altri " . (count($results) - 3) . " risultati.");
+            TelegramService::sendToChat($chatId, "...e altri " . (count($results) - 3) . " risultati.", 'HTML', null, $threadId);
         }
     }
 
-    protected function handleView($chatId, $slug)
+    protected function handleView($chatId, $slug, $threadId = null)
     {
         if (empty($slug)) {
-            TelegramService::sendToChat($chatId, "Specifica la nota da leggere. Esempio: /view personaggi/giocanti/than-warlock-tiefling-30");
+            TelegramService::sendToChat($chatId, "Specifica la nota da leggere. Esempio: /view personaggi/giocanti/than-warlock-tiefling-30", 'HTML', null, $threadId);
             return;
         }
 
@@ -201,7 +209,7 @@ class TelegramBotController extends Controller
         $fullPath = base_path("Vault/" . $path . ".md");
 
         if (!\Illuminate\Support\Facades\File::exists($fullPath)) {
-            TelegramService::sendToChat($chatId, "Nota non trovata: $slug");
+            TelegramService::sendToChat($chatId, "Nota non trovata: $slug", 'HTML', null, $threadId);
             return;
         }
 
@@ -278,6 +286,6 @@ class TelegramBotController extends Controller
             ]
         ];
 
-        TelegramService::sendToChat($chatId, $message, 'HTML', $replyMarkup);
+        TelegramService::sendToChat($chatId, $message, 'HTML', $replyMarkup, $threadId);
     }
 }
