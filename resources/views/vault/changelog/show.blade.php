@@ -238,7 +238,7 @@
                                         @php
                                             $slug = str_replace('.md', '', \App\Http\Controllers\VaultController::pathToCamelCase($change['file']));
                                         @endphp
-                                        <a href="/vault/{{ $slug }}" class="view-file-link" onclick="event.stopPropagation()">
+                                        <a href="/vault/{{ $slug }}" class="view-file-link">
                                             <i class="bi bi-eye"></i> Visualizza nota
                                         </a>
                                     @endif
