@@ -19,5 +19,6 @@
 - [X] modificare il grafo per usare le informazioni nella cartella .obsidian (è presente un esempio di cartella .obsidian nella cartella example, ricorda che come i file del vault anche la cartella obsidian è presente sul server di produzione ma non qui, nel server si trova in /vault/.obsidian)
 - [X] fixare pagina di changelog
 - [X] creare bot telegram per ricerca e gestione notifiche (prompt per antigravity già pronto su WA ma da rileggere)
+- [X] aggiungere una route `/api/vault` che si comporti allo stesso modo di `/vault` ma che faccia scaricare il file markdown originale invece di renderizzarlo (pubblica)
+- [X] rimuovere cronologia modifiche dalla view `vault._sidebar.blade.php`
 # da fare
-- [] rimuovere cronologia modifiche dalla sideboard

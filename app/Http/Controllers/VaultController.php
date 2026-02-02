@@ -699,6 +699,55 @@ class VaultController extends Controller
     }
 
     /**
+     * Ritorna il file markdown originale invece di renderizzarlo.
+     * Si comporta come show() ma restituisce il contenuto raw (filtrato).
+     */
+    public function rawShow(Request $request, $note = null)
+    {
+        if ($note !== null) {
+            $decoded = rawurldecode($note);
+            if (strpos($decoded, '..') !== false) {
+                abort(404);
+            }
+            $decoded = ltrim($decoded, '/\\');
+            $candidate = base_path('Vault' . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $decoded));
+            $ext = strtolower(pathinfo($candidate, PATHINFO_EXTENSION));
+            if (File::exists($candidate) && is_file($candidate) && $ext !== 'md') {
+                return response()->file($candidate);
+            }
+        }
+
+        if ($note === null || $note === '') {
+            abort(404, 'Nessuna nota specificata');
+        }
+
+        // Risolve il path reale della nota
+        $filePath = MarkdownPreprocessor::findNotePath($note);
+        $fullSystemPath = base_path("Vault/" . $filePath . ".md");
+
+        if (!File::exists($fullSystemPath)) {
+            abort(404, 'Nota non trovata');
+        }
+
+        $content = File::get($fullSystemPath);
+
+        // Gestione blocchi master e DM
+        if (!Auth::isMaster() && preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
+            abort(403, 'Accesso negato');
+        }
+
+        if (!Auth::isMaster()) {
+            $content = MarkdownPreprocessor::filterMasterBlocks($content);
+        } else {
+            $content = MarkdownPreprocessor::stripDmMarker($content);
+        }
+
+        return response($content)
+            ->header('Content-Type', 'text/markdown; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="' . basename($fullSystemPath) . '"');
+    }
+
+    /**
      * Imposta la vista di default del vault (solo admin)
      */
     public function setDefaultView(Request $request)

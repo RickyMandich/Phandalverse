@@ -25,6 +25,10 @@ Route::get('/vault/{note?}', [VaultController::class, 'show'])
     ->where('note', '.*')
     ->name('vault.show');
 
+Route::get('/api/vault/{note?}', [VaultController::class, 'rawShow'])
+    ->where('note', '.*')
+    ->name('vault.raw');
+
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
 
 // ========== API PUBBLICA SESSIONI (Per visuale giocatori) ==========
