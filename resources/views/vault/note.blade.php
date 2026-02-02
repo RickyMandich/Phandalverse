@@ -11,9 +11,17 @@
         <section class="flex-grow-1 p-4" style="min-width: 0;">
             <div class="title-container">
                 <h1 class="display-5 mb-4 border-bottom pb-2 text-warning fw-bold">{{ $title }}</h1>
-                @if ($masterFile)
-                    <div class="master-block tag">Master</div>
-                @endif
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    @if ($masterFile)
+                        <div class="master-block tag">Master</div>
+                    @endif
+                    @if (Auth::check() && Auth::isMaster())
+                        <a href="{{ route('vault.raw', ['note' => $note]) }}" class="btn btn-sm btn-outline-warning"
+                            title="Scarica Markdown">
+                            <i class="bi bi-download"></i> Scarica MD
+                        </a>
+                    @endif
+                </div>
             </div>
             <div class="vault-note typography">
                 {!! $html !!}
