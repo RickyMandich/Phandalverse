@@ -187,13 +187,24 @@ function dmScreen(config = {}) {
             this.modalMode = group ? 'edit' : 'create';
             if (group) {
                 const stats = typeof group.stats === 'string' ? JSON.parse(group.stats) : (group.stats || {});
-                this.groupForm = {
-                    id: group.id,
-                    name: group.name,
-                    members: stats.members || []
-                };
+                let members = stats.members || [];
+
+                // Assicuriamoci che sia un array (se arrivasse come oggetto associativo dal JSON)
+                if (!Array.isArray(members)) {
+                    members = Object.values(members);
+                }
+
+                this.groupForm.id = group.id;
+                this.groupForm.name = group.name;
+                // Clona l'array e assicura che gli ID siano numeri per il matching del select
+                this.groupForm.members = JSON.parse(JSON.stringify(members)).map(m => ({
+                    ...m,
+                    character_id: m.character_id ? parseInt(m.character_id) : ''
+                }));
             } else {
-                this.groupForm = { id: null, name: '', members: [] };
+                this.groupForm.id = null;
+                this.groupForm.name = '';
+                this.groupForm.members = [];
             }
             this.showModal(this.groupModal);
         },
