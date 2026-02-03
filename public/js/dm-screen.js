@@ -302,7 +302,7 @@ function dmScreen(config = {}) {
                     instanceId: Date.now() + Math.random(),
                     id: char.id,
                     name: char.name,
-                    alias: '',
+                    alias: countToAdd > 1 ? `${i + 1} - ${char.name}` : '',
                     type: char.type,
                     ac: stats.ac || 10,
                     maxHp: hp, hp: hp, tempHp: 0,
