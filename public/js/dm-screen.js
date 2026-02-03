@@ -233,25 +233,34 @@ function dmScreen(config = {}) {
         },
 
         async saveGroup() {
-            const method = this.modalMode === 'create' ? 'POST' : 'PATCH';
-            const url = this.modalMode === 'create' ? '/dm/api/characters' : `/dm/api/characters/${this.groupForm.id}`;
+            const isEdit = !!this.groupForm.id;
+            const method = isEdit ? 'PATCH' : 'POST';
+            const url = isEdit ? `/dm/api/characters/${this.groupForm.id}` : '/dm/api/characters';
             const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
             const payload = {
                 name: this.groupForm.name,
                 type: 'group',
                 stats: { members: this.groupForm.members }
             };
+
             try {
                 const response = await fetch(url, {
                     method: method,
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
                     body: JSON.stringify(payload)
                 });
+
                 if (response.ok) {
                     await this.loadCharacters();
                     if (this.groupModal) this.groupModal.hide();
+                } else {
+                    const err = await response.json();
+                    alert("Errore: " + (err.message || "Salvataggio gruppo fallito"));
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error("Errore salvataggio gruppo:", e);
+            }
         },
 
         // --- COMBAT LOGIC ---
