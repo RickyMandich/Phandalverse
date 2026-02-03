@@ -345,16 +345,72 @@ function dmScreen(config = {}) {
             this.sortCombat();
             this.round = 1;
             this.currentTurnIndex = 0;
+
+            // Se il primo combatente è morto (non player), cerchiamo il primo valido
+            if (this.combatants.length > 0) {
+                let c = this.combatants[0];
+                if (c.type !== 'player' && (c.hp === undefined || c.hp <= 0)) {
+                    this.nextTurn(); // Usa la logica di skip già implementata
+                    return; // nextTurn salva già la sessione
+                }
+            }
+
             this.saveSession();
         },
 
         nextTurn() {
             if (this.combatants.length === 0) return;
-            this.currentTurnIndex++;
-            if (this.currentTurnIndex >= this.combatants.length) {
-                this.currentTurnIndex = 0;
-                this.round++;
+
+            let startIndex = this.currentTurnIndex;
+            let foundNext = false;
+
+            while (!foundNext) {
+                this.currentTurnIndex++;
+                if (this.currentTurnIndex >= this.combatants.length) {
+                    this.currentTurnIndex = 0;
+                    this.round++;
+                }
+
+                // Un combatante è valido se è un giocatore oppure ha HP > 0
+                let c = this.combatants[this.currentTurnIndex];
+                if (c.type === 'player' || (c.hp !== undefined && c.hp > 0)) {
+                    foundNext = true;
+                }
+
+                // Sicurezza: se abbiamo fatto il giro completo e non abbiamo trovato nessuno vivo
+                if (this.currentTurnIndex === startIndex) break;
             }
+
+            this.saveSession();
+        },
+
+        removeDead() {
+            if (!confirm('Rimuovere tutti i mostri morti?')) return;
+
+            // Trovo l'ID di chi ha il turno ora
+            let activeId = null;
+            if (this.combatants[this.currentTurnIndex]) {
+                activeId = this.combatants[this.currentTurnIndex].instanceId;
+            }
+
+            // Filtro: tengo i giocatori e chi ha HP > 0
+            this.combatants = this.combatants.filter(c => c.type === 'player' || (c.hp !== undefined && c.hp > 0));
+
+            // Riposiziono il currentTurnIndex
+            if (activeId) {
+                let newIndex = this.combatants.findIndex(c => c.instanceId === activeId);
+                if (newIndex !== -1) {
+                    this.currentTurnIndex = newIndex;
+                } else {
+                    // Se chi aveva il turno è stato rimosso, il turno passa al successivo (che ora è nello stesso indice o 0)
+                    if (this.currentTurnIndex >= this.combatants.length) {
+                        this.currentTurnIndex = 0;
+                    }
+                }
+            } else {
+                this.currentTurnIndex = 0;
+            }
+
             this.saveSession();
         },
 
