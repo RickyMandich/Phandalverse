@@ -22,6 +22,6 @@
 - [X] aggiungere una route `/api/vault` che si comporti allo stesso modo di `/vault` ma che faccia scaricare il file markdown originale invece di renderizzarlo (pubblica)
 - [X] rimuovere cronologia modifiche dalla view `vault._sidebar.blade.php`
 - [X] aggiungere pulsante download MD per master nella view delle note
-# da fare
 - [X] sistemare l'avanzamento dei turni nello schermo del master (premendo prossimo turno vengono considerati anche i morti)
 - [X] aggiunta pulsante rimuovi morti dallo schermo master
+# da fare

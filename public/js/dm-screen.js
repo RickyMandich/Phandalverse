@@ -1,3 +1,4 @@
+
 function dmScreen(config = {}) {
     return {
         // --- DATA PROPERTIES ---
@@ -39,20 +40,6 @@ function dmScreen(config = {}) {
             members: []
         },
 
-        utilModal: {
-            instance: null,
-            title: '',
-            message: '',
-            type: 'alert',
-            icon: 'bi-info-circle',
-            inputValue: '',
-            placeholder: '',
-            confirmText: 'OK',
-            cancelText: 'Annulla',
-            showInput: false,
-            callback: null
-        },
-
         // --- INITIALIZATION ---
         init() {
             this.loadCharacters();
@@ -74,17 +61,15 @@ function dmScreen(config = {}) {
             if (modalEl) this.characterModal = new window.bootstrap.Modal(modalEl);
             const groupModalEl = document.getElementById('groupModal');
             if (groupModalEl) this.groupModal = new window.bootstrap.Modal(groupModalEl);
-            const utilModalEl = document.getElementById('utilityModal');
-            if (utilModalEl) this.utilModal.instance = new window.bootstrap.Modal(utilModalEl);
         },
 
         async loadCharacters() {
             try {
                 const response = await fetch('/dm/api/characters');
                 const data = await response.json();
-                this.templates = data.filter(c => c.type === 'template').map(c => ({ ...c, id: String(c.id), qty: 1 }));
-                this.players = data.filter(c => c.type === 'player').map(c => ({ ...c, id: String(c.id), qty: 1 }));
-                this.groups = data.filter(c => c.type === 'group').map(g => ({ ...g, id: String(g.id) }));
+                this.templates = data.filter(c => c.type === 'template').map(c => ({ ...c, qty: 1 }));
+                this.players = data.filter(c => c.type === 'player').map(c => ({ ...c, qty: 1 }));
+                this.groups = data.filter(c => c.type === 'group');
             } catch (e) {
                 console.error("Errore caricamento libreria:", e);
             }
@@ -101,22 +86,21 @@ function dmScreen(config = {}) {
         },
 
         async createSession() {
-            this.showPrompt("Nuova Sessione", "Inserisci il nome per la nuova sessione:", async (name) => {
-                if (!name) return;
+            let name = prompt("Nome della nuova sessione:");
+            if (!name) return;
 
-                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                const response = await fetch('/dm/api/sessions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
-                    body: JSON.stringify({ name: name, data: { combatants: [], round: 1, currentTurnIndex: 0, hideDead: false } })
-                });
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const response = await fetch('/dm/api/sessions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+                body: JSON.stringify({ name: name, data: { combatants: [], round: 1, currentTurnIndex: 0, hideDead: false } })
+            });
 
-                if (response.ok) {
-                    const newSession = await response.json();
-                    this.switchSession(newSession);
-                    await this.loadSessionsList();
-                }
-            }, '', 'Es: Campagna di Natale...');
+            if (response.ok) {
+                const newSession = await response.json();
+                this.switchSession(newSession);
+                await this.loadSessionsList();
+            }
         },
 
         async switchSession(session) {
@@ -149,19 +133,17 @@ function dmScreen(config = {}) {
         },
 
         async deleteSession(id) {
-            this.showConfirm('Elimina Sessione', 'Sei sicuro di voler eliminare definitivamente questa sessione?', async (confirmed) => {
-                if (!confirmed) return;
-                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                await fetch(`/dm/api/sessions/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'X-CSRF-TOKEN': token }
-                });
-                await this.loadSessionsList();
-                if (this.currentSession.id === String(id)) {
-                    this.currentSession = { id: null, name: 'Nessuna Sessione' };
-                    this.combatants = [];
-                }
-            }, 'Sì, Elimina');
+            if (!confirm('Eliminare questa sessione?')) return;
+            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            await fetch(`/dm/api/sessions/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': token }
+            });
+            await this.loadSessionsList();
+            if (this.currentSession.id === id) {
+                this.currentSession = { id: null, name: 'Nessuna Sessione' };
+                this.combatants = [];
+            }
         },
 
         // --- MODAL TRIGGERS ---
@@ -212,12 +194,12 @@ function dmScreen(config = {}) {
                     members = Object.values(members);
                 }
 
-                this.groupForm.id = String(group.id);
+                this.groupForm.id = group.id;
                 this.groupForm.name = group.name;
-                // Clona l'array e assicura che gli ID siano stringhe per il matching del select del browser
+                // Clona l'array e assicura che gli ID siano numeri per il matching del select
                 this.groupForm.members = JSON.parse(JSON.stringify(members)).map(m => ({
-                    character_id: m.character_id ? String(m.character_id) : '',
-                    qty: parseInt(m.qty) || 1
+                    ...m,
+                    character_id: m.character_id ? parseInt(m.character_id) : ''
                 }));
             } else {
                 this.groupForm.id = null;
@@ -238,7 +220,7 @@ function dmScreen(config = {}) {
         showModal(modalObj) {
             if (!modalObj) this.initModals();
             if (modalObj) modalObj.show();
-            else console.error('Errore Modal Bootstrap: riferimento non trovato.');
+            else alert('Errore Modal Bootstrap.');
         },
 
         async saveCharacter() {
@@ -256,7 +238,7 @@ function dmScreen(config = {}) {
                     if (this.characterModal) this.characterModal.hide();
                 } else {
                     const err = await response.json();
-                    this.showAlert("Errore", err.message || "Salvataggio fallito");
+                    alert("Errore: " + (err.message || "Salvataggio fallito"));
                 }
             } catch (e) { console.error(e); }
         },
@@ -285,7 +267,7 @@ function dmScreen(config = {}) {
                     if (this.groupModal) this.groupModal.hide();
                 } else {
                     const err = await response.json();
-                    this.showAlert("Errore", err.message || "Salvataggio gruppo fallito");
+                    alert("Errore: " + (err.message || "Salvataggio gruppo fallito"));
                 }
             } catch (e) {
                 console.error("Errore salvataggio gruppo:", e);
@@ -338,7 +320,7 @@ function dmScreen(config = {}) {
 
                 this.combatants.push({
                     instanceId: Date.now() + Math.random(),
-                    id: String(char.id),
+                    id: char.id,
                     name: char.name,
                     alias: countToAdd > 1 ? `${i + 1} - ${char.name}` : '',
                     type: char.type,
@@ -359,7 +341,7 @@ function dmScreen(config = {}) {
             const stats = typeof group.stats === 'string' ? JSON.parse(group.stats) : (group.stats || {});
             const members = stats.members || [];
             members.forEach(m => {
-                const char = [...this.templates, ...this.players].find(c => String(c.id) == String(m.character_id));
+                const char = [...this.templates, ...this.players].find(c => c.id == m.character_id);
                 if (char) this.addToCombat(char, m.qty);
             });
         },
@@ -423,41 +405,41 @@ function dmScreen(config = {}) {
         },
 
         removeDead() {
-            this.showConfirm('Rimuovi Morti', 'Vuoi rimuovere definitivamente tutti i mostri con 0 HP dal combattimento?', () => {
-                // Trovo l'ID di chi ha il turno ora
-                let activeId = null;
-                if (this.combatants[this.currentTurnIndex]) {
-                    activeId = this.combatants[this.currentTurnIndex].instanceId;
-                }
+            if (!confirm('Rimuovere tutti i mostri morti?')) return;
 
-                // Filtro: tengo i giocatori e chi ha HP > 0
-                this.combatants = this.combatants.filter(c => c.type === 'player' || (c.hp !== undefined && c.hp > 0));
+            // Trovo l'ID di chi ha il turno ora
+            let activeId = null;
+            if (this.combatants[this.currentTurnIndex]) {
+                activeId = this.combatants[this.currentTurnIndex].instanceId;
+            }
 
-                // Riposiziono il currentTurnIndex
-                if (activeId) {
-                    let newIndex = this.combatants.findIndex(c => c.instanceId === activeId);
-                    if (newIndex !== -1) {
-                        this.currentTurnIndex = newIndex;
-                    } else {
-                        // Se chi aveva il turno è stato rimosso, il turno passa al successivo (che ora è nello stesso indice o 0)
-                        if (this.currentTurnIndex >= this.combatants.length) {
-                            this.currentTurnIndex = 0;
-                        }
-                    }
+            // Filtro: tengo i giocatori e chi ha HP > 0
+            this.combatants = this.combatants.filter(c => c.type === 'player' || (c.hp !== undefined && c.hp > 0));
+
+            // Riposiziono il currentTurnIndex
+            if (activeId) {
+                let newIndex = this.combatants.findIndex(c => c.instanceId === activeId);
+                if (newIndex !== -1) {
+                    this.currentTurnIndex = newIndex;
                 } else {
-                    this.currentTurnIndex = 0;
+                    // Se chi aveva il turno è stato rimosso, il turno passa al successivo (che ora è nello stesso indice o 0)
+                    if (this.currentTurnIndex >= this.combatants.length) {
+                        this.currentTurnIndex = 0;
+                    }
                 }
+            } else {
+                this.currentTurnIndex = 0;
+            }
 
-                this.saveSession();
-            }, 'Rimuovi');
+            this.saveSession();
         },
 
         resetCombat() {
-            this.showConfirm('Reset Combattimento', 'Sei sicuro di voler svuotare il tracker e resettare i turni? Questa azione non è reversibile.', () => {
+            if (confirm('Resettare il combattimento?')) {
                 this.combatants = []; this.round = 1; this.currentTurnIndex = 0;
                 this.selectedCombatant = null; this.selectedStatBlock = '';
                 this.saveSession();
-            }, 'Resetta');
+            }
         },
 
         removeCombatant(index) {
@@ -489,87 +471,8 @@ function dmScreen(config = {}) {
         },
 
         addStatus(combatant) {
-            this.showPrompt("Aggiungi Stato", "Inserisci il nome dello stato da infliggere (es. Intontito, Accecato):", (status) => {
-                if (status) {
-                    combatant.statuses.push(status);
-                    this.saveSession();
-                }
-            }, '', 'Es: Ingranato...');
-        },
-
-        editAlias(combatant) {
-            this.showPrompt("Modifica Alias", "Inserisci un nome alternativo per identificare questo partecipante:", (alias) => {
-                if (alias !== null) {
-                    combatant.alias = alias;
-                    this.saveSession();
-                }
-            }, combatant.alias, "Es: Orco n.1...");
-        },
-
-        copySessionLink() {
-            const url = window.location.origin + '/dm/player/' + this.currentSession.share_code;
-            navigator.clipboard.writeText(url);
-            this.showAlert("Link Copiato", "Il link è stato copiato negli appunti. Condividilo con i tuoi giocatori per mostrare loro il tracker in tempo reale.");
-        },
-
-        // --- UTILITY MODAL HELPERS ---
-        showAlert(title, message, callback = null) {
-            this.openUtilModal({ type: 'alert', icon: 'bi-info-circle', title, message, callback, confirmText: 'OK' });
-        },
-
-        showConfirm(title, message, callback, confirmText = 'Conferma') {
-            this.openUtilModal({ type: 'confirm', icon: 'bi-question-circle', title, message, callback, confirmText, cancelText: 'Annulla' });
-        },
-
-        showPrompt(title, message, callback, defaultValue = '', placeholder = '') {
-            this.openUtilModal({ type: 'prompt', icon: 'bi-pencil-square', title, message, callback, inputValue: defaultValue, placeholder, confirmText: 'Salva', cancelText: 'Annulla' });
-        },
-
-        openUtilModal(options) {
-            this.utilModal.title = options.title || 'Avviso';
-            this.utilModal.message = options.message || '';
-            this.utilModal.type = options.type || 'alert';
-            this.utilModal.icon = options.icon || 'bi-info-circle';
-            this.utilModal.inputValue = options.inputValue || '';
-            this.utilModal.placeholder = options.placeholder || '';
-            this.utilModal.confirmText = options.confirmText || 'OK';
-            this.utilModal.cancelText = options.cancelText || 'Annulla';
-            this.utilModal.callback = options.callback || null;
-            this.utilModal.showInput = options.type === 'prompt';
-
-            if (!this.utilModal.instance) {
-                this.initModals();
-            }
-            this.utilModal.instance.show();
-
-            // Focus input if prompt
-            if (this.utilModal.showInput) {
-                setTimeout(() => {
-                    const input = document.getElementById('utilModalInput');
-                    if (input) {
-                        input.focus();
-                        input.select();
-                    }
-                }, 500);
-            }
-        },
-
-        confirmUtilModal() {
-            const value = this.utilModal.inputValue;
-            const callback = this.utilModal.callback;
-            const type = this.utilModal.type;
-
-            this.utilModal.instance.hide();
-
-            if (callback) {
-                if (type === 'prompt') {
-                    callback(value);
-                } else if (type === 'confirm') {
-                    callback(true);
-                } else {
-                    callback();
-                }
-            }
+            let status = prompt("Stato (es. Intontito):");
+            if (status) { combatant.statuses.push(status); this.saveSession(); }
         },
 
         async selectCombatant(combatant) {
