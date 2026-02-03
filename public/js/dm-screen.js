@@ -67,9 +67,9 @@ function dmScreen(config = {}) {
             try {
                 const response = await fetch('/dm/api/characters');
                 const data = await response.json();
-                this.templates = data.filter(c => c.type === 'template').map(c => ({ ...c, qty: 1 }));
-                this.players = data.filter(c => c.type === 'player').map(c => ({ ...c, qty: 1 }));
-                this.groups = data.filter(c => c.type === 'group');
+                this.templates = data.filter(c => c.type === 'template').map(c => ({ ...c, id: String(c.id), qty: 1 }));
+                this.players = data.filter(c => c.type === 'player').map(c => ({ ...c, id: String(c.id), qty: 1 }));
+                this.groups = data.filter(c => c.type === 'group').map(g => ({ ...g, id: String(g.id) }));
             } catch (e) {
                 console.error("Errore caricamento libreria:", e);
             }
@@ -140,7 +140,7 @@ function dmScreen(config = {}) {
                 headers: { 'X-CSRF-TOKEN': token }
             });
             await this.loadSessionsList();
-            if (this.currentSession.id === id) {
+            if (this.currentSession.id === String(id)) {
                 this.currentSession = { id: null, name: 'Nessuna Sessione' };
                 this.combatants = [];
             }
@@ -194,12 +194,12 @@ function dmScreen(config = {}) {
                     members = Object.values(members);
                 }
 
-                this.groupForm.id = group.id;
+                this.groupForm.id = String(group.id);
                 this.groupForm.name = group.name;
-                // Clona l'array e assicura che gli ID siano numeri per il matching del select
+                // Clona l'array e assicura che gli ID siano stringhe per il matching del select del browser
                 this.groupForm.members = JSON.parse(JSON.stringify(members)).map(m => ({
-                    ...m,
-                    character_id: m.character_id ? parseInt(m.character_id) : ''
+                    character_id: m.character_id ? String(m.character_id) : '',
+                    qty: parseInt(m.qty) || 1
                 }));
             } else {
                 this.groupForm.id = null;
