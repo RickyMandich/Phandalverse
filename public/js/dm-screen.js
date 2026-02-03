@@ -1,4 +1,3 @@
-
 function dmScreen(config = {}) {
     return {
         // --- DATA PROPERTIES ---
@@ -45,6 +44,7 @@ function dmScreen(config = {}) {
             title: '',
             message: '',
             type: 'alert',
+            icon: 'bi-info-circle',
             inputValue: '',
             placeholder: '',
             confirmText: 'OK',
@@ -101,7 +101,7 @@ function dmScreen(config = {}) {
         },
 
         async createSession() {
-            this.showPrompt("Nuova Sessione", "Nome della nuova sessione:", async (name) => {
+            this.showPrompt("Nuova Sessione", "Inserisci il nome per la nuova sessione:", async (name) => {
                 if (!name) return;
 
                 const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -116,7 +116,7 @@ function dmScreen(config = {}) {
                     this.switchSession(newSession);
                     await this.loadSessionsList();
                 }
-            });
+            }, '', 'Es: Campagna di Natale...');
         },
 
         async switchSession(session) {
@@ -149,7 +149,7 @@ function dmScreen(config = {}) {
         },
 
         async deleteSession(id) {
-            this.showConfirm('Elimina Sessione', 'Eliminare questa sessione?', async (confirmed) => {
+            this.showConfirm('Elimina Sessione', 'Sei sicuro di voler eliminare definitivamente questa sessione?', async (confirmed) => {
                 if (!confirmed) return;
                 const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                 await fetch(`/dm/api/sessions/${id}`, {
@@ -161,7 +161,7 @@ function dmScreen(config = {}) {
                     this.currentSession = { id: null, name: 'Nessuna Sessione' };
                     this.combatants = [];
                 }
-            });
+            }, 'Sì, Elimina');
         },
 
         // --- MODAL TRIGGERS ---
@@ -338,7 +338,7 @@ function dmScreen(config = {}) {
 
                 this.combatants.push({
                     instanceId: Date.now() + Math.random(),
-                    id: char.id,
+                    id: String(char.id),
                     name: char.name,
                     alias: countToAdd > 1 ? `${i + 1} - ${char.name}` : '',
                     type: char.type,
@@ -359,7 +359,7 @@ function dmScreen(config = {}) {
             const stats = typeof group.stats === 'string' ? JSON.parse(group.stats) : (group.stats || {});
             const members = stats.members || [];
             members.forEach(m => {
-                const char = [...this.templates, ...this.players].find(c => c.id == m.character_id);
+                const char = [...this.templates, ...this.players].find(c => String(c.id) == String(m.character_id));
                 if (char) this.addToCombat(char, m.qty);
             });
         },
@@ -423,7 +423,7 @@ function dmScreen(config = {}) {
         },
 
         removeDead() {
-            this.showConfirm('Rimuovi Morti', 'Rimuovere tutti i mostri morti?', () => {
+            this.showConfirm('Rimuovi Morti', 'Vuoi rimuovere definitivamente tutti i mostri con 0 HP dal combattimento?', () => {
                 // Trovo l'ID di chi ha il turno ora
                 let activeId = null;
                 if (this.combatants[this.currentTurnIndex]) {
@@ -449,15 +449,15 @@ function dmScreen(config = {}) {
                 }
 
                 this.saveSession();
-            });
+            }, 'Rimuovi');
         },
 
         resetCombat() {
-            this.showConfirm('Reset', 'Resettare il combattimento?', () => {
+            this.showConfirm('Reset Combattimento', 'Sei sicuro di voler svuotare il tracker e resettare i turni? Questa azione non è reversibile.', () => {
                 this.combatants = []; this.round = 1; this.currentTurnIndex = 0;
                 this.selectedCombatant = null; this.selectedStatBlock = '';
                 this.saveSession();
-            });
+            }, 'Resetta');
         },
 
         removeCombatant(index) {
@@ -489,16 +489,16 @@ function dmScreen(config = {}) {
         },
 
         addStatus(combatant) {
-            this.showPrompt("Aggiungi Stato", "Inserisci lo stato (es. Intontito):", (status) => {
+            this.showPrompt("Aggiungi Stato", "Inserisci il nome dello stato da infliggere (es. Intontito, Accecato):", (status) => {
                 if (status) {
                     combatant.statuses.push(status);
                     this.saveSession();
                 }
-            });
+            }, '', 'Es: Ingranato...');
         },
 
         editAlias(combatant) {
-            this.showPrompt("Modifica Alias", "Inserisci un alias per questo partecipante:", (alias) => {
+            this.showPrompt("Modifica Alias", "Inserisci un nome alternativo per identificare questo partecipante:", (alias) => {
                 if (alias !== null) {
                     combatant.alias = alias;
                     this.saveSession();
@@ -509,26 +509,27 @@ function dmScreen(config = {}) {
         copySessionLink() {
             const url = window.location.origin + '/dm/player/' + this.currentSession.share_code;
             navigator.clipboard.writeText(url);
-            this.showAlert("Link Copiato", "Il link per i giocatori è stato copiato negli appunti.");
+            this.showAlert("Link Copiato", "Il link è stato copiato negli appunti. Condividilo con i tuoi giocatori per mostrare loro il tracker in tempo reale.");
         },
 
         // --- UTILITY MODAL HELPERS ---
         showAlert(title, message, callback = null) {
-            this.openUtilModal({ type: 'alert', title, message, callback, confirmText: 'Ho capito' });
+            this.openUtilModal({ type: 'alert', icon: 'bi-info-circle', title, message, callback, confirmText: 'OK' });
         },
 
-        showConfirm(title, message, callback) {
-            this.openUtilModal({ type: 'confirm', title, message, callback, confirmText: 'Conferma', cancelText: 'Annulla' });
+        showConfirm(title, message, callback, confirmText = 'Conferma') {
+            this.openUtilModal({ type: 'confirm', icon: 'bi-question-circle', title, message, callback, confirmText, cancelText: 'Annulla' });
         },
 
         showPrompt(title, message, callback, defaultValue = '', placeholder = '') {
-            this.openUtilModal({ type: 'prompt', title, message, callback, inputValue: defaultValue, placeholder, confirmText: 'Salva', cancelText: 'Annulla' });
+            this.openUtilModal({ type: 'prompt', icon: 'bi-pencil-square', title, message, callback, inputValue: defaultValue, placeholder, confirmText: 'Salva', cancelText: 'Annulla' });
         },
 
         openUtilModal(options) {
             this.utilModal.title = options.title || 'Avviso';
             this.utilModal.message = options.message || '';
             this.utilModal.type = options.type || 'alert';
+            this.utilModal.icon = options.icon || 'bi-info-circle';
             this.utilModal.inputValue = options.inputValue || '';
             this.utilModal.placeholder = options.placeholder || '';
             this.utilModal.confirmText = options.confirmText || 'OK';
@@ -545,22 +546,30 @@ function dmScreen(config = {}) {
             if (this.utilModal.showInput) {
                 setTimeout(() => {
                     const input = document.getElementById('utilModalInput');
-                    if (input) input.focus();
+                    if (input) {
+                        input.focus();
+                        input.select();
+                    }
                 }, 500);
             }
         },
 
         confirmUtilModal() {
-            if (this.utilModal.callback) {
-                if (this.utilModal.type === 'prompt') {
-                    this.utilModal.callback(this.utilModal.inputValue);
-                } else if (this.utilModal.type === 'confirm') {
-                    this.utilModal.callback(true);
+            const value = this.utilModal.inputValue;
+            const callback = this.utilModal.callback;
+            const type = this.utilModal.type;
+
+            this.utilModal.instance.hide();
+
+            if (callback) {
+                if (type === 'prompt') {
+                    callback(value);
+                } else if (type === 'confirm') {
+                    callback(true);
                 } else {
-                    this.utilModal.callback();
+                    callback();
                 }
             }
-            this.utilModal.instance.hide();
         },
 
         async selectCombatant(combatant) {
