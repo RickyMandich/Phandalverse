@@ -5,9 +5,9 @@
 
 @section('content')
     <div x-data="dmScreen({ 
-                                                                            isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
-                                                                            isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
-                                                                        })">
+                                                                                isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
+                                                                                isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
+                                                                            })">
         <div class="row gx-0">
             <!-- SIDEBAR LEFT: Libreria -->
             <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3 custom-scrollbar">
@@ -169,10 +169,10 @@
                         <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                             <div class="list-group-item mb-2 rounded border-0 shadow-sm combatant-card p-0"
                                 x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                                                                                    'active-turn': currentTurnIndex === index,
-                                                                                                    'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
-                                                                                                    'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
-                                                                                                }"
+                                                                                                        'active-turn': currentTurnIndex === index,
+                                                                                                        'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
+                                                                                                        'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
+                                                                                                    }"
                                 @click="selectCombatant(combatant)">
 
                                 <div class="d-flex align-items-center p-2">
@@ -504,38 +504,37 @@
                 </div>
             </div>
         </div>
-    </div> <!-- FINE x-data -->
-
-    <!-- MODAL: Utility (Alert, Confirm, Prompt) -->
-    <div class="modal fade" id="utilityModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content bg-dark text-white border-secondary shadow-lg">
-                <div class="modal-header border-secondary bg-black bg-opacity-25 py-2">
-                    <h5 class="modal-title d-flex align-items-center fs-6">
-                        <i :class="['bi', utilModal.icon, 'me-2', 'text-warning']"></i>
-                        <span x-text="utilModal.title" class="fw-bold"></span>
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        style="font-size: 0.8rem;"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <p class="mb-3 text-light" x-text="utilModal.message"></p>
-                    <div x-show="utilModal.showInput">
-                        <input type="text"
-                            class="form-control bg-secondary bg-opacity-25 text-white border-secondary shadow-sm"
-                            x-model="utilModal.inputValue" @keyup.enter="confirmUtilModal()"
-                            :placeholder="utilModal.placeholder" id="utilModalInput">
+        <!-- MODAL: Utility (Alert, Confirm, Prompt) -->
+        <div class="modal fade" id="utilityModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content bg-dark text-white border-secondary shadow-lg">
+                    <div class="modal-header border-secondary bg-black bg-opacity-25 py-2">
+                        <h5 class="modal-title d-flex align-items-center fs-6">
+                            <i :class="['bi', utilModal.icon, 'me-2', 'text-warning']"></i>
+                            <span x-text="utilModal.title" class="fw-bold"></span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            style="font-size: 0.8rem;"></button>
                     </div>
-                </div>
-                <div class="modal-footer border-secondary bg-black bg-opacity-25 py-2">
-                    <button type="button" class="btn btn-sm btn-outline-secondary px-3" data-bs-dismiss="modal"
-                        x-text="utilModal.cancelText" x-show="utilModal.type !== 'alert'"></button>
-                    <button type="button" class="btn btn-sm btn-warning text-dark fw-bold px-4 shadow-sm"
-                        @click="confirmUtilModal()" x-text="utilModal.confirmText"></button>
+                    <div class="modal-body p-4">
+                        <p class="mb-3 text-light" x-text="utilModal.message"></p>
+                        <div x-show="utilModal.showInput">
+                            <input type="text"
+                                class="form-control bg-secondary bg-opacity-25 text-white border-secondary shadow-sm"
+                                x-model="utilModal.inputValue" @keyup.enter="confirmUtilModal()"
+                                :placeholder="utilModal.placeholder" id="utilModalInput">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary bg-black bg-opacity-25 py-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary px-3" data-bs-dismiss="modal"
+                            x-text="utilModal.cancelText" x-show="utilModal.type !== 'alert'"></button>
+                        <button type="button" class="btn btn-sm btn-warning text-dark fw-bold px-4 shadow-sm"
+                            @click="confirmUtilModal()" x-text="utilModal.confirmText"></button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </div> <!-- FINE x-data -->
 
     <script src="{{ asset('js/dm-screen.js') }}?v={{ time() }}" defer></script>
     <script src="//unpkg.com/alpinejs" defer></script>

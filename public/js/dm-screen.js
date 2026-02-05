@@ -21,6 +21,20 @@ function dmScreen(config = {}) {
         groupModal: null,
         modalMode: 'create',
 
+        utilModal: {
+            title: '',
+            message: '',
+            type: 'alert', // alert, confirm, prompt
+            icon: 'bi-info-circle',
+            placeholder: '',
+            inputValue: '',
+            showInput: false,
+            confirmText: 'OK',
+            cancelText: 'Annulla',
+            resolve: null,
+            modalObj: null
+        },
+
         characterForm: {
             id: null,
             name: '',
@@ -61,6 +75,8 @@ function dmScreen(config = {}) {
             if (modalEl) this.characterModal = new window.bootstrap.Modal(modalEl);
             const groupModalEl = document.getElementById('groupModal');
             if (groupModalEl) this.groupModal = new window.bootstrap.Modal(groupModalEl);
+            const utilModalEl = document.getElementById('utilityModal');
+            if (utilModalEl) this.utilModal.modalObj = new window.bootstrap.Modal(utilModalEl);
         },
 
         async loadCharacters() {
@@ -86,7 +102,7 @@ function dmScreen(config = {}) {
         },
 
         async createSession() {
-            let name = prompt("Nome della nuova sessione:");
+            let name = await this.showPrompt("Nome della nuova sessione:", "Nuova Sessione", "bi-folder-plus");
             if (!name) return;
 
             const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -133,7 +149,7 @@ function dmScreen(config = {}) {
         },
 
         async deleteSession(id) {
-            if (!confirm('Eliminare questa sessione?')) return;
+            if (!(await this.showConfirm('Eliminare questa sessione? Questa azione è irreversibile.', 'Elimina Sessione', 'bi-exclamation-triangle'))) return;
             const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             await fetch(`/dm/api/sessions/${id}`, {
                 method: 'DELETE',
@@ -404,8 +420,8 @@ function dmScreen(config = {}) {
             this.saveSession();
         },
 
-        removeDead() {
-            if (!confirm('Rimuovere tutti i mostri morti?')) return;
+        async removeDead() {
+            if (!(await this.showConfirm('Rimuovere tutti i mostri morti?', 'Pulisci Iniziativa', 'bi-trash'))) return;
 
             // Trovo l'ID di chi ha il turno ora
             let activeId = null;
@@ -434,8 +450,8 @@ function dmScreen(config = {}) {
             this.saveSession();
         },
 
-        resetCombat() {
-            if (confirm('Resettare il combattimento?')) {
+        async resetCombat() {
+            if (await this.showConfirm('Resettare il combattimento?', 'Reset', 'bi-arrow-clockwise')) {
                 this.combatants = []; this.round = 1; this.currentTurnIndex = 0;
                 this.selectedCombatant = null; this.selectedStatBlock = '';
                 this.saveSession();
@@ -470,9 +486,30 @@ function dmScreen(config = {}) {
             this.saveSession();
         },
 
-        addStatus(combatant) {
-            let status = prompt("Stato (es. Intontito):");
+        async addStatus(combatant) {
+            let status = await this.showPrompt("Stato (es. Intontito):", "Aggiungi Stato", "bi-plus-circle");
             if (status) { combatant.statuses.push(status); this.saveSession(); }
+        },
+
+        async editAlias(combatant) {
+            const newAlias = await this.showPrompt(
+                `Inserisci alias per ${combatant.name}:`,
+                'Modifica Alias',
+                'bi-tag',
+                combatant.alias || combatant.name
+            );
+            if (newAlias !== null && newAlias !== undefined) {
+                combatant.alias = newAlias;
+                this.saveSession();
+            }
+        },
+
+        copySessionLink() {
+            if (!this.currentSession.share_code) return;
+            const link = `${window.location.origin}/dm/player/${this.currentSession.share_code}`;
+            navigator.clipboard.writeText(link).then(() => {
+                this.showAlert("Link copiato negli appunti!", "Link Copiato", "bi-check-circle");
+            });
         },
 
         async selectCombatant(combatant) {
@@ -505,6 +542,50 @@ function dmScreen(config = {}) {
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
                 body: JSON.stringify({ data: data })
             });
+        },
+
+        // --- UTILITY MODALS ---
+        async showAlert(message, title = 'Info', icon = 'bi-info-circle') {
+            return this.showUtility('alert', message, title, icon);
+        },
+
+        async showConfirm(message, title = 'Conferma', icon = 'bi-question-circle') {
+            return this.showUtility('confirm', message, title, icon);
+        },
+
+        async showPrompt(message, title = 'Inserisci', icon = 'bi-pencil-square', placeholder = '') {
+            return this.showUtility('prompt', message, title, icon, placeholder);
+        },
+
+        showUtility(type, message, title, icon, placeholder = '') {
+            this.utilModal.type = type;
+            this.utilModal.message = message;
+            this.utilModal.title = title;
+            this.utilModal.icon = icon;
+            this.utilModal.placeholder = placeholder;
+            this.utilModal.inputValue = (type === 'prompt' ? (placeholder || '') : '');
+            this.utilModal.showInput = (type === 'prompt');
+            this.utilModal.confirmText = (type === 'confirm' ? 'Sì' : (type === 'prompt' ? 'Salva' : 'OK'));
+            this.utilModal.cancelText = (type === 'confirm' ? 'No' : 'Annulla');
+
+            if (!this.utilModal.modalObj) {
+                const el = document.getElementById('utilityModal');
+                if (el) this.utilModal.modalObj = new window.bootstrap.Modal(el);
+            }
+
+            return new Promise((resolve) => {
+                this.utilModal.resolve = resolve;
+                this.utilModal.modalObj.show();
+                if (type === 'prompt') {
+                    setTimeout(() => document.getElementById('utilModalInput')?.focus(), 500);
+                }
+            });
+        },
+
+        confirmUtilModal() {
+            const value = this.utilModal.type === 'prompt' ? this.utilModal.inputValue : true;
+            this.utilModal.modalObj.hide();
+            if (this.utilModal.resolve) this.utilModal.resolve(value);
         }
     }
 }
