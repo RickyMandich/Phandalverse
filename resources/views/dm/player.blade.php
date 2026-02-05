@@ -2,9 +2,9 @@
 
 @section('content')
     <div class="container-fluid py-4" x-data="playerView({ 
-                    shareCode: '{{ $session->share_code }}',
-                    sessionId: {{ $session->id }}
-                })">
+                        shareCode: '{{ $session->share_code }}',
+                        sessionId: {{ $session->id }}
+                    })">
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <!-- HEADER PUBBLICO -->
@@ -25,9 +25,9 @@
                     <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                         <div class="list-group-item mb-2 rounded border-0 shadow-sm combatant-card p-0 overflow-hidden"
                             x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                            'active-turn': currentTurnIndex === index,
-                                            'dead-combatant bg-black bg-opacity-50 opacity-50': combatant.hp <= 0 && combatant.type !== 'player'
-                                        }">
+                                                'active-turn': currentTurnIndex === index,
+                                                'dead-combatant bg-black bg-opacity-50 opacity-50': combatant.hp <= 0 && combatant.type !== 'player'
+                                            }">
 
                             <div class="d-flex align-items-center p-3">
                                 <!-- INITIATIVE -->
@@ -41,10 +41,12 @@
 
                                 <!-- NAME -->
                                 <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center">
-                                        <h4 class="mb-0" :class="combatant.type === 'player' ? 'text-info' : 'text-warning'"
-                                            x-text="combatant.alias || (combatant.type === 'player' ? combatant.name : 'Nemico')">
-                                        </h4>
+                                    <div class="d-flex align-items-center overflow-hidden">
+                                        <h4 class="mb-0 text-truncate"
+                                            :class="combatant.type === 'player' ? 'text-info' : 'text-warning'"
+                                            x-text="combatant.alias || combatant.name"></h4>
+                                        <span class="small text-muted ms-2" x-show="combatant.alias">(<span
+                                                x-text="combatant.name"></span>)</span>
                                         <span class="ms-3 badge bg-danger"
                                             x-show="combatant.hp <= 0 && combatant.type !== 'player'">CADUTO</span>
                                     </div>
