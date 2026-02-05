@@ -5,9 +5,9 @@
 
 @section('content')
     <div x-data="dmScreen({ 
-                                                                                    isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
-                                                                                    isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
-                                                                                })">
+                                                                                        isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
+                                                                                        isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
+                                                                                    })">
         <div class="row gx-0">
             <!-- SIDEBAR LEFT: Libreria -->
             <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3 custom-scrollbar">
@@ -153,10 +153,30 @@
                                 <input class="form-check-input" type="checkbox" id="hideDeadSwitch" x-model="hideDead">
                                 <label class="form-check-label small" for="hideDeadSwitch">Nascondi Morti</label>
                             </div>
-                            <button class="btn btn-sm btn-success me-1 px-3 shadow-sm" @click="startCombat()">⚔️
+                            <button class="btn btn-sm btn-success me-2 px-3 shadow-sm" @click="startCombat()">⚔️
                                 Inizia</button>
-                            <button class="btn btn-sm btn-danger me-1 px-2 shadow-sm" @click="removeDead()">💀
-                                Rimuovi Morti</button>
+
+                            <!-- Dropdown Pulisci -->
+                            <div class="dropdown d-inline-block me-1">
+                                <button class="btn btn-sm btn-danger dropdown-toggle px-2 shadow-sm" type="button"
+                                    data-bs-toggle="dropdown" title="Pulizia Sessione">
+                                    🧹 Pulisci
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-dark shadow border-secondary">
+                                    <li><a class="dropdown-item py-1 small" href="#" @click.prevent="removeDead()">💀
+                                            Rimuovi Morti</a></li>
+                                    <li><a class="dropdown-item py-1 small" href="#" @click.prevent="removeMonsters()">👺
+                                            Elimina Mostri</a></li>
+                                    <li><a class="dropdown-item py-1 small" href="#" @click.prevent="removePlayers()">👥
+                                            Elimina Giocatori</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider my-1">
+                                    </li>
+                                    <li><a class="dropdown-item py-1 small text-danger fw-bold" href="#"
+                                            @click.prevent="resetCombat()">♻️ Svuota Sessione</a></li>
+                                </ul>
+                            </div>
+
                             <button class="btn btn-sm btn-warning text-dark px-3 shadow-sm" @click="nextTurn()">⏩
                                 Prossimo</button>
                         </div>
@@ -169,10 +189,10 @@
                         <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                             <div class="list-group-item mb-2 rounded border-0 shadow-sm combatant-card p-0"
                                 x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                                                                                            'active-turn': currentTurnIndex === index,
-                                                                                                            'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
-                                                                                                            'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
-                                                                                                        }"
+                                                                                                                'active-turn': currentTurnIndex === index,
+                                                                                                                'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
+                                                                                                                'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
+                                                                                                            }"
                                 @click="selectCombatant(combatant)">
 
                                 <div class="d-flex align-items-center p-2">

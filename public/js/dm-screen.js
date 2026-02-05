@@ -458,6 +458,20 @@ function dmScreen(config = {}) {
             }
         },
 
+        async removeMonsters() {
+            if (!(await this.showConfirm('Rimuovere tutti i mostri dalla sessione?', 'Rimuovi Mostri', 'bi-trash'))) return;
+            this.combatants = this.combatants.filter(c => c.type === 'player');
+            this.currentTurnIndex = 0;
+            this.saveSession();
+        },
+
+        async removePlayers() {
+            if (!(await this.showConfirm('Rimuovere tutti i giocatori dalla sessione?', 'Rimuovi Giocatori', 'bi-person-x'))) return;
+            this.combatants = this.combatants.filter(c => c.type !== 'player');
+            this.currentTurnIndex = 0;
+            this.saveSession();
+        },
+
         removeCombatant(index) {
             const isSelected = (this.selectedCombatant && this.selectedCombatant.instanceId === this.combatants[index].instanceId);
             if (index < this.currentTurnIndex) this.currentTurnIndex--;
