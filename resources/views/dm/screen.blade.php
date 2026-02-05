@@ -5,9 +5,9 @@
 
 @section('content')
     <div x-data="dmScreen({ 
-                                                                                isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
-                                                                                isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
-                                                                            })">
+                                                                                    isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
+                                                                                    isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
+                                                                                })">
         <div class="row gx-0">
             <!-- SIDEBAR LEFT: Libreria -->
             <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3 custom-scrollbar">
@@ -169,10 +169,10 @@
                         <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                             <div class="list-group-item mb-2 rounded border-0 shadow-sm combatant-card p-0"
                                 x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                                                                                        'active-turn': currentTurnIndex === index,
-                                                                                                        'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
-                                                                                                        'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
-                                                                                                    }"
+                                                                                                            'active-turn': currentTurnIndex === index,
+                                                                                                            'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
+                                                                                                            'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
+                                                                                                        }"
                                 @click="selectCombatant(combatant)">
 
                                 <div class="d-flex align-items-center p-2">
@@ -200,8 +200,10 @@
                                         <div class="d-flex align-items-center mt-1">
                                             <span class="badge bg-dark me-1 border border-secondary x-small">CA <span
                                                     x-text="combatant.ac"></span></span>
-                                            <template x-for="status in combatant.statuses" :key="status">
-                                                <span class="badge bg-danger me-1 x-small" x-text="status"></span>
+                                            <template x-for="(status, sIndex) in combatant.statuses" :key="sIndex">
+                                                <span class="badge bg-danger me-1 x-small" style="cursor: pointer;"
+                                                    @click.stop="removeStatus(combatant, sIndex)" x-text="status"
+                                                    title="Clicca per rimuovere"></span>
                                             </template>
                                             <i class="bi bi-journal-text ms-2" x-show="combatant.personalNotes && isMaster"
                                                 @click.stop="combatant.showNotesInline = !combatant.showNotesInline"

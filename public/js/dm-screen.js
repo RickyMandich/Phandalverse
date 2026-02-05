@@ -491,6 +491,11 @@ function dmScreen(config = {}) {
             if (status) { combatant.statuses.push(status); this.saveSession(); }
         },
 
+        removeStatus(combatant, index) {
+            combatant.statuses.splice(index, 1);
+            this.saveSession();
+        },
+
         async editAlias(combatant) {
             const newAlias = await this.showPrompt(
                 `Inserisci alias per ${combatant.name}:`,
