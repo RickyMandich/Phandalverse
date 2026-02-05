@@ -40,6 +40,11 @@ class ReportController extends Controller
             "categories validator: |$categoriesValidator|");
 
 
+        $request->mergeIfMissing([
+            'email' => null,
+            'page_urls' => null,
+        ]);
+
         $validated = $request->validate([
             'category' => $categoriesValidator,
             'description' => 'required|string|min:10|max:2000',
