@@ -92,24 +92,18 @@ class MarkdownPreprocessor
      */
     public static function filterMasterBlocks(string $text): string
     {
-        // If the file is marked as DM-only, hide the entire file for non-master users
+        // Se l'utente è master, non filtriamo nulla (i marker verranno gestiti dal renderer)
+        if (Auth::check() && Auth::isMaster()) {
+            return $text;
+        }
+
+        // Se il file è marcato come DM-only, nascondi l'intero file
         if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $text)) {
             return '';
         }
 
-        $start = '#startMaster';
-        $end = '#endMaster';
-
-        if (!str_contains($text, $start)) {
-            return $text;
-        }
-
-        $startPos = strpos($text, $start);
-        $endPos = str_contains($text, $end)
-            ? strpos($text, $end) + strlen($end)
-            : strlen($text);
-
-        return substr($text, 0, $startPos) . substr($text, $endPos);
+        // Rimuove tutti i blocchi compresi tra #startMaster e #endMaster (globale)
+        return preg_replace('/#startMaster\s*(.*?)\s*#endMaster/is', '', $text);
     }
 
     /**
@@ -547,10 +541,24 @@ class MarkdownPreprocessor
 
     public static function toHtml(string $text, string $note): string
     {
-        // 1. Extract master sections first so we get clean markdown for them.
-        // We replace them with placeholders and process/convert them separately.
+        $isMaster = Auth::check() && Auth::isMaster();
+
+        // 1. Se il file è marcato come DM-only e non siamo master, ritorna vuoto
+        if (!$isMaster && preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $text)) {
+            return '';
+        }
+
+        // 2. Se siamo master, puliamo eventuali tag #dm dal testo visualizzato
+        if ($isMaster) {
+            $text = self::stripDmMarker($text);
+        }
+
+        // 3. Estrai i blocchi master. Se non siamo master, rimuovili direttamente.
         $masterBlocks = [];
-        $text = preg_replace_callback('/#startMaster\s*(.*?)\s*#endMaster/s', function ($m) use (&$masterBlocks) {
+        $text = preg_replace_callback('/#startMaster\s*(.*?)\s*#endMaster/is', function ($m) use (&$masterBlocks, $isMaster) {
+            if (!$isMaster) {
+                return '';
+            }
             $idx = count($masterBlocks);
             $masterBlocks[$idx] = $m[1];
             return "<!--MASTER_BLOCK:{$idx}-->";
