@@ -10,6 +10,7 @@ function dmScreen(config = {}) {
         combatants: [],
         round: 1,
         currentTurnIndex: 0,
+        roundStartId: null,
         hideDead: false,
 
         availableSessions: [],
@@ -129,7 +130,16 @@ function dmScreen(config = {}) {
             if (data) {
                 this.combatants = data.combatants || [];
                 this.round = data.round || 1;
-                this.currentTurnIndex = data.currentTurnIndex || 0;
+                let oldIndex = data.currentTurnIndex || 0;
+                let marker = data.roundStartId || (this.combatants.length > 0 ? this.combatants[0].instanceId : null);
+
+                if (oldIndex > 0 && oldIndex < this.combatants.length) {
+                    for (let i = 0; i < oldIndex; i++) {
+                        this.combatants.push(this.combatants.shift());
+                    }
+                }
+                this.currentTurnIndex = 0;
+                this.roundStartId = marker;
                 this.hideDead = data.hideDead || false;
             } else {
                 this.combatants = [];
@@ -364,30 +374,44 @@ function dmScreen(config = {}) {
 
         sortCombat() {
             let activeId = null;
-            if (this.combatants.length > 0 && this.combatants[this.currentTurnIndex]) {
-                activeId = this.combatants[this.currentTurnIndex].instanceId;
+            if (this.combatants.length > 0) {
+                // In un sistema a coda, l'attivo è sempre il primo
+                activeId = this.combatants[0].instanceId;
             }
+
+            // 1. Ordina tutti secondo l'iniziativa ideale
             this.combatants.sort((a, b) => {
                 if (b.initiative !== a.initiative) return b.initiative - a.initiative;
                 return this.getStatModifier(b.stats?.attributes?.dex || 10) - this.getStatModifier(a.stats?.attributes?.dex || 10);
             });
+
+            // 2. Ruota l'array per riportare l'attivo in cima (preservando il cerchio)
             if (activeId) {
                 let newIndex = this.combatants.findIndex(c => c.instanceId === activeId);
-                if (newIndex !== -1) this.currentTurnIndex = newIndex;
+                if (newIndex !== -1) {
+                    this.combatants = [
+                        ...this.combatants.slice(newIndex),
+                        ...this.combatants.slice(0, newIndex)
+                    ];
+                }
             }
+            this.currentTurnIndex = 0;
         },
 
         startCombat() {
             this.sortCombat();
             this.round = 1;
             this.currentTurnIndex = 0;
+            if (this.combatants.length > 0) {
+                this.roundStartId = this.combatants[0].instanceId;
+            }
 
             // Se il primo combatente è morto (non player), cerchiamo il primo valido
             if (this.combatants.length > 0) {
                 let c = this.combatants[0];
                 if (c.type !== 'player' && (c.hp === undefined || c.hp <= 0)) {
-                    this.nextTurn(); // Usa la logica di skip già implementata
-                    return; // nextTurn salva già la sessione
+                    this.nextTurn();
+                    return;
                 }
             }
 
@@ -395,28 +419,42 @@ function dmScreen(config = {}) {
         },
 
         nextTurn() {
-            if (this.combatants.length === 0) return;
-
-            let startIndex = this.currentTurnIndex;
-            let foundNext = false;
-
-            while (!foundNext) {
-                this.currentTurnIndex++;
-                if (this.currentTurnIndex >= this.combatants.length) {
-                    this.currentTurnIndex = 0;
-                    this.round++;
-                }
-
-                // Un combatante è valido se è un giocatore oppure ha HP > 0
-                let c = this.combatants[this.currentTurnIndex];
-                if (c.type === 'player' || (c.hp !== undefined && c.hp > 0)) {
-                    foundNext = true;
-                }
-
-                // Sicurezza: se abbiamo fatto il giro completo e non abbiamo trovato nessuno vivo
-                if (this.currentTurnIndex === startIndex) break;
+            if (this.combatants.length <= 1) {
+                if (this.combatants.length === 1) this.round++;
+                this.saveSession();
+                return;
             }
 
+            let foundNext = false;
+            let safetyCounter = 0;
+
+            // Sposta il primo in fondo
+            let current = this.combatants.shift();
+            this.combatants.push(current);
+
+            // Se il nuovo primo è il marker, incrementa il round
+            if (this.combatants[0].instanceId === this.roundStartId) {
+                this.round++;
+            }
+
+            // Salta i morti (che non siano player)
+            while (!foundNext && safetyCounter < this.combatants.length) {
+                let c = this.combatants[0];
+                if (c.type === 'player' || (c.hp !== undefined && c.hp > 0)) {
+                    foundNext = true;
+                } else {
+                    // Sposta in fondo e continua
+                    let dead = this.combatants.shift();
+                    this.combatants.push(dead);
+
+                    if (this.combatants[0].instanceId === this.roundStartId) {
+                        this.round++;
+                    }
+                }
+                safetyCounter++;
+            }
+
+            this.currentTurnIndex = 0;
             this.saveSession();
         },
 
@@ -433,18 +471,9 @@ function dmScreen(config = {}) {
             this.combatants = this.combatants.filter(c => c.type === 'player' || (c.hp !== undefined && c.hp > 0));
 
             // Riposiziono il currentTurnIndex
-            if (activeId) {
-                let newIndex = this.combatants.findIndex(c => c.instanceId === activeId);
-                if (newIndex !== -1) {
-                    this.currentTurnIndex = newIndex;
-                } else {
-                    // Se chi aveva il turno è stato rimosso, il turno passa al successivo (che ora è nello stesso indice o 0)
-                    if (this.currentTurnIndex >= this.combatants.length) {
-                        this.currentTurnIndex = 0;
-                    }
-                }
-            } else {
-                this.currentTurnIndex = 0;
+            this.currentTurnIndex = 0;
+            if (this.combatants.length > 0 && !this.combatants.some(c => c.instanceId === this.roundStartId)) {
+                this.roundStartId = this.combatants[0].instanceId;
             }
 
             this.saveSession();
@@ -462,6 +491,9 @@ function dmScreen(config = {}) {
             if (!(await this.showConfirm('Rimuovere tutti i mostri dalla sessione?', 'Rimuovi Mostri', 'bi-trash'))) return;
             this.combatants = this.combatants.filter(c => c.type === 'player');
             this.currentTurnIndex = 0;
+            if (this.combatants.length > 0 && !this.combatants.some(c => c.instanceId === this.roundStartId)) {
+                this.roundStartId = this.combatants[0].instanceId;
+            }
             this.saveSession();
         },
 
@@ -469,14 +501,22 @@ function dmScreen(config = {}) {
             if (!(await this.showConfirm('Rimuovere tutti i giocatori dalla sessione?', 'Rimuovi Giocatori', 'bi-person-x'))) return;
             this.combatants = this.combatants.filter(c => c.type !== 'player');
             this.currentTurnIndex = 0;
+            if (this.combatants.length > 0 && !this.combatants.some(c => c.instanceId === this.roundStartId)) {
+                this.roundStartId = this.combatants[0].instanceId;
+            }
             this.saveSession();
         },
 
         removeCombatant(index) {
             const isSelected = (this.selectedCombatant && this.selectedCombatant.instanceId === this.combatants[index].instanceId);
             if (index < this.currentTurnIndex) this.currentTurnIndex--;
-            this.combatants.splice(index, 1);
+            const removed = this.combatants.splice(index, 1)[0];
             if (isSelected) this.selectedCombatant = null;
+
+            this.currentTurnIndex = 0;
+            if (this.combatants.length > 0 && removed.instanceId === this.roundStartId) {
+                this.roundStartId = this.combatants[0].instanceId;
+            }
             this.saveSession();
         },
 
@@ -553,6 +593,7 @@ function dmScreen(config = {}) {
                 combatants: this.combatants,
                 round: this.round,
                 currentTurnIndex: this.currentTurnIndex,
+                roundStartId: this.roundStartId,
                 hideDead: this.hideDead
             };
 
