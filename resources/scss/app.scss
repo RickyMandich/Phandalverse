@@ -101,6 +101,134 @@ a {
     @extend .text-warning;
 }
 
+/* Stat Block Styling for Blockquotes */
+.vault-note blockquote.stat-block {
+    border: 2px solid var(--bs-warning);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    background: linear-gradient(145deg, rgba(var(--bs-dark-rgb), 0.6), rgba(var(--bs-secondary-rgb), 0.2));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(var(--bs-warning-rgb), 0.05);
+    position: relative;
+    color: var(--bs-body-color);
+    border-left-width: 8px;
+    /* Accent on the left for D&D feel */
+    overflow: hidden;
+
+    // Corner decorative effect (optional, subtle)
+    &::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 30px;
+        height: 30px;
+        background: linear-gradient(225deg, var(--bs-warning) 0%, transparent 50%);
+        opacity: 0.1;
+    }
+
+    // Override headings
+    h1,
+    h2,
+    h3,
+    h4 {
+        text-transform: none !important;
+        border-bottom: none !important;
+        margin-top: 1rem;
+        margin-bottom: 0.25rem;
+        font-family: 'Georgia', serif; // Fantasy feel
+        letter-spacing: 0.5px;
+    }
+
+    h1:first-child {
+        margin-top: 0;
+        font-size: 1.9rem;
+        font-weight: 800;
+        color: var(--bs-warning);
+    }
+
+    h2 {
+        font-size: 1.5rem;
+        border-bottom: 1px solid rgba(var(--bs-warning-rgb), 0.4) !important;
+        padding-bottom: 6px;
+        margin-top: 1.5rem;
+        color: var(--bs-warning);
+    }
+
+    p {
+        margin-bottom: 0.6rem;
+    }
+
+    // Subtitle effect for italic text right after H1
+    h1+p em,
+    h1+em {
+        color: var(--bs-info);
+        font-size: 0.95rem;
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    hr {
+        border: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--bs-warning), transparent);
+        margin: 1.25rem 0;
+        opacity: 0.8;
+    }
+
+    ul {
+        list-style: none;
+        padding-left: 0;
+
+        li {
+            margin-bottom: 0.5rem;
+
+            &::before {
+                content: "•";
+                color: var(--bs-warning);
+                font-weight: bold;
+                margin-right: 10px;
+                font-size: 1.2em;
+            }
+
+            strong {
+                color: var(--bs-warning);
+                font-weight: 700;
+            }
+        }
+    }
+
+    table {
+        margin: 1.25rem 0;
+        border: none;
+        background: rgba(var(--bs-dark-rgb), 0.3) !important;
+        border-radius: 4px;
+
+        tr,
+        th,
+        td {
+            background: transparent !important;
+            border: none !important;
+        }
+
+        th {
+            color: var(--bs-warning);
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            padding-top: 10px !important;
+        }
+
+        td {
+            padding: 10px 4px !important;
+            font-weight: bold;
+            color: var(--bs-info);
+            font-size: 1.1rem;
+        }
+    }
+}
+
 .embed-title {
     @extend .mb-4;
     @extend .pb-2;

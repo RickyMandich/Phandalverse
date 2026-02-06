@@ -609,6 +609,9 @@ class MarkdownPreprocessor
         // 6. Process external links to add target="_blank"
         $html = self::processExternalLinks($html);
 
+        // 7. Add stat-block class to blockquotes for D&D styling
+        $html = str_replace('<blockquote>', '<blockquote class="stat-block">', $html);
+
         return $html;
     }
 }
