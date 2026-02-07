@@ -89,11 +89,23 @@
                             <div class="fw-bold mb-1">💥 <span x-text="roller.pendingExplosions"></span> "10" ottenuti!
                             </div>
                             <div>Quanti dadi extra vuoi tirare?</div>
-                            <div class="d-flex gap-1 mt-2 overflow-auto">
-                                <template x-for="n in (roller.pendingExplosions + 1)">
-                                    <button class="btn btn-xs btn-outline-dark" @click="rollExplosions(n-1)"
-                                        x-text="n-1"></button>
-                                </template>
+                            <div class="d-flex flex-wrap gap-2 mt-2 align-items-center">
+                                <!-- All or Nothing -->
+                                <button class="btn btn-sm btn-dark" @click="rollExplosions(roller.pendingExplosions)">
+                                    TUTTI (<span x-text="roller.pendingExplosions"></span>)
+                                </button>
+                                <button class="btn btn-sm btn-outline-dark" @click="rollExplosions(0)">
+                                    NESSUNO
+                                </button>
+
+                                <!-- Custom Amount -->
+                                <div class="input-group input-group-sm w-auto" style="max-width: 120px;">
+                                    <input type="number" class="form-control border-dark"
+                                        x-model.number="roller.customExplosion" min="0" :max="roller.pendingExplosions"
+                                        placeholder="#">
+                                    <button class="btn btn-outline-dark"
+                                        @click="rollExplosions(roller.customExplosion || 0)">Vai</button>
+                                </div>
                             </div>
                         </div>
 
@@ -109,11 +121,11 @@
                                     <div class="d-flex flex-wrap gap-1 mt-1">
                                         <template x-for="die in log.results">
                                             <span class="badge" :class="{
-                                                    'bg-success': die >= 8, 
-                                                    'bg-danger': die === 1, 
-                                                    'bg-secondary': die > 1 && die < 8,
-                                                    'border border-warning': die === 10
-                                                }" x-text="die"></span>
+                                                            'bg-success': die >= 8, 
+                                                            'bg-danger': die === 1, 
+                                                            'bg-secondary': die > 1 && die < 8,
+                                                            'border border-warning': die === 10
+                                                        }" x-text="die"></span>
                                         </template>
                                     </div>
                                     <div class="mt-1 x-small">
@@ -147,17 +159,17 @@
 
                         <template x-for="(actor, index) in actors" :key="actor.id">
                             <div class="card border-0 shadow-lg" style="width: 300px;" :class="{
-                                    'bg-dark': actor.type === 'pc',
-                                    'bg-danger bg-opacity-10': actor.type === 'enemy',
-                                    'bg-secondary bg-opacity-10': actor.type === 'minion'
-                                }">
+                                            'bg-dark': actor.type === 'pc',
+                                            'bg-danger bg-opacity-10': actor.type === 'enemy',
+                                            'bg-secondary bg-opacity-10': actor.type === 'minion'
+                                        }">
 
                                 <!-- Header Attore -->
                                 <div class="card-header py-1 d-flex justify-content-between align-items-center" :class="{
-                                        'bg-info text-dark': actor.type === 'pc',
-                                        'bg-danger text-white': actor.type === 'enemy',
-                                        'bg-secondary text-white': actor.type === 'minion'
-                                    }">
+                                                'bg-info text-dark': actor.type === 'pc',
+                                                'bg-danger text-white': actor.type === 'enemy',
+                                                'bg-secondary text-white': actor.type === 'minion'
+                                            }">
                                     <input type="text"
                                         class="form-control form-control-sm bg-transparent border-0 fw-bold p-0"
                                         :class="actor.type === 'pc' ? 'text-dark' : 'text-white'" x-model="actor.name">
@@ -303,6 +315,7 @@
                     stat: 0,
                     skill: 0,
                     pendingExplosions: 0,
+                    customExplosion: null, // For manual input
                     pendingFailures: 0,
                     currentSuccesses: 0,
                     currentFailures: 0,
