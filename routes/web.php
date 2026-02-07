@@ -52,6 +52,7 @@ Route::post('/report', [ReportController::class, 'store'])->name('report.store')
 // ========== DM SCREEN (solo master o master_utils) ==========
 Route::middleware(['auth', 'master_utils'])->prefix('dm')->group(function () {
     Route::get('/', [DmController::class, 'index'])->name('dm.screen');
+    Route::get('/powerfail', [DmController::class, 'powerfailScreen'])->name('dm.powerfail');
     Route::get('/manage', [DmController::class, 'manage'])->name('dm.manage');
     Route::get('/api/manage-data', [DmController::class, 'getManagementData'])->name('dm.api.manage-data');
     Route::get('/api/characters', [DmController::class, 'getCharacters'])->name('dm.api.characters.index');

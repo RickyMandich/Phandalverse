@@ -169,12 +169,14 @@ class DmController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'data' => 'nullable|array',
+            'system' => 'nullable|string|max:50',
         ]);
 
         $session = DmSession::create([
             'user_id' => Auth::id(),
             'name' => $validated['name'],
             'data' => $validated['data'] ?? [],
+            'system' => $validated['system'] ?? 'dnd5e',
         ]);
 
         return response()->json($session);
@@ -185,7 +187,7 @@ class DmController extends Controller
         if ($session->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
             abort(403);
         }
-        CustomLogger::screen("{$session->share_code}-master", "Master loading specific session ID: {$session->id}");
+        CustomLogger::screen("{$session->share_code}-master", "Master loading specific session ID: {$session->id} (System: {$session->system})");
         return response()->json($session);
     }
 
@@ -198,11 +200,12 @@ class DmController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'data' => 'required|array',
+            'system' => 'sometimes|string|max:50',
         ]);
 
         $session->update($validated);
 
-        CustomLogger::screen("{$session->share_code}-master", "Session ID {$session->id} updated. Combatants: " . count($validated['data']['combatants'] ?? []) . ", Round: " . ($validated['data']['round'] ?? '1'));
+        CustomLogger::screen("{$session->share_code}-master", "Session ID {$session->id} updated. System: {$session->system}.");
 
         return response()->json(['success' => true]);
     }
@@ -283,5 +286,11 @@ class DmController extends Controller
         CustomLogger::screen("{$share_code}-player", "Public Load Session requested. Combatants in DB: " . count($session->data['combatants'] ?? []) . ", Round: " . ($session->data['round'] ?? '1'));
 
         return response()->json($session);
+    }
+
+    public function powerfailScreen()
+    {
+        CustomLogger::screen("view-powerfail", "Powerfail Master Screen loaded by ID: " . Auth::id());
+        return view('dm.powerfail_screen');
     }
 }

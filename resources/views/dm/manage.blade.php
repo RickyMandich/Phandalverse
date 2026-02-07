@@ -216,20 +216,43 @@
                     <table class="table table-dark table-hover align-middle">
                         <thead class="table-secondary">
                             <tr>
+                                <th>Sistema</th>
                                 <th>Nome Sessione</th>
                                 <th>Ultimo Salvataggio</th>
-                                <th>Round</th>
-                                <th>Combattenti</th>
+                                <th>Info</th>
                                 <th class="text-end">Azioni</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-for="s in sessions" :key="s.id">
                                 <tr>
+                                    <td>
+                                        <span class="badge" :class="s.system === 'powerfail' ? 'bg-danger' : 'bg-primary'"
+                                            x-text="s.system === 'powerfail' ? 'Powerfail' : 'D&D 5e'">
+                                        </span>
+                                    </td>
                                     <td class="fw-bold" x-text="s.name"></td>
                                     <td class="small" x-text="formatDate(s.updated_at)"></td>
-                                    <td x-text="getData(s).round || '1'"></td>
-                                    <td x-text="(getData(s).combatants || []).length"></td>
+                                    <td class="small">
+                                        <template x-if="s.system === 'powerfail'">
+                                            <span>
+                                                <i class="bi bi-people"></i> <span
+                                                    x-text="(getData(s).actors || []).length"></span> Attori
+                                                <br>
+                                                <i class="bi bi-film"></i> <span
+                                                    x-text="getData(s).scene?.state || 'N/A'"></span>
+                                            </span>
+                                        </template>
+                                        <template x-if="s.system !== 'powerfail'">
+                                            <span>
+                                                <i class="bi bi-arrow-repeat"></i> Round: <span
+                                                    x-text="getData(s).round || '1'"></span>
+                                                <br>
+                                                <i class="bi bi-people"></i> <span
+                                                    x-text="(getData(s).combatants || []).length"></span> Combattenti
+                                            </span>
+                                        </template>
+                                    </td>
                                     <td class="text-end">
                                         <button class="btn btn-sm btn-outline-info" @click="renameSession(s)">
                                             <i class="bi bi-chat-left-text"></i> Rinomina

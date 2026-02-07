@@ -2,15 +2,16 @@
 
 @section('content')
     <div class="container-fluid py-4" x-data="playerView({ 
-                                shareCode: '{{ $session->share_code }}',
-                                sessionId: {{ $session->id }}
-                            })">
+                                    shareCode: '{{ $session->share_code }}',
+                                    sessionId: {{ $session->id }}
+                                })">
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <!-- HEADER PUBBLICO -->
                 <div
                     class="d-flex justify-content-between align-items-center mb-4 bg-dark bg-opacity-25 p-3 rounded shadow-sm border border-secondary border-opacity-25">
                     <div>
+                        <span class="badge bg-danger mb-1">D&D 5e Edition</span>
                         <h2 class="mb-0">⚔️ <span class="text-warning">Incontro:</span> {{ $session->name }}</h2>
                         <span class="small text-muted">Codice Sessione: <strong
                                 class="text-info">{{ $session->share_code }}</strong></span>
@@ -25,9 +26,9 @@
                     <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                         <div class="list-group-item mb-2 rounded border-0 shadow-sm combatant-card p-0 overflow-hidden"
                             x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                                        'active-turn': currentTurnIndex === index,
-                                                        'dead-combatant bg-black bg-opacity-50 opacity-50': combatant.hp <= 0 && combatant.type !== 'player'
-                                                    }">
+                                                            'active-turn': currentTurnIndex === index,
+                                                            'dead-combatant bg-black bg-opacity-50 opacity-50': combatant.hp <= 0 && combatant.type !== 'player'
+                                                        }">
 
                             <div class="d-flex align-items-center p-3">
                                 <!-- INITIATIVE -->

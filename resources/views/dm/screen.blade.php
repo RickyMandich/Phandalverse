@@ -5,12 +5,13 @@
 
 @section('content')
     <div x-data="dmScreen({ 
-                                                                                            isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
-                                                                                            isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
-                                                                                        })">
+                                                                                                isMaster: {{ Auth::user()->isMaster() ? 'true' : 'false' }},
+                                                                                                isMasterUtils: {{ Auth::user()->isMasterUtils() ? 'true' : 'false' }} 
+                                                                                            })">
         <div class="row gx-0">
             <!-- SIDEBAR LEFT: Libreria -->
             <div class="col-md-3 border-end vh-100 overflow-auto bg-dark p-3 custom-scrollbar">
+                <span class="badge bg-danger mb-2">D&D 5e Edition</span>
                 <h4 class="mb-3 text-light">📚 Libreria</h4>
 
                 <ul class="nav nav-tabs mb-3" id="libraryTabs" role="tablist">
@@ -189,10 +190,10 @@
                         <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                             <div class="list-group-item mb-2 rounded border-0 shadow-sm combatant-card p-0"
                                 x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                                                                                                    'active-turn': currentTurnIndex === index,
-                                                                                                                    'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
-                                                                                                                    'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
-                                                                                                                }"
+                                                                                                                        'active-turn': currentTurnIndex === index,
+                                                                                                                        'selected-combatant': selectedCombatant && selectedCombatant.instanceId === combatant.instanceId,
+                                                                                                                        'dead-combatant bg-black bg-opacity-50 opacity-75': combatant.hp <= 0 && combatant.type !== 'player'
+                                                                                                                    }"
                                 @click="selectCombatant(combatant)">
 
                                 <div class="d-flex align-items-center p-2">

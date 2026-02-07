@@ -14,6 +14,7 @@ class DmSession extends Model
         'name',
         'share_code',
         'data',
+        'system',
     ];
 
     protected $casts = [
