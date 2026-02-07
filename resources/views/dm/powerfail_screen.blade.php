@@ -85,27 +85,17 @@
                         </div>
 
                         <!-- Exploding 10s Modal/Prompt Area -->
-                        <div x-show="roller.pendingExplosions > 0" class="alert alert-warning p-2 small">
-                            <div class="fw-bold mb-1">💥 <span x-text="roller.pendingExplosions"></span> "10" ottenuti!
-                            </div>
-                            <div>Quanti dadi extra vuoi tirare?</div>
-                            <div class="d-flex flex-wrap gap-2 mt-2 align-items-center">
-                                <!-- All or Nothing -->
-                                <button class="btn btn-sm btn-dark" @click="rollExplosions(roller.pendingExplosions)">
-                                    TUTTI (<span x-text="roller.pendingExplosions"></span>)
-                                </button>
-                                <button class="btn btn-sm btn-outline-dark" @click="rollExplosions(0)">
-                                    NESSUNO
-                                </button>
-
-                                <!-- Custom Amount -->
-                                <div class="input-group input-group-sm w-auto" style="max-width: 120px;">
-                                    <input type="number" class="form-control border-dark"
-                                        x-model.number="roller.customExplosion" min="0" :max="roller.pendingExplosions"
-                                        placeholder="#">
-                                    <button class="btn btn-outline-dark"
-                                        @click="rollExplosions(roller.customExplosion || 0)">Vai</button>
-                                </div>
+                        <div x-show="roller.pendingExplosions > 0" class="alert alert-warning p-2 small shadow-sm border-warning">
+                            <div class="fw-bold mb-2 text-dark">💥 <span x-text="roller.pendingExplosions"></span> "10" ottenuti! Quanti dadi extra vuoi tirare?</div>
+                            
+                            <div class="d-flex flex-wrap gap-1">
+                                <template x-for="n in (roller.pendingExplosions + 1)">
+                                    <button class="btn btn-sm btn-dark border-light fw-bold px-3" 
+                                            @click="rollExplosions(n-1)" 
+                                            x-text="n-1"
+                                            title="Tira questa quantità di dadi">
+                                    </button>
+                                </template>
                             </div>
                         </div>
 
