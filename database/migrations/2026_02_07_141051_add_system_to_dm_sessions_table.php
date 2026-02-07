@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('dm_sessions', function (Blueprint $table) {
-            // RAW SQL: ALTER TABLE dm_sessions ADD COLUMN system VARCHAR(255) DEFAULT 'dnd5e' NOT NULL;
+            // RAW SQL: ALTER TABLE dm_sessions ADD COLUMN `system` VARCHAR(255) DEFAULT 'dnd5e' NOT NULL;
             $table->string('system')->default('dnd5e')->after('data');
         });
     }
