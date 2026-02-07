@@ -1,4 +1,4 @@
-# già fatto
+# generale
 - [X] aggiungere il nome della nota come titolo
 - [X] migliorare la vista della profondità nella vista ad albero
 - [X] creare vista a grafo
@@ -24,4 +24,8 @@
 - [X] aggiungere pulsante download MD per master nella view delle note
 - [X] sistemare l'avanzamento dei turni nello schermo del master (premendo prossimo turno vengono considerati anche i morti)
 - [X] aggiunta pulsante rimuovi morti dallo schermo master
-# da fare
+# inabion
+## dadi
+- [ ] manca la possibilità di ritirare i singoli dadi
+- [ ] far vedere tutti i dadi divisi in "generazioni"
+- [ ] aggiungere todo list dei problemi trovati da claudio
