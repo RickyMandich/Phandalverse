@@ -128,7 +128,10 @@
                                             {{ Auth::user()->isMaster() ? 'Dungeon Master' : 'DM Utilities' }}
                                         </h6>
                                         <a class="dropdown-item" href="{{ route('dm.screen') }}">
-                                            <i class="bi bi-person-badge"></i> DM Screen
+                                            <i class="bi bi-person-badge"></i> DM Screen (D&D 5e)
+                                        </a>
+                                        <a class="dropdown-item" href="{{ route('dm.powerfail') }}">
+                                            💥 DM Screen (Powerfail)
                                         </a>
                                         <a class="dropdown-item" href="{{ route('dm.manage') }}">
                                             <i class="bi bi-gear"></i> Gestione Risorse
@@ -145,7 +148,7 @@
 
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                         onclick="event.preventDefault();
-                                                                                                                     document.getElementById('logout-form').submit();">
+                                                                                                                         document.getElementById('logout-form').submit();">
                                         {{ __('Logout') }}
                                     </a>
 
