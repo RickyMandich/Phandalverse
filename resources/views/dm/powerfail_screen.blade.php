@@ -110,12 +110,12 @@
                                     </div>
                                     <div class="d-flex flex-wrap gap-1 mt-1">
                                         <template x-for="die in log.results">
-                                            <span class="badge" :class="{
-                                                                            'bg-success': die >= 8, 
-                                                                            'bg-danger': die === 1, 
-                                                                            'bg-secondary': die > 1 && die < 8,
-                                                                            'border border-warning': die === 10
-                                                                        }" x-text="die"></span>
+                                            <span class="badge text-white" :class="{
+                                                                                    'bg-success': die >= 8, 
+                                                                                    'bg-danger': die === 1, 
+                                                                                    'bg-secondary': die > 1 && die < 8,
+                                                                                    'border border-warning': die === 10
+                                                                                }" x-text="die"></span>
                                         </template>
                                     </div>
                                     <div class="mt-1 x-small">
@@ -149,17 +149,17 @@
 
                         <template x-for="(actor, index) in actors" :key="actor.id">
                             <div class="card border-0 shadow-lg" style="width: 300px;" :class="{
-                                                            'bg-dark': actor.type === 'pc',
-                                                            'bg-danger bg-opacity-10': actor.type === 'enemy',
-                                                            'bg-secondary bg-opacity-10': actor.type === 'minion'
-                                                        }">
+                                                                    'bg-dark': actor.type === 'pc',
+                                                                    'bg-danger bg-opacity-10': actor.type === 'enemy',
+                                                                    'bg-secondary bg-opacity-10': actor.type === 'minion'
+                                                                }">
 
                                 <!-- Header Attore -->
                                 <div class="card-header py-1 d-flex justify-content-between align-items-center" :class="{
-                                                                'bg-info text-dark': actor.type === 'pc',
-                                                                'bg-danger text-white': actor.type === 'enemy',
-                                                                'bg-secondary text-white': actor.type === 'minion'
-                                                            }">
+                                                                        'bg-info text-dark': actor.type === 'pc',
+                                                                        'bg-danger text-white': actor.type === 'enemy',
+                                                                        'bg-secondary text-white': actor.type === 'minion'
+                                                                    }">
                                     <input type="text"
                                         class="form-control form-control-sm bg-transparent border-0 fw-bold p-0"
                                         :class="actor.type === 'pc' ? 'text-dark' : 'text-white'" x-model="actor.name">
