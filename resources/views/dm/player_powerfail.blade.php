@@ -6,11 +6,16 @@
 
 @section('content')
     <div class="container-fluid py-4" x-data="playerView({ 
-                                            shareCode: '{{ $session->share_code }}',
-                                            sessionId: {{ $session->id }}
-                                        })">
-        <div class="row justify-content-center">
-            <div class="col-md-10">
+                                                shareCode: '{{ $session->share_code }}',
+                                                sessionId: {{ $session->id }}
+                                            })">
+        <div class="row g-4">
+            <!-- SIDEBAR: Tools -->
+            <div class="col-md-3">
+                @include('dm.partials.dice_roller')
+            </div>
+
+            <div class="col-md-9">
                 <!-- HEADER PUBBLICO -->
                 <div
                     class="d-flex justify-content-between align-items-center mb-4 bg-dark bg-opacity-25 p-3 rounded shadow-sm border border-secondary border-opacity-25">
@@ -26,7 +31,7 @@
                 </div>
 
                 <!-- LISTA ATTORI -->
-                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+                <div class="row row-cols-1 row-cols-md-2 g-3">
                     <template x-for="(actor, index) in actors" :key="actor.id">
                         <div class="col">
                             <div class="card bg-dark bg-opacity-50 border-secondary h-100"
@@ -92,6 +97,9 @@
                 actors: [],
                 scene: { name: '...', state: 'narrative' },
                 activeActorIndex: 0,
+                diceLog: [],
+
+                ...window.powerfailDiceLogic('Player'),
 
                 init() {
                     this.fetchData();
@@ -108,6 +116,10 @@
                                 this.actors = d.actors || [];
                                 this.scene = d.scene || { name: 'Incontro' };
                                 this.activeActorIndex = d.activeActorIndex || 0;
+
+                                // Sync diceLog but keep local ones if not present?
+                                // For now, simple overwrite so they see Master's rolls.
+                                if (d.diceLog) this.diceLog = d.diceLog;
                             }
                         }
                     } catch (e) {
