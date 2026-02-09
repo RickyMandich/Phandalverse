@@ -108,12 +108,13 @@
                                             <template x-for="(die, dieIdx) in gen" :key="dieIdx">
                                                 <button
                                                     class="btn btn-sm p-0 d-flex justify-content-center align-items-center rounded-circle"
-                                                    style="width: 28px; height: 28px;" :class="{
-                                                                                                                        'btn-success': isSuccess(die),
-                                                                                                                        'btn-danger': die === 1,
-                                                                                                                        'btn-secondary': !isSuccess(die) && die !== 1,
-                                                                                                                        'border border-warning border-2': die === 10
-                                                                                                                    }"
+                                                    style="width: 28px; height: 28px;"
+                                                    :class="{
+                                                                                                                                                            'btn-success': isSuccess(die),
+                                                                                                                                                            'btn-danger': die === 1,
+                                                                                                                                                            'btn-secondary': !isSuccess(die) && die !== 1,
+                                                                                                                                                            'border border-warning border-2': die === 10
+                                                                                                                                                        }"
                                                     @click="rerollDie(genIdx, dieIdx)" :disabled="!canReroll()"
                                                     :title="canReroll() ? 'Clicca per ritirare (Livello 3+)' : ''">
                                                     <span class="fw-bold" x-text="die"></span>
@@ -167,12 +168,13 @@
                                             <!-- <span class="text-muted x-small">W<span x-text="genIdx + 1"></span></span> -->
                                             <div class="d-flex flex-wrap gap-1">
                                                 <template x-for="die in gen">
-                                                    <span class="badge" :class="{
-                                                                                                                            'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
-                                                                                                                            'bg-danger': die === 1, 
-                                                                                                                            'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
-                                                                                                                            'border border-warning': die === 10
-                                                                                                                        }"
+                                                    <span class="badge"
+                                                        :class="{
+                                                                                                                                                                'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
+                                                                                                                                                                'bg-danger': die === 1, 
+                                                                                                                                                                'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
+                                                                                                                                                                'border border-warning': die === 10
+                                                                                                                                                            }"
                                                         x-text="die"></span>
                                                 </template>
                                             </div>
@@ -205,6 +207,10 @@
                         class="card-header bg-secondary bg-opacity-25 fw-bold d-flex justify-content-between align-items-center">
                         <span>👥 Attori in Scena</span>
                         <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-warning" @click="sortActorsByInitiative()"
+                                title="Ordina per Iniziativa">
+                                <i class="bi bi-sort-numeric-down"></i> Ordina
+                            </button>
                             <button class="btn btn-sm btn-outline-info" @click="addActor('pc')">+ PG</button>
                             <button class="btn btn-sm btn-outline-danger" @click="bestiaryModal = true">+ Aggiungi
                                 Nemico</button>
@@ -214,18 +220,20 @@
                     <div class="card-body overflow-auto custom-scrollbar d-flex gap-3 flex-wrap align-items-start">
 
                         <template x-for="(actor, index) in actors" :key="actor.id">
-                            <div class="card border-0 shadow-lg" style="width: 300px;" :class="{
-                                                                                                'bg-dark': actor.type === 'pc',
-                                                                                                'bg-danger bg-opacity-10': actor.type === 'enemy',
-                                                                                                'bg-secondary bg-opacity-10': actor.type === 'minion'
-                                                                                            }">
+                            <div class="card border-0 shadow-lg" style="width: 300px;"
+                                :class="{
+                                                                                                                                    'bg-dark': actor.type === 'pc',
+                                                                                                                                    'bg-danger bg-opacity-10': actor.type === 'enemy',
+                                                                                                                                    'bg-secondary bg-opacity-10': actor.type === 'minion'
+                                                                                                                                }">
 
                                 <!-- Header Attore -->
-                                <div class="card-header py-1 d-flex justify-content-between align-items-center" :class="{
-                                                                                                    'bg-info text-dark': actor.type === 'pc',
-                                                                                                    'bg-danger text-white': actor.type === 'enemy',
-                                                                                                    'bg-secondary text-white': actor.type === 'minion'
-                                                                                                }">
+                                <div class="card-header py-1 d-flex justify-content-between align-items-center"
+                                    :class="{
+                                                                                                                                        'bg-info text-dark': actor.type === 'pc',
+                                                                                                                                        'bg-danger text-white': actor.type === 'enemy',
+                                                                                                                                        'bg-secondary text-white': actor.type === 'minion'
+                                                                                                                                    }">
                                     <input type="text"
                                         class="form-control form-control-sm bg-transparent border-0 fw-bold p-0"
                                         :class="actor.type === 'pc' ? 'text-dark' : 'text-white'" x-model="actor.name">
@@ -277,6 +285,19 @@
                                             x-text="actor.statusMessage"></span>
                                     </div>
 
+                                    <!-- Initiative -->
+                                    <div class="mb-2">
+                                        <label class="x-small text-muted">Iniziativa</label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" class="form-control bg-dark text-white border-secondary"
+                                                x-model.number="actor.initiative">
+                                            <button class="btn btn-sm btn-outline-warning" @click="rollInitiative(actor)"
+                                                title="Tira 1d10 + caratteristica">
+                                                🎲
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <!-- Attributes & Skills -->
                                     <template x-if="actor.type !== 'minion'">
                                         <div class="mb-2">
@@ -284,17 +305,65 @@
                                                 class="d-flex justify-content-between bg-secondary bg-opacity-25 p-1 rounded mb-1">
                                                 <span class="x-small fw-bold">CARATTERISTICHE</span>
                                             </div>
-                                            <div class="d-flex gap-1 mb-2">
-                                                <input type="number"
-                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                    placeholder="FIS" x-model.number="actor.stats.fis" title="Fisico">
-                                                <input type="number"
-                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                    placeholder="MEN" x-model.number="actor.stats.men" title="Mentale">
-                                                <input type="number"
-                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                    placeholder="SOC" x-model.number="actor.stats.soc" title="Sociale">
-                                            </div>
+
+                                            <!-- PC: 6 Inabion Characteristics -->
+                                            <template x-if="actor.type === 'pc'">
+                                                <div>
+                                                    <!-- Fisiche -->
+                                                    <div class="x-small text-muted mb-1">Fisiche</div>
+                                                    <div class="d-flex gap-1 mb-2">
+                                                        <input type="number"
+                                                            class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                            placeholder="VIG" x-model.number="actor.stats.vig"
+                                                            title="Vigore">
+                                                        <input type="number"
+                                                            class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                            placeholder="DES" x-model.number="actor.stats.des"
+                                                            title="Destrezza">
+                                                    </div>
+
+                                                    <!-- Mente -->
+                                                    <div class="x-small text-muted mb-1">Mente</div>
+                                                    <div class="d-flex gap-1 mb-2">
+                                                        <input type="number"
+                                                            class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                            placeholder="INT" x-model.number="actor.stats.int"
+                                                            title="Intuito">
+                                                        <input type="number"
+                                                            class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                            placeholder="RAG" x-model.number="actor.stats.rag"
+                                                            title="Ragione">
+                                                    </div>
+
+                                                    <!-- Anima -->
+                                                    <div class="x-small text-muted mb-1">Anima</div>
+                                                    <div class="d-flex gap-1 mb-2">
+                                                        <input type="number"
+                                                            class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                            placeholder="CAR" x-model.number="actor.stats.car"
+                                                            title="Carisma">
+                                                        <input type="number"
+                                                            class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                            placeholder="SPI" x-model.number="actor.stats.spi"
+                                                            title="Spirito">
+                                                    </div>
+                                                </div>
+                                            </template>
+
+                                            <!-- Enemy: 3 Stats -->
+                                            <template x-if="actor.type === 'enemy'">
+                                                <div class="d-flex gap-1 mb-2">
+                                                    <input type="number"
+                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                        placeholder="FIS" x-model.number="actor.stats.fis" title="Fisico">
+                                                    <input type="number"
+                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                        placeholder="MEN" x-model.number="actor.stats.men" title="Mentale">
+                                                    <input type="number"
+                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                        placeholder="SOC" x-model.number="actor.stats.soc" title="Sociale">
+                                                </div>
+                                            </template>
 
                                             <div
                                                 class="d-flex justify-content-between bg-secondary bg-opacity-25 p-1 rounded mb-1">
@@ -341,10 +410,11 @@
                     </div>
                     <div class="modal-body">
                         <!-- New Session Option -->
-                        <button class="btn btn-success w-100 mb-2 py-2 fw-bold" @click="loadSessionModal = false; scene = { name: 'Nuova Scena', state: 'narrative', notes: '' }; actors = []; diceLog = []; currentSessionId = null;">
+                        <button class="btn btn-success w-100 mb-2 py-2 fw-bold"
+                            @click="loadSessionModal = false; scene = { name: 'Nuova Scena', state: 'narrative', notes: '' }; actors = []; diceLog = []; currentSessionId = null;">
                             <i class="bi bi-plus-circle"></i> Inizia Nuova Sessione
                         </button>
-                        
+
                         <div class="border-top border-secondary my-3"></div>
 
                         <button class="btn btn-sm btn-outline-light mb-3 w-100" @click="loadSessionsList()">🔄 Aggiorna
@@ -651,14 +721,23 @@
                 },
 
                 addActor(type) {
+                    const isPc = type === 'pc';
                     this.actors.push({
                         id: Date.now(),
                         type: type,
-                        name: type === 'pc' ? 'Nuovo Giocatore' : (type === 'minion' ? 'Minion' : 'Nemico'),
+                        name: isPc ? 'Nuovo Giocatore' : (type === 'minion' ? 'Minion' : 'Nemico'),
                         hp: 10,
                         maxHp: 10,
                         fatigue: 0,
-                        stats: { fis: 2, men: 2, soc: 2 },
+                        initiative: 0,
+                        // PCs use Inabion 6 characteristics (Fisiche, Mente, Anima), others use simplified 3
+                        stats: isPc ? {
+                            vig: 2, des: 2,          // Fisiche
+                            int: 2, rag: 2,          // Mente
+                            car: 2, spi: 2           // Anima
+                        } : {
+                            fis: 2, men: 2, soc: 2
+                        },
                         notes: '',
                         statusMessage: ''
                     });
@@ -666,13 +745,20 @@
 
                 addFromBestiary(monster) {
                     const s = monster.stats || {};
+                    const type = s.type === 'minion' ? 'minion' : 'enemy';
+
+                    // Bestiary is mostly enemies, so use 3 stats or 6 if needed.
+                    // For now, assume bestiary = simplified stats unless 'pc' (rare for bestiary).
+                    // If complex NPC, we might need 6 stats, but current bestiary logic supports simplified.
+
                     this.actors.push({
                         id: Date.now(),
-                        type: s.type === 'minion' ? 'minion' : 'enemy',
+                        type: type,
                         name: monster.name,
                         hp: s.hp || 10,
                         maxHp: s.maxHp || 10,
                         fatigue: 0,
+                        initiative: 0,
                         stats: {
                             fis: s.fis || 2,
                             men: s.men || 2,
@@ -831,14 +917,50 @@
                 },
 
                 quickRoll(actor, skillName) {
-                    // Auto-set and Roll
-                    // Assume Level based on skill? For now hardcode or random for demo
-                    // The user said "Quando premo per tirare ... tira in automatico"
-                    this.roller.level = 3; // Default or calculate
-                    this.roller.pool = actor.stats.fis || 2; // Default
+                    this.roller.level = 3;
 
-                    // Trigger visual roll
+                    if (actor.type === 'pc') {
+                        // Inabion system: VIG for melee, DES for ranged, INT for technical
+                        const s = actor.stats || {};
+                        let pool = 2;
+                        switch (skillName) {
+                            case 'mischia': pool = (s.vig || 2); break;  // Vigore for melee
+                            case 'tiro': pool = (s.des || 2); break;     // Destrezza for ranged
+                            case 'tecnica': pool = (s.int || 2); break;  // Intuito for technical
+                            default: pool = 2;
+                        }
+                        this.roller.pool = Math.max(1, pool);
+                    } else {
+                        // Minion/Enemy logic (3 stats)
+                        const s = actor.stats || {};
+                        const fis = s.fis || 2;
+                        const men = s.men || 2;
+
+                        // Heuristic mapping
+                        if (skillName === 'mischia') this.roller.pool = fis;
+                        else if (skillName === 'tiro') this.roller.pool = Math.max(1, fis - 1); // slightly less
+                        else if (skillName === 'tecnica') this.roller.pool = men;
+                        else this.roller.pool = 2;
+                    }
+
                     this.rollDice();
+                },
+
+                rollInitiative(actor) {
+                    const d10 = Math.floor(Math.random() * 10) + 1;
+                    let modifier = 0;
+
+                    if (actor.type === 'pc') {
+                        modifier = actor.stats.des || 0;
+                    } else {
+                        modifier = actor.stats.fis || 0;
+                    }
+
+                    actor.initiative = d10 + modifier;
+                },
+
+                sortActorsByInitiative() {
+                    this.actors.sort((a, b) => (b.initiative || 0) - (a.initiative || 0));
                 },
 
                 // --- SESSION PERSISTENCE ---
