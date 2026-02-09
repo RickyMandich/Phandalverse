@@ -65,7 +65,13 @@
                 <div class="card bg-dark text-white border-secondary">
                     <div class="card-header bg-secondary bg-opacity-25 fw-bold d-flex justify-content-between">
                         <span>🎲 Lancio Dadi (d10)</span>
-                        <button class="btn btn-sm btn-link text-white p-0" @click="diceLog = []">Pulisci Log</button>
+                        <div>
+                            <button class="btn btn-sm btn-link text-info p-0 me-2" @click="helpModal = true"
+                                title="Guida al Sistema">
+                                <i class="bi bi-question-circle"></i>
+                            </button>
+                            <button class="btn btn-sm btn-link text-white p-0" @click="diceLog = []">Pulisci Log</button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <!-- Inputs -->
@@ -97,17 +103,18 @@
                             <div class="d-flex flex-column gap-2">
                                 <template x-for="(gen, genIdx) in roller.generations" :key="genIdx">
                                     <div class="d-flex align-items-center gap-2">
-                                        <span class="text-muted x-small">W<span x-text="genIdx + 1"></span></span>
+                                        <!-- <span class="text-muted x-small">W<span x-text="genIdx + 1"></span></span> -->
                                         <div class="d-flex flex-wrap gap-1">
                                             <template x-for="(die, dieIdx) in gen" :key="dieIdx">
                                                 <button
                                                     class="btn btn-sm p-0 d-flex justify-content-center align-items-center rounded-circle"
                                                     style="width: 28px; height: 28px;" :class="{
-                                                                'btn-success': isSuccess(die),
-                                                                'btn-danger': die === 1,
-                                                                'btn-secondary': !isSuccess(die) && die !== 1,
-                                                                'border border-warning border-2': die === 10
-                                                            }" @click="rerollDie(genIdx, dieIdx)" :disabled="!canReroll()"
+                                                                                        'btn-success': isSuccess(die),
+                                                                                        'btn-danger': die === 1,
+                                                                                        'btn-secondary': !isSuccess(die) && die !== 1,
+                                                                                        'border border-warning border-2': die === 10
+                                                                                    }" @click="rerollDie(genIdx, dieIdx)"
+                                                    :disabled="!canReroll()"
                                                     :title="canReroll() ? 'Clicca per ritirare (Livello 3+)' : ''">
                                                     <span class="fw-bold" x-text="die"></span>
                                                 </button>
@@ -157,15 +164,15 @@
                                     <!-- Log Generations -->
                                     <template x-for="(gen, genIdx) in log.generations" :key="genIdx">
                                         <div class="d-flex gap-2 align-items-center mt-1">
-                                            <span class="text-muted x-small">W<span x-text="genIdx + 1"></span></span>
+                                            <!-- <span class="text-muted x-small">W<span x-text="genIdx + 1"></span></span> -->
                                             <div class="d-flex flex-wrap gap-1">
                                                 <template x-for="die in gen">
                                                     <span class="badge" :class="{
-                                                                    'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
-                                                                    'bg-danger': die === 1, 
-                                                                    'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
-                                                                    'border border-warning': die === 10
-                                                                }" x-text="die"></span>
+                                                                                            'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
+                                                                                            'bg-danger': die === 1, 
+                                                                                            'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
+                                                                                            'border border-warning': die === 10
+                                                                                        }" x-text="die"></span>
                                                 </template>
                                             </div>
                                         </div>
@@ -207,17 +214,17 @@
 
                         <template x-for="(actor, index) in actors" :key="actor.id">
                             <div class="card border-0 shadow-lg" style="width: 300px;" :class="{
-                                        'bg-dark': actor.type === 'pc',
-                                        'bg-danger bg-opacity-10': actor.type === 'enemy',
-                                        'bg-secondary bg-opacity-10': actor.type === 'minion'
-                                    }">
+                                                                'bg-dark': actor.type === 'pc',
+                                                                'bg-danger bg-opacity-10': actor.type === 'enemy',
+                                                                'bg-secondary bg-opacity-10': actor.type === 'minion'
+                                                            }">
 
                                 <!-- Header Attore -->
                                 <div class="card-header py-1 d-flex justify-content-between align-items-center" :class="{
-                                            'bg-info text-dark': actor.type === 'pc',
-                                            'bg-danger text-white': actor.type === 'enemy',
-                                            'bg-secondary text-white': actor.type === 'minion'
-                                        }">
+                                                                    'bg-info text-dark': actor.type === 'pc',
+                                                                    'bg-danger text-white': actor.type === 'enemy',
+                                                                    'bg-secondary text-white': actor.type === 'minion'
+                                                                }">
                                     <input type="text"
                                         class="form-control form-control-sm bg-transparent border-0 fw-bold p-0"
                                         :class="actor.type === 'pc' ? 'text-dark' : 'text-white'" x-model="actor.name">
@@ -389,6 +396,34 @@
             </div>
         </div>
 
+        <!-- Help Modal -->
+        <div class="modal fade" id="helpModal" tabindex="-1" style="display: block; background: rgba(0,0,0,0.8);"
+            x-show="helpModal" x-transition.opacity @click.self="helpModal = false">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark text-white border-info">
+                    <div class="modal-header border-info">
+                        <h5 class="modal-title"><i class="bi bi-info-circle"></i> Regole Powerfail System</h5>
+                        <button type="button" class="btn-close btn-close-white" @click="helpModal = false"></button>
+                    </div>
+                    <div class="modal-body small">
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><strong>🎲 Base:</strong> Tira una pool di d10.</li>
+                            <li class="mb-2"><strong>✅ Successo:</strong> Risultato 8+ (o 7+ a Lv.4+).</li>
+                            <li class="mb-2"><strong>❌ Fallimento:</strong> Risultato 1. Cancella 1 successo.</li>
+                            <li class="mb-2"><strong>💥 Esplosioni (Lv.2+):</strong> Ogni 10 permette di tirare un dado
+                                extra.</li>
+                            <li class="mb-2"><strong>🔄 Reroll (Lv.3+):</strong> Puoi ritirare 1 dado dal tavolo, ma SOLO
+                                dopo aver risolto tutte le esplosioni pendenti.</li>
+                        </ul>
+                        <div class="alert alert-info py-1 mb-0">
+                            Premi <strong>TIRA</strong> per iniziare. Se ottieni dei 10, appariranno i tasti per esplodere.
+                            Alla fine, <strong>Conferma</strong> per salvare nel log.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -404,6 +439,7 @@
                 currentSessionId: null,
                 loadSessionModal: false,
                 bestiaryModal: false,
+                helpModal: false,
                 availableSessions: [],
 
                 roller: {
@@ -502,7 +538,7 @@
                 },
 
                 canReroll() {
-                    return this.roller.level >= 3 && !this.roller.rerollUsed;
+                    return this.roller.level >= 3 && !this.roller.rerollUsed && this.countTens() === 0;
                 },
 
                 rollDice() {
@@ -524,10 +560,17 @@
                 },
 
                 rerollDie(genIdx, dieIdx) {
-                    if (!this.canReroll()) return;
+                    if (!this.canReroll()) {
+                        alert("Puoi ritirare solo se NON ci sono esplosioni pendenti!");
+                        return;
+                    }
 
                     this.roller.generations[genIdx][dieIdx] = Math.floor(Math.random() * 10) + 1;
                     this.roller.rerollUsed = true;
+                    // Force reactivity if needed, but typically assignment works. 
+                    // Let's use a splice to be 100% sure for Alpine
+                    // this.roller.generations[genIdx].splice(dieIdx, 1, val);
+                    // But standard assignment is fine in modern Alpine.
                 },
 
                 explode(count) {
