@@ -123,11 +123,11 @@
                                                     class="btn btn-sm p-0 d-flex justify-content-center align-items-center rounded-circle"
                                                     style="width: 28px; height: 28px;"
                                                     :class="{
-                                                                                                                                                                                                                                'btn-success': isSuccess(die),
-                                                                                                                                                                                                                                'btn-danger': die === 1,
-                                                                                                                                                                                                                                'btn-secondary': !isSuccess(die) && die !== 1,
-                                                                                                                                                                                                                                'border border-warning border-2': die === 10
-                                                                                                                                                                                                                            }"
+                                                                                                                                                                                                                                        'btn-success': isSuccess(die),
+                                                                                                                                                                                                                                        'btn-danger': die === 1,
+                                                                                                                                                                                                                                        'btn-secondary': !isSuccess(die) && die !== 1,
+                                                                                                                                                                                                                                        'border border-warning border-2': die === 10
+                                                                                                                                                                                                                                    }"
                                                     @click="rerollDie(genIdx, dieIdx)" :disabled="!canReroll()"
                                                     :title="canReroll() ? 'Clicca per ritirare (Livello 3+)' : ''">
                                                     <span class="fw-bold" x-text="die"></span>
@@ -183,11 +183,11 @@
                                                 <template x-for="die in gen">
                                                     <span class="badge"
                                                         :class="{
-                                                                                                                                                                                                                                    'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
-                                                                                                                                                                                                                                    'bg-danger': die === 1, 
-                                                                                                                                                                                                                                    'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
-                                                                                                                                                                                                                                    'border border-warning': die === 10
-                                                                                                                                                                                                                                }"
+                                                                                                                                                                                                                                            'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
+                                                                                                                                                                                                                                            'bg-danger': die === 1, 
+                                                                                                                                                                                                                                            'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
+                                                                                                                                                                                                                                            'border border-warning': die === 10
+                                                                                                                                                                                                                                        }"
                                                         x-text="die"></span>
                                                 </template>
                                             </div>
@@ -536,8 +536,11 @@
                                                     <div>
                                                         <h6 class="mb-0 fw-bold" x-text="monster.name"></h6>
                                                         <div class="small text-muted">
-                                                            <span x-text="monster.stats?.fis || 2"></span>/<span x-text="monster.stats?.men || 2"></span>/<span x-text="monster.stats?.soc || 2"></span> |
-                                                            <span class="badge bg-dark border border-secondary" x-text="(monster.stats?.type || 'enemy').toUpperCase()"></span>
+                                                            <span x-text="monster.stats?.fis || 2"></span>/<span
+                                                                x-text="monster.stats?.men || 2"></span>/<span
+                                                                x-text="monster.stats?.soc || 2"></span> |
+                                                            <span class="badge bg-dark border border-secondary"
+                                                                x-text="(monster.stats?.type || 'enemy').toUpperCase()"></span>
                                                         </div>
                                                     </div>
                                                     <button class="btn btn-sm btn-outline-success"
@@ -675,17 +678,42 @@
                         rerollUsed: false
                     },
 
-                    // Bestiary State
                     bestiary: [],
                     bestiaryView: 'list', // 'list' or 'form'
                     editingMonsterId: null,
                     monsterForm: { name: '', type: 'enemy', fis: 2, men: 2, soc: 2, notes: '' },
 
+                    saveTimer: null,
+
                     init() {
                         this.loadSessionsList();
                         this.loadBestiary();
+
+                        // SET UP AUTO-SAVE (Watcher style)
+                        this.$watch('actors', () => this.triggerAutoSave());
+                        this.$watch('scene', () => this.triggerAutoSave(), { deep: true });
+
                         // Auto-open load session modal on start
                         setTimeout(() => this.loadSessionModal = true, 500);
+                    },
+
+                    triggerAutoSave() {
+                        if (!this.currentSessionId) return;
+                        if (this.saveTimer) clearTimeout(this.saveTimer);
+                        this.saveTimer = setTimeout(() => {
+                            this.executeSave(true); // true = silent save
+                        }, 300); // 300ms debounce
+                    },
+
+                    sanitizeActor(actor) {
+                        // Ensure all required fields exist with defaults
+                        if (!actor.defenses) actor.defenses = { mischia: 0, tiro: 0, magia: 0 };
+                        if (actor.damage === undefined) actor.damage = 0;
+                        if (actor.fatigue === undefined) actor.fatigue = 0;
+                        if (actor.traumas === undefined) actor.traumas = 0;
+                        if (actor.initiative === undefined) actor.initiative = 0;
+                        if (!actor.stats) actor.stats = actor.type === 'pc' ? { vig: 2, des: 2, int: 2, rag: 2, car: 2, spi: 2 } : { fis: 2, men: 2, soc: 2 };
+                        return actor;
                     },
 
                     // UI UTILITIES
@@ -873,22 +901,26 @@
                     },
 
                     cloneActor(actor) {
-                        const count = prompt(`Quante copie di ${actor.name} vuoi creare?`, "1");
-                        const num = parseInt(count);
-                        if (!num || num < 1) return;
+                        this.showPrompt("Clona Personaggio", `Quante copie di ${actor.name} vuoi creare?`, "1", (val) => {
+                            const num = parseInt(val);
+                            if (!num || num < 1) return;
 
-                        for (let i = 0; i < num; i++) {
-                            const clone = JSON.parse(JSON.stringify(actor));
-                            clone.id = Date.now() + i; // Ensure unique ID
-                            clone.name = `${actor.name} ${i + 1}`;
-                            this.actors.push(clone);
-                        }
+                            for (let i = 0; i < num; i++) {
+                                const clone = JSON.parse(JSON.stringify(actor));
+                                clone.id = Date.now() + i;
+                                clone.name = `${actor.name} ${i + 1}`;
+                                this.actors.push(this.sanitizeActor(clone));
+                            }
+                        });
                     },
 
                     removeActor(index) {
-                        if (confirm('Rimuovere questo attore?')) {
-                            this.actors.splice(index, 1);
-                        }
+                        const actor = this.actors[index];
+                        this.showPrompt("Conferma", `Vuoi rimuovere ${actor.name}? Scrivi 'RIMUOVI' per confermare:`, "", (val) => {
+                            if (val === 'RIMUOVI') {
+                                this.actors.splice(index, 1);
+                            }
+                        });
                     },
 
                     checkHpTriggers(actor) {
@@ -1094,7 +1126,7 @@
                         }
                     },
 
-                    async executeSave() {
+                    async executeSave(silent = false) {
                         const payload = {
                             name: this.scene.name,
                             system: 'powerfail',
@@ -1121,13 +1153,13 @@
                                 const data = await response.json();
                                 if (data.id) this.currentSessionId = data.id;
                                 if (data.share_code) this.currentSessionCode = data.share_code;
-                                this.showAlert("Salvato", "Sessione salvata correttamente!");
+                                if (!silent) this.showAlert("Salvato", "Sessione salvata correttamente!");
                                 this.loadSessionsList();
-                            } else {
+                            } else if (!silent) {
                                 this.showAlert("Errore", "Errore server nel salvataggio.");
                             }
                         } catch (e) {
-                            this.showAlert("Errore", 'Errore: ' + e);
+                            if (!silent) this.showAlert("Errore", 'Errore: ' + e);
                         }
                     },
 
@@ -1159,7 +1191,11 @@
                             this.currentSessionId = session.id;
                             this.currentSessionCode = session.share_code;
                             this.scene = session.data.scene || this.scene;
-                            this.actors = session.data.actors || [];
+
+                            // SANITIZE ALL ACTORS UPON LOADING
+                            const loadedActors = session.data.actors || [];
+                            this.actors = loadedActors.map(a => this.sanitizeActor(a));
+
                             this.activeActorIndex = session.data.activeActorIndex || 0;
                             this.diceLog = session.data.diceLog || [];
 

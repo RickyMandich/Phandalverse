@@ -6,9 +6,9 @@
 
 @section('content')
     <div class="container-fluid py-4" x-data="playerView({ 
-                                        shareCode: '{{ $session->share_code }}',
-                                        sessionId: {{ $session->id }}
-                                    })">
+                                            shareCode: '{{ $session->share_code }}',
+                                            sessionId: {{ $session->id }}
+                                        })">
         <div class="row justify-content-center">
             <div class="col-md-10">
                 <!-- HEADER PUBBLICO -->
@@ -95,7 +95,7 @@
 
                 init() {
                     this.fetchData();
-                    setInterval(() => this.fetchData(), 2000);
+                    setInterval(() => this.fetchData(), 300);
                 },
 
                 async fetchData() {
