@@ -109,11 +109,11 @@
                                                 <button
                                                     class="btn btn-sm p-0 d-flex justify-content-center align-items-center rounded-circle"
                                                     style="width: 28px; height: 28px;" :class="{
-                                                                                                    'btn-success': isSuccess(die),
-                                                                                                    'btn-danger': die === 1,
-                                                                                                    'btn-secondary': !isSuccess(die) && die !== 1,
-                                                                                                    'border border-warning border-2': die === 10
-                                                                                                }"
+                                                                                                            'btn-success': isSuccess(die),
+                                                                                                            'btn-danger': die === 1,
+                                                                                                            'btn-secondary': !isSuccess(die) && die !== 1,
+                                                                                                            'border border-warning border-2': die === 10
+                                                                                                        }"
                                                     @click="rerollDie(genIdx, dieIdx)" :disabled="!canReroll()"
                                                     :title="canReroll() ? 'Clicca per ritirare (Livello 3+)' : ''">
                                                     <span class="fw-bold" x-text="die"></span>
@@ -168,11 +168,12 @@
                                             <div class="d-flex flex-wrap gap-1">
                                                 <template x-for="die in gen">
                                                     <span class="badge" :class="{
-                                                                                                        'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
-                                                                                                        'bg-danger': die === 1, 
-                                                                                                        'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
-                                                                                                        'border border-warning': die === 10
-                                                                                                    }" x-text="die"></span>
+                                                                                                                'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
+                                                                                                                'bg-danger': die === 1, 
+                                                                                                                'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
+                                                                                                                'border border-warning': die === 10
+                                                                                                            }"
+                                                        x-text="die"></span>
                                                 </template>
                                             </div>
                                         </div>
@@ -214,17 +215,17 @@
 
                         <template x-for="(actor, index) in actors" :key="actor.id">
                             <div class="card border-0 shadow-lg" style="width: 300px;" :class="{
-                                                                            'bg-dark': actor.type === 'pc',
-                                                                            'bg-danger bg-opacity-10': actor.type === 'enemy',
-                                                                            'bg-secondary bg-opacity-10': actor.type === 'minion'
-                                                                        }">
+                                                                                    'bg-dark': actor.type === 'pc',
+                                                                                    'bg-danger bg-opacity-10': actor.type === 'enemy',
+                                                                                    'bg-secondary bg-opacity-10': actor.type === 'minion'
+                                                                                }">
 
                                 <!-- Header Attore -->
                                 <div class="card-header py-1 d-flex justify-content-between align-items-center" :class="{
-                                                                                'bg-info text-dark': actor.type === 'pc',
-                                                                                'bg-danger text-white': actor.type === 'enemy',
-                                                                                'bg-secondary text-white': actor.type === 'minion'
-                                                                            }">
+                                                                                        'bg-info text-dark': actor.type === 'pc',
+                                                                                        'bg-danger text-white': actor.type === 'enemy',
+                                                                                        'bg-secondary text-white': actor.type === 'minion'
+                                                                                    }">
                                     <input type="text"
                                         class="form-control form-control-sm bg-transparent border-0 fw-bold p-0"
                                         :class="actor.type === 'pc' ? 'text-dark' : 'text-white'" x-model="actor.name">
@@ -330,8 +331,8 @@
         <!-- MODALS -->
 
         <!-- Load Session Modal -->
-        <div class="modal fade" :class="{ 'show': loadSessionModal }" id="loadSessionModal" tabindex="-1"
-            style="display: block; background: rgba(0,0,0,0.8);" x-show="loadSessionModal" x-transition.opacity>
+        <div class="modal fade" :class="{ 'show d-block': loadSessionModal }" id="loadSessionModal" tabindex="-1"
+            style="background: rgba(0,0,0,0.8);" role="dialog" aria-hidden="true" @click.self="loadSessionModal = false">
             <div class="modal-dialog">
                 <div class="modal-content bg-dark text-white border-secondary">
                     <div class="modal-header border-secondary">
@@ -360,8 +361,8 @@
         </div>
 
         <!-- Bestiary Modal -->
-        <div class="modal fade" :class="{ 'show': bestiaryModal }" id="bestiaryModal" tabindex="-1"
-            style="display: block; background: rgba(0,0,0,0.8);" x-show="bestiaryModal" x-transition.opacity>
+        <div class="modal fade" :class="{ 'show d-block': bestiaryModal }" id="bestiaryModal" tabindex="-1"
+            style="background: rgba(0,0,0,0.8);" role="dialog" aria-hidden="true" @click.self="bestiaryModal = false">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content bg-dark text-white border-secondary">
                     <div class="modal-header border-secondary">
@@ -397,9 +398,8 @@
         </div>
 
         <!-- Help Modal -->
-        <div class="modal fade" :class="{ 'show': helpModal }" id="helpModal" tabindex="-1"
-            style="display: block; background: rgba(0,0,0,0.8);" x-show="helpModal" x-transition.opacity
-            @click.self="helpModal = false">
+        <div class="modal fade" :class="{ 'show d-block': helpModal }" id="helpModal" tabindex="-1"
+            style="background: rgba(0,0,0,0.8);" role="dialog" aria-hidden="true" @click.self="helpModal = false">
             <div class="modal-dialog">
                 <div class="modal-content bg-dark text-white border-info">
                     <div class="modal-header border-info">
@@ -428,7 +428,9 @@
     </div>
 
     <script>
-        function powerfailMaster() {
+        console.log("Defining powerfailMaster...");
+        window.powerfailMaster = function () {
+            console.log("Initializing Powerfail Component...");
             return {
                 scene: {
                     name: 'Nuova Scena',
