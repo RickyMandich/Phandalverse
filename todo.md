@@ -25,7 +25,7 @@
 - [X] sistemare l'avanzamento dei turni nello schermo del master (premendo prossimo turno vengono considerati anche i morti)
 - [X] aggiunta pulsante rimuovi morti dallo schermo master
 # inabion
+- [ ] aggiungere todo list dei problemi trovati da claudio
 ## dadi
 - [X] manca la possibilità di ritirare i singoli dadi
 - [X] far vedere tutti i dadi divisi in "generazioni"
-- [ ] aggiungere todo list dei problemi trovati da claudio

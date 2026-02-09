@@ -27,8 +27,11 @@
                 </button>
             </div>
             <div class="col-md-6 text-end">
+                <button class="btn btn-sm btn-outline-success me-2" @click="startNewSession()">
+                    <i class="bi bi-plus-circle"></i> Nuovo
+                </button>
                 <button class="btn btn-sm btn-outline-warning" @click="loadSessionModal = true">
-                    <i class="bi bi-folder2-open"></i> Carica / Nuova Sessione
+                    <i class="bi bi-folder2-open"></i> Carica
                 </button>
             </div>
         </div>
@@ -120,11 +123,11 @@
                                                     class="btn btn-sm p-0 d-flex justify-content-center align-items-center rounded-circle"
                                                     style="width: 28px; height: 28px;"
                                                     :class="{
-                                                                                                                                                                                                                                            'btn-success': isSuccess(die),
-                                                                                                                                                                                                                                            'btn-danger': die === 1,
-                                                                                                                                                                                                                                            'btn-secondary': !isSuccess(die) && die !== 1,
-                                                                                                                                                                                                                                            'border border-warning border-2': die === 10
-                                                                                                                                                                                                                                        }"
+                                                                                                                                                                                                                                                'btn-success': isSuccess(die),
+                                                                                                                                                                                                                                                'btn-danger': die === 1,
+                                                                                                                                                                                                                                                'btn-secondary': !isSuccess(die) && die !== 1,
+                                                                                                                                                                                                                                                'border border-warning border-2': die === 10
+                                                                                                                                                                                                                                            }"
                                                     @click="rerollDie(genIdx, dieIdx)" :disabled="!canReroll()"
                                                     :title="canReroll() ? 'Clicca per ritirare (Livello 3+)' : ''">
                                                     <span class="fw-bold" x-text="die"></span>
@@ -180,11 +183,11 @@
                                                 <template x-for="die in gen">
                                                     <span class="badge"
                                                         :class="{
-                                                                                                                                                                                                                                                'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
-                                                                                                                                                                                                                                                'bg-danger': die === 1, 
-                                                                                                                                                                                                                                                'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
-                                                                                                                                                                                                                                                'border border-warning': die === 10
-                                                                                                                                                                                                                                            }"
+                                                                                                                                                                                                                                                    'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
+                                                                                                                                                                                                                                                    'bg-danger': die === 1, 
+                                                                                                                                                                                                                                                    'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
+                                                                                                                                                                                                                                                    'border border-warning': die === 10
+                                                                                                                                                                                                                                                }"
                                                         x-text="die"></span>
                                                 </template>
                                             </div>
@@ -467,7 +470,7 @@
                         <div class="modal-body">
                             <!-- New Session Option -->
                             <button class="btn btn-success w-100 mb-2 py-2 fw-bold"
-                                @click="loadSessionModal = false; currentSessionId = null; saveSession();">
+                                @click="loadSessionModal = false; startNewSession();">
                                 <i class="bi bi-plus-circle"></i> Inizia Nuova Sessione
                             </button>
 
@@ -1108,6 +1111,21 @@
                     sortActorsByInitiative() {
                         this.actors.sort((a, b) => (b.initiative || 0) - (a.initiative || 0));
                         this.activeActorIndex = 0; // Reset turn to top after sorting
+                    },
+
+                    startNewSession() {
+                        this.showPrompt("Nuova Sessione", "Inserisic il nome per la nuova sessione:", "Nuova Scena", (name) => {
+                            if (name) {
+                                this.currentSessionId = null;
+                                this.currentSessionCode = null;
+                                this.scene = { name: name, state: 'narrative', notes: '' };
+                                this.actors = [];
+                                this.diceLog = [];
+                                this.activeActorIndex = 0;
+                                // Save immediately to establish the new session in DB
+                                this.executeSave();
+                            }
+                        });
                     },
 
                     // --- SESSION PERSISTENCE ---
