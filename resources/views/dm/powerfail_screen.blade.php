@@ -103,11 +103,11 @@
                                                 <button
                                                     class="btn btn-sm p-0 d-flex justify-content-center align-items-center rounded-circle"
                                                     style="width: 28px; height: 28px;" :class="{
-                                                            'btn-success': isSuccess(die),
-                                                            'btn-danger': die === 1,
-                                                            'btn-secondary': !isSuccess(die) && die !== 1,
-                                                            'border border-warning border-2': die === 10
-                                                        }" @click="rerollDie(genIdx, dieIdx)" :disabled="!canReroll()"
+                                                                'btn-success': isSuccess(die),
+                                                                'btn-danger': die === 1,
+                                                                'btn-secondary': !isSuccess(die) && die !== 1,
+                                                                'border border-warning border-2': die === 10
+                                                            }" @click="rerollDie(genIdx, dieIdx)" :disabled="!canReroll()"
                                                     :title="canReroll() ? 'Clicca per ritirare (Livello 3+)' : ''">
                                                     <span class="fw-bold" x-text="die"></span>
                                                 </button>
@@ -136,7 +136,7 @@
                                         <template x-for="n in (countTens() + 1)">
                                             <button class="btn btn-sm btn-dark border-secondary px-2 py-0"
                                                 @click="explode(n-1)" x-text="n-1"
-                                                :class="{'btn-warning text-dark': (n-1) === countTens()}">
+                                                :class="{'btn-warning': (n-1) === countTens()}">
                                             </button>
                                         </template>
                                     </div>
@@ -161,11 +161,11 @@
                                             <div class="d-flex flex-wrap gap-1">
                                                 <template x-for="die in gen">
                                                     <span class="badge" :class="{
-                                                                'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
-                                                                'bg-danger': die === 1, 
-                                                                'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
-                                                                'border border-warning': die === 10
-                                                            }" x-text="die"></span>
+                                                                    'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
+                                                                    'bg-danger': die === 1, 
+                                                                    'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
+                                                                    'border border-warning': die === 10
+                                                                }" x-text="die"></span>
                                                 </template>
                                             </div>
                                         </div>
@@ -207,17 +207,17 @@
 
                         <template x-for="(actor, index) in actors" :key="actor.id">
                             <div class="card border-0 shadow-lg" style="width: 300px;" :class="{
-                                    'bg-dark': actor.type === 'pc',
-                                    'bg-danger bg-opacity-10': actor.type === 'enemy',
-                                    'bg-secondary bg-opacity-10': actor.type === 'minion'
-                                }">
+                                        'bg-dark': actor.type === 'pc',
+                                        'bg-danger bg-opacity-10': actor.type === 'enemy',
+                                        'bg-secondary bg-opacity-10': actor.type === 'minion'
+                                    }">
 
                                 <!-- Header Attore -->
                                 <div class="card-header py-1 d-flex justify-content-between align-items-center" :class="{
-                                        'bg-info text-dark': actor.type === 'pc',
-                                        'bg-danger text-white': actor.type === 'enemy',
-                                        'bg-secondary text-white': actor.type === 'minion'
-                                    }">
+                                            'bg-info text-dark': actor.type === 'pc',
+                                            'bg-danger text-white': actor.type === 'enemy',
+                                            'bg-secondary text-white': actor.type === 'minion'
+                                        }">
                                     <input type="text"
                                         class="form-control form-control-sm bg-transparent border-0 fw-bold p-0"
                                         :class="actor.type === 'pc' ? 'text-dark' : 'text-white'" x-model="actor.name">
