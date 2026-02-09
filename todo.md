@@ -25,7 +25,11 @@
 - [X] sistemare l'avanzamento dei turni nello schermo del master (premendo prossimo turno vengono considerati anche i morti)
 - [X] aggiunta pulsante rimuovi morti dallo schermo master
 # inabion
-- [ ] aggiungere todo list dei problemi trovati da claudio
+## schede nemici
+- [ ] quanti dadi tira per l'attacco
+- [ ] quanti danni fa
+- [ ] quanto costano in fatica le mosse
+- [ ] fare scalare tutti in automatico
 ## dadi
 - [X] manca la possibilità di ritirare i singoli dadi
 - [X] far vedere tutti i dadi divisi in "generazioni"

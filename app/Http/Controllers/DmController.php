@@ -166,22 +166,31 @@ class DmController extends Controller
 
     public function storeSession(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'data' => 'nullable|array',
-            'system' => 'nullable|string|max:50',
-        ]);
+        CustomLogger::screen("session-create", "Attempting to store session. Name: " . ($request->input('name') ?: 'NULL'));
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'data' => 'nullable|array',
+                'system' => 'nullable|string|max:50',
+            ]);
 
-        $session = DmSession::create([
-            'user_id' => Auth::id(),
-            'name' => $validated['name'],
-            'data' => $validated['data'] ?? [],
-            'system' => $validated['system'] ?? 'dnd5e',
-        ]);
+            $session = DmSession::create([
+                'user_id' => Auth::id(),
+                'name' => $validated['name'],
+                'data' => $validated['data'] ?? [],
+                'system' => $validated['system'] ?? 'dnd5e',
+            ]);
 
-        CustomLogger::screen("session-create", "New session created: {$session->name} (System: {$session->system}) by user " . Auth::id());
+            CustomLogger::screen("session-create", "SUCCESS: New session created: {$session->name} (ID: {$session->id}, System: {$session->system})");
 
-        return response()->json($session);
+            return response()->json($session);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            CustomLogger::screen("session-create", "VALIDATION ERROR: " . json_encode($e->errors()));
+            return response()->json(['error' => 'Validation failed', 'details' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            CustomLogger::screen("session-create", "GENERAL ERROR: " . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function loadSession(DmSession $session)

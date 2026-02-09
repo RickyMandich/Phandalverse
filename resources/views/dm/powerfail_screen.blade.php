@@ -35,564 +35,696 @@
                 <button class="btn btn-sm btn-outline-warning" @click="loadSessionModal = true">
                     <i class="bi bi-folder2-open"></i> Carica
                 </button>
-            </div>
-        </div>
-
-        <div class="row h-100">
-            <!-- LEFT COLUMN: Scene & Tools -->
-            <div class="col-md-3 d-flex flex-column gap-3">
-
-                <!-- SCENE CONTEXT -->
-                <div class="card bg-dark text-white border-secondary">
-                    <div class="card-header bg-secondary bg-opacity-25 fw-bold">1. Contesto Scena</div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label small text-muted">Nome Scena</label>
-                            <input type="text" class="form-control bg-secondary text-white border-secondary"
-                                x-model="scene.name" placeholder="Es. L'assalto alla locanda...">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label small text-muted">Stato Scena</label>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm flex-grow-1"
-                                    :class="scene.state === 'narrative' ? 'btn-info' : 'btn-outline-secondary'"
-                                    @click="scene.state = 'narrative'">
-                                    📜 Narrativa
-                                </button>
-                                <button class="btn btn-sm flex-grow-1"
-                                    :class="scene.state === 'combat' ? 'btn-danger' : 'btn-outline-secondary'"
-                                    @click="scene.state = 'combat'">
-                                    ⚔️ Combattimento
-                                </button>
+                <!-- Utility Modal (Alert/Prompt) -->
+                <div class="modal fade" x-show="utilModal.show" x-cloak :class="{ 'show d-block': utilModal.show }"
+                    style="background: rgba(0,0,0,0.8); z-index: 1060;">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content bg-dark text-white border-primary shadow-lg">
+                            <div class="modal-header border-primary">
+                                <h5 class="modal-title" x-text="utilModal.title"></h5>
                             </div>
-                        </div>
-
-                        <div>
-                            <label class="form-label small text-muted">Note Master (Private)</label>
-                            <textarea class="form-control bg-secondary text-white border-secondary small" rows="3"
-                                x-model="scene.notes"></textarea>
+                            <div class="modal-body">
+                                <p x-text="utilModal.message"></p>
+                                <template x-if="utilModal.type === 'prompt'">
+                                    <input type="text" class="form-control bg-secondary text-white border-primary"
+                                        x-model="utilModal.inputValue"
+                                        @keyup.enter="utilModal.onConfirm(utilModal.inputValue); utilModal.show = false">
+                                </template>
+                            </div>
+                            <div class="modal-footer border-primary">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    @click="utilModal.show = false">Annulla</button>
+                                <button type="button" class="btn btn-primary"
+                                    @click="utilModal.onConfirm(utilModal.inputValue); utilModal.show = false">Conferma</button>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- TOOLS: Dice Roller -->
-                <div class="card bg-dark text-white border-secondary">
-                    <div class="card-header bg-secondary bg-opacity-25 fw-bold d-flex justify-content-between">
-                        <span>🎲 Lancio Dadi (d10)</span>
-                        <div>
-                            <button class="btn btn-sm btn-link text-info p-0 me-2" @click="helpModal = true"
-                                title="Guida al Sistema">
-                                <i class="bi bi-question-circle"></i>
-                            </button>
-                            <button class="btn btn-sm btn-link text-white p-0" @click="diceLog = []">Pulisci Log</button>
+            <div class="row h-100">
+                <!-- LEFT COLUMN: Scene & Tools -->
+                <div class="col-md-3 d-flex flex-column gap-3">
+
+                    <!-- SCENE CONTEXT -->
+                    <div class="card bg-dark text-white border-secondary">
+                        <div class="card-header bg-secondary bg-opacity-25 fw-bold">1. Contesto Scena</div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Nome Scena</label>
+                                <input type="text" class="form-control bg-secondary text-white border-secondary"
+                                    x-model="scene.name" placeholder="Es. L'assalto alla locanda...">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Stato Scena</label>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm flex-grow-1"
+                                        :class="scene.state === 'narrative' ? 'btn-info' : 'btn-outline-secondary'"
+                                        @click="scene.state = 'narrative'">
+                                        📜 Narrativa
+                                    </button>
+                                    <button class="btn btn-sm flex-grow-1"
+                                        :class="scene.state === 'combat' ? 'btn-danger' : 'btn-outline-secondary'"
+                                        @click="scene.state = 'combat'">
+                                        ⚔️ Combattimento
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="form-label small text-muted">Note Master (Private)</label>
+                                <textarea class="form-control bg-secondary text-white border-secondary small" rows="3"
+                                    x-model="scene.notes"></textarea>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <!-- Inputs -->
-                        <div class="row g-2 mb-3">
-                            <div class="col-4">
-                                <label class="small text-muted">Livello (1-5)</label>
-                                <input type="number" class="form-control form-control-sm text-center fw-bold"
-                                    x-model.number="roller.level" min="1" max="5">
-                            </div>
-                            <div class="col-4">
-                                <label class="small text-muted">Dadi (Pool)</label>
-                                <input type="number" class="form-control form-control-sm text-center fw-bold"
-                                    x-model.number="roller.pool" min="1">
-                            </div>
-                            <div class="col-4 d-flex align-items-end">
-                                <button class="btn btn-sm btn-light w-100 fw-bold" @click="rollDice()">TIRA</button>
+
+                    <!-- TOOLS: Dice Roller -->
+                    <div class="card bg-dark text-white border-secondary">
+                        <div class="card-header bg-secondary bg-opacity-25 fw-bold d-flex justify-content-between">
+                            <span>🎲 Lancio Dadi (d10)</span>
+                            <div>
+                                <button class="btn btn-sm btn-link text-info p-0 me-2" @click="helpModal = true"
+                                    title="Guida al Sistema">
+                                    <i class="bi bi-question-circle"></i>
+                                </button>
+                                <button class="btn btn-sm btn-link text-white p-0" @click="diceLog = []">Pulisci
+                                    Log</button>
                             </div>
                         </div>
-
-                        <!-- Active Roll Area -->
-                        <div x-show="roller.active"
-                            class="border border-info rounded p-2 mb-3 bg-secondary bg-opacity-10 position-relative">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="badge bg-info text-dark">Lancio in Corso</span>
-                                <button class="btn btn-xs btn-success" @click="finalizeRoll()">✅ Conferma</button>
-                            </div>
-
-                            <!-- Generations -->
-                            <div class="d-flex flex-column gap-2">
-                                <template x-for="(gen, genIdx) in roller.generations" :key="genIdx">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <!-- <span class="text-muted x-small">W<span x-text="genIdx + 1"></span></span> -->
-                                        <div class="d-flex flex-wrap gap-1">
-                                            <template x-for="(die, dieIdx) in gen" :key="dieIdx">
-                                                <button
-                                                    class="btn btn-sm p-0 d-flex justify-content-center align-items-center rounded-circle"
-                                                    style="width: 28px; height: 28px;"
-                                                    :class="{
-                                                                                                                                                                                                                                                    'btn-success': isSuccess(die),
-                                                                                                                                                                                                                                                    'btn-danger': die === 1,
-                                                                                                                                                                                                                                                    'btn-secondary': !isSuccess(die) && die !== 1,
-                                                                                                                                                                                                                                                    'border border-warning border-2': die === 10
-                                                                                                                                                                                                                                                }"
-                                                    @click="rerollDie(genIdx, dieIdx)" :disabled="!canReroll()"
-                                                    :title="canReroll() ? 'Clicca per ritirare (Livello 3+)' : ''">
-                                                    <span class="fw-bold" x-text="die"></span>
-                                                </button>
-                                            </template>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-
-                            <!-- Controls: Reroll & Explosions -->
-                            <div class="mt-2 border-top border-secondary pt-2">
-                                <div class="x-small text-muted mb-1" x-show="roller.level >= 3 && !roller.rerollUsed">
-                                    💡 Livello 3+: Clicca su un dado per ritirarlo.
+                        <div class="card-body">
+                            <!-- Inputs -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-4">
+                                    <label class="small text-muted">Livello (1-5)</label>
+                                    <input type="number" class="form-control form-control-sm text-center fw-bold"
+                                        x-model.number="roller.level" min="1" max="5">
                                 </div>
-                                <div class="x-small text-muted mb-1" x-show="roller.reraollUsed">
-                                    ⚠️ Reroll utilizzato.
+                                <div class="col-4">
+                                    <label class="small text-muted">Dadi (Pool)</label>
+                                    <input type="number" class="form-control form-control-sm text-center fw-bold"
+                                        x-model.number="roller.pool" min="1">
                                 </div>
-
-                                <!-- Explosions Prompt -->
-                                <div x-show="countTens() > 0 && roller.level >= 2" class="mt-2">
-                                    <div class="fw-bold text-warning small mb-1">
-                                        💥 <span x-text="countTens()"></span> "10" ottenuti! Esplodi?
-                                    </div>
-                                    <div class="d-flex flex-wrap gap-1">
-                                        <!-- Dynamic Buttons for Explosions -->
-                                        <template x-for="n in (countTens() + 1)">
-                                            <button class="btn btn-sm btn-dark border-secondary px-2 py-0"
-                                                @click="explode(n-1)" x-text="n-1"
-                                                :class="{'btn-warning': (n-1) === countTens()}">
-                                            </button>
-                                        </template>
-                                    </div>
+                                <div class="col-4 d-flex align-items-end">
+                                    <button class="btn btn-sm btn-light w-100 fw-bold" @click="rollDice()">TIRA</button>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- History Log -->
-                        <div class="border rounded p-2 bg-secondary bg-opacity-50 small custom-scrollbar"
-                            style="max-height: 250px; overflow-y: auto;">
-                            <template x-for="(log, idx) in diceLog" :key="idx">
-                                <div class="mb-2 border-bottom border-secondary border-opacity-25 pb-1">
-                                    <div class="d-flex justify-content-between">
-                                        <span class="fw-bold" x-text="log.source || 'Master'"></span>
-                                        <span class="text-muted" x-text="log.time"></span>
-                                    </div>
+                            <!-- Active Roll Area -->
+                            <div x-show="roller.active"
+                                class="border border-info rounded p-2 mb-3 bg-secondary bg-opacity-10 position-relative">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge bg-info text-dark">Lancio in Corso</span>
+                                    <button class="btn btn-xs btn-success" @click="finalizeRoll()">✅ Conferma</button>
+                                </div>
 
-                                    <!-- Log Generations -->
-                                    <template x-for="(gen, genIdx) in log.generations" :key="genIdx">
-                                        <div class="d-flex gap-2 align-items-center mb-1 mt-1">
+                                <!-- Generations -->
+                                <div class="d-flex flex-column gap-2">
+                                    <template x-for="(gen, genIdx) in roller.generations" :key="genIdx">
+                                        <div class="d-flex align-items-center gap-2">
                                             <!-- <span class="text-muted x-small">W<span x-text="genIdx + 1"></span></span> -->
                                             <div class="d-flex flex-wrap gap-1">
-                                                <template x-for="die in gen">
-                                                    <span class="badge"
+                                                <template x-for="(die, dieIdx) in gen" :key="dieIdx">
+                                                    <button
+                                                        class="btn btn-sm p-0 d-flex justify-content-center align-items-center rounded-circle"
+                                                        style="width: 28px; height: 28px;"
                                                         :class="{
-                                                                                                                                                                                                                                                        'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
-                                                                                                                                                                                                                                                        'bg-danger': die === 1, 
-                                                                                                                                                                                                                                                        'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
-                                                                                                                                                                                                                                                        'border border-warning': die === 10
-                                                                                                                                                                                                                                                    }"
-                                                        x-text="die"></span>
+                                                                                                                                                                                                                                                                        'btn-success': isSuccess(die),
+                                                                                                                                                                                                                                                                        'btn-danger': die === 1,
+                                                                                                                                                                                                                                                                        'btn-secondary': !isSuccess(die) && die !== 1,
+                                                                                                                                                                                                                                                                        'border border-warning border-2': die === 10
+                                                                                                                                                                                                                                                                    }"
+                                                        @click="rerollDie(genIdx, dieIdx)" :disabled="!canReroll()"
+                                                        :title="canReroll() ? 'Clicca per ritirare (Livello 3+)' : ''">
+                                                        <span class="fw-bold" x-text="die"></span>
+                                                    </button>
                                                 </template>
                                             </div>
                                         </div>
                                     </template>
+                                </div>
 
-                                    <div class="mt-1 x-small d-flex justify-content-between">
-                                        <span>
-                                            Successi: <span class="text-success fw-bold" x-text="log.successes"></span>
-                                            <span x-show="log.failures > 0" class="text-danger ms-2">Fallimenti: <span
-                                                    x-text="log.failures"></span></span>
-                                        </span>
-                                        <span class="badge bg-dark border border-secondary text-muted">Lv.<span
-                                                x-text="log.level"></span></span>
+                                <!-- Controls: Reroll & Explosions -->
+                                <div class="mt-2 border-top border-secondary pt-2">
+                                    <div class="x-small text-muted mb-1" x-show="roller.level >= 3 && !roller.rerollUsed">
+                                        💡 Livello 3+: Clicca su un dado per ritirarlo.
+                                    </div>
+                                    <div class="x-small text-muted mb-1" x-show="roller.reraollUsed">
+                                        ⚠️ Reroll utilizzato.
+                                    </div>
+
+                                    <!-- Explosions Prompt -->
+                                    <div x-show="countTens() > 0 && roller.level >= 2" class="mt-2">
+                                        <div class="fw-bold text-warning small mb-1">
+                                            💥 <span x-text="countTens()"></span> "10" ottenuti! Esplodi?
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            <!-- Dynamic Buttons for Explosions -->
+                                            <template x-for="n in (countTens() + 1)">
+                                                <button class="btn btn-sm btn-dark border-secondary px-2 py-0"
+                                                    @click="explode(n-1)" x-text="n-1"
+                                                    :class="{'btn-warning': (n-1) === countTens()}">
+                                                </button>
+                                            </template>
+                                        </div>
                                     </div>
                                 </div>
-                            </template>
-                            <div x-show="diceLog.length === 0" class="text-muted text-center italic">Nessun lancio
-                                effettuato.</div>
-                        </div>
-                    </div>
-                </div>
+                            </div>
 
-            </div>
-
-            <!-- CENTER COLUMN: Attori in Scena -->
-            <div class="col-md-9">
-                <div class="card bg-dark text-white border-secondary h-100">
-                    <div
-                        class="card-header bg-secondary bg-opacity-25 fw-bold d-flex justify-content-between align-items-center">
-                        <span>👥 Attori in Scena</span>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-outline-success" @click="nextTurn()"
-                                x-show="scene.state === 'combat'">
-                                <i class="bi bi-play-fill"></i> Prossimo Turno
-                            </button>
-                            <button class="btn btn-sm btn-outline-warning" @click="sortActorsByInitiative()"
-                                title="Ordina per Iniziativa">
-                                <i class="bi bi-sort-numeric-down"></i> Ordina
-                            </button>
-                            <button class="btn btn-sm btn-outline-info" @click="addActor('pc')">+ PG</button>
-                            <button class="btn btn-sm btn-outline-danger" @click="bestiaryModal = true">+ Aggiungi
-                                Nemico</button>
-                            <button class="btn btn-sm btn-outline-secondary" @click="addActor('minion')">+ Minion</button>
-                        </div>
-                    </div>
-                    <div class="card-body p-2 overflow-auto" style="min-height: 400px;">
-                        <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-2">
-                            <template x-for="(actor, index) in actors" :key="actor.id">
-                                <div class="col">
-                                    <div class="card bg-secondary bg-opacity-10 border-secondary h-100 position-relative"
-                                        :class="{ 'border-warning shadow-sm': index === activeActorIndex && scene.state === 'combat' }">
-                                        <div
-                                            class="card-header p-1 d-flex justify-content-between align-items-center bg-secondary bg-opacity-25">
-                                            <div class="d-flex align-items-center">
-                                                <span x-show="index === activeActorIndex && scene.state === 'combat'"
-                                                    class="me-1 text-warning">▶</span>
-                                                <input type="text"
-                                                    class="form-control form-control-sm bg-transparent border-0 text-white fw-bold p-0"
-                                                    x-model="actor.name" style="width: auto;">
-                                            </div>
-                                            <div>
-                                                <button class="btn btn-sm btn-link p-0 me-1 text-white"
-                                                    @click="cloneActor(actor)" title="Clona">
-                                                    <i class="bi bi-files"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-link p-0 text-danger"
-                                                    @click="removeActor(index)">
-                                                    <i class="bi bi-x-lg"></i>
-                                                </button>
-                                            </div>
+                            <!-- History Log -->
+                            <div class="border rounded p-2 bg-secondary bg-opacity-50 small custom-scrollbar"
+                                style="max-height: 250px; overflow-y: auto;">
+                                <template x-for="(log, idx) in diceLog" :key="idx">
+                                    <div class="mb-2 border-bottom border-secondary border-opacity-25 pb-1">
+                                        <div class="d-flex justify-content-between">
+                                            <span class="fw-bold" x-text="log.source || 'Master'"></span>
+                                            <span class="text-muted" x-text="log.time"></span>
                                         </div>
 
-                                        <div class="card-body p-2">
-                                            <!-- Damage & Wound State (Inabion System) -->
-                                            <div class="mb-2">
-                                                <label class="x-small text-muted">Danni Attuali</label>
-                                                <input type="number"
-                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                    x-model.number="actor.damage" @input="checkHpTriggers(actor)" min="0">
-
-                                                <!-- Wound State Display -->
-                                                <div class="mt-1 p-1 rounded text-center x-small"
-                                                    :class="getDamageState(actor).class">
-                                                    <strong x-text="getDamageState(actor).state"></strong>
-                                                    <span x-show="getDamageState(actor).penalty"
-                                                        x-text="' - ' + getDamageState(actor).penalty"></span>
+                                        <!-- Log Generations -->
+                                        <template x-for="(gen, genIdx) in log.generations" :key="genIdx">
+                                            <div class="d-flex gap-2 align-items-center mb-1 mt-1">
+                                                <!-- <span class="text-muted x-small">W<span x-text="genIdx + 1"></span></span> -->
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    <template x-for="die in gen">
+                                                        <span class="badge"
+                                                            :class="{
+                                                                                                                                                                                                                                                                            'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
+                                                                                                                                                                                                                                                                            'bg-danger': die === 1, 
+                                                                                                                                                                                                                                                                            'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
+                                                                                                                                                                                                                                                                            'border border-warning': die === 10
+                                                                                                                                                                                                                                                                        }"
+                                                            x-text="die"></span>
+                                                    </template>
                                                 </div>
+                                            </div>
+                                        </template>
 
-                                                <!-- Thresholds Reference (for PCs) -->
-                                                <template x-if="actor.type === 'pc'">
-                                                    <div class="x-small text-muted mt-1">
-                                                        Soglie: <span x-text="(actor.stats.vig || 2) * 1"></span> /
-                                                        <span x-text="(actor.stats.vig || 2) * 2"></span> /
-                                                        <span x-text="(actor.stats.vig || 2) * 3"></span> /
-                                                        <span x-text="(actor.stats.vig || 2) * 4"></span> /
-                                                        <span x-text="(actor.stats.vig || 2) * 5"></span>
-                                                    </div>
-                                                </template>
+                                        <div class="mt-1 x-small d-flex justify-content-between">
+                                            <span>
+                                                Successi: <span class="text-success fw-bold" x-text="log.successes"></span>
+                                                <span x-show="log.failures > 0" class="text-danger ms-2">Fallimenti: <span
+                                                        x-text="log.failures"></span></span>
+                                            </span>
+                                            <span class="badge bg-dark border border-secondary text-muted">Lv.<span
+                                                    x-text="log.level"></span></span>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="diceLog.length === 0" class="text-muted text-center italic">Nessun lancio
+                                    effettuato.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- CENTER COLUMN: Attori in Scena -->
+                <div class="col-md-9">
+                    <div class="card bg-dark text-white border-secondary h-100">
+                        <div
+                            class="card-header bg-secondary bg-opacity-25 fw-bold d-flex justify-content-between align-items-center">
+                            <span>👥 Attori in Scena</span>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-success" @click="nextTurn()"
+                                    x-show="scene.state === 'combat'">
+                                    <i class="bi bi-play-fill"></i> Prossimo Turno
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning" @click="sortActorsByInitiative()"
+                                    title="Ordina per Iniziativa">
+                                    <i class="bi bi-sort-numeric-down"></i> Ordina
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" @click="addActor('pc')">+ PG</button>
+                                <button class="btn btn-sm btn-outline-danger" @click="bestiaryModal = true">+ Aggiungi
+                                    Nemico</button>
+                                <button class="btn btn-sm btn-outline-secondary" @click="addActor('minion')">+
+                                    Minion</button>
+                            </div>
+                        </div>
+                        <div class="card-body p-2 overflow-auto" style="min-height: 400px;">
+                            <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-2">
+                                <template x-for="(actor, index) in actors" :key="actor.id">
+                                    <div class="col">
+                                        <div class="card bg-secondary bg-opacity-10 border-secondary h-100 position-relative"
+                                            :class="{ 'border-warning shadow-sm': index === activeActorIndex && scene.state === 'combat' }">
+                                            <div
+                                                class="card-header p-1 d-flex justify-content-between align-items-center bg-secondary bg-opacity-25">
+                                                <div class="d-flex align-items-center">
+                                                    <span x-show="index === activeActorIndex && scene.state === 'combat'"
+                                                        class="me-1 text-warning">▶</span>
+                                                    <input type="text"
+                                                        class="form-control form-control-sm bg-transparent border-0 text-white fw-bold p-0"
+                                                        x-model="actor.name" style="width: auto;">
+                                                </div>
+                                                <div>
+                                                    <button class="btn btn-sm btn-link p-0 me-1 text-white"
+                                                        @click="cloneActor(actor)" title="Clona">
+                                                        <i class="bi bi-files"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-link p-0 text-danger"
+                                                        @click="removeActor(index)">
+                                                        <i class="bi bi-x-lg"></i>
+                                                    </button>
+                                                </div>
                                             </div>
 
-                                            <!-- Fatigue, Traumas & Defenses -->
-                                            <div class="row g-2 mb-2">
-                                                <template x-if="actor.type !== 'minion'">
+                                            <div class="card-body p-2">
+                                                <!-- Damage & Wound State (Inabion System) -->
+                                                <div class="mb-2">
+                                                    <label class="x-small text-muted">Danni Attuali</label>
+                                                    <input type="number"
+                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                        x-model.number="actor.damage" @input="checkHpTriggers(actor)"
+                                                        min="0">
+
+                                                    <!-- Wound State Display -->
+                                                    <div class="mt-1 p-1 rounded text-center x-small"
+                                                        :class="getDamageState(actor).class">
+                                                        <strong x-text="getDamageState(actor).state"></strong>
+                                                        <span x-show="getDamageState(actor).penalty"
+                                                            x-text="' - ' + getDamageState(actor).penalty"></span>
+                                                    </div>
+
+                                                    <!-- Thresholds Reference (for PCs) -->
+                                                    <template x-if="actor.type === 'pc'">
+                                                        <div class="x-small text-muted mt-1">
+                                                            Soglie: <span x-text="(actor.stats.vig || 2) * 1"></span> /
+                                                            <span x-text="(actor.stats.vig || 2) * 2"></span> /
+                                                            <span x-text="(actor.stats.vig || 2) * 3"></span> /
+                                                            <span x-text="(actor.stats.vig || 2) * 4"></span> /
+                                                            <span x-text="(actor.stats.vig || 2) * 5"></span>
+                                                        </div>
+                                                    </template>
+                                                </div>
+
+                                                <!-- Fatigue, Traumas & Defenses -->
+                                                <div class="row g-2 mb-2">
+                                                    <template x-if="actor.type !== 'minion'">
+                                                        <div class="col-6">
+                                                            <label class="x-small text-muted">Fatica</label>
+                                                            <input type="number"
+                                                                class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                x-model.number="actor.fatigue">
+                                                        </div>
+                                                    </template>
                                                     <div class="col-6">
-                                                        <label class="x-small text-muted">Fatica</label>
+                                                        <label class="x-small text-muted">Traumi</label>
                                                         <input type="number"
                                                             class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                            x-model.number="actor.fatigue">
+                                                            x-model.number="actor.traumas">
+                                                    </div>
+                                                </div>
+
+                                                <!-- Defenses & Combat Stats -->
+                                                <div class="mb-2">
+                                                    <label class="x-small text-muted d-block mb-1">Difese</label>
+                                                    <div class="d-flex gap-1">
+                                                        <div class="flex-grow-1">
+                                                            <div class="x-small text-muted text-center"
+                                                                style="font-size: 0.6rem;">MIS</div>
+                                                            <input type="number"
+                                                                class="form-control form-control-sm bg-dark text-white border-secondary text-center px-0"
+                                                                x-model.number="actor.defenses.mischia">
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <div class="x-small text-muted text-center"
+                                                                style="font-size: 0.6rem;">TIR</div>
+                                                            <input type="number"
+                                                                class="form-control form-control-sm bg-dark text-white border-secondary text-center px-0"
+                                                                x-model.number="actor.defenses.tiro">
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <div class="x-small text-muted text-center"
+                                                                style="font-size: 0.6rem;">MAG</div>
+                                                            <input type="number"
+                                                                class="form-control form-control-sm bg-dark text-white border-secondary text-center px-0"
+                                                                x-model.number="actor.defenses.magia">
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Enemy Combat Stats (ATK, DMG, FAT, ACTIONS) -->
+                                                <div x-show="actor.type !== 'pc'" class="row g-1 mb-2">
+                                                    <div class="col-3" title="Dadi Attacco">
+                                                        <div
+                                                            class="bg-danger bg-opacity-10 p-1 rounded border border-danger border-opacity-10 text-center">
+                                                            <div class="x-small text-danger" style="font-size: 0.6rem;">ATK
+                                                            </div>
+                                                            <input type="number"
+                                                                class="form-control form-control-sm bg-transparent text-white border-0 text-center p-0 fw-bold"
+                                                                x-model.number="actor.attackDice">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-3" title="Danno Inflitto">
+                                                        <div
+                                                            class="bg-warning bg-opacity-10 p-1 rounded border border-warning border-opacity-10 text-center">
+                                                            <div class="x-small text-warning" style="font-size: 0.6rem;">DMG
+                                                            </div>
+                                                            <input type="number"
+                                                                class="form-control form-control-sm bg-transparent text-white border-0 text-center p-0 fw-bold"
+                                                                x-model.number="actor.damageInflicted">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-3" title="Costo Fatica">
+                                                        <div
+                                                            class="bg-info bg-opacity-10 p-1 rounded border border-info border-opacity-10 text-center">
+                                                            <div class="x-small text-info" style="font-size: 0.6rem;">FAT
+                                                            </div>
+                                                            <input type="number"
+                                                                class="form-control form-control-sm bg-transparent text-white border-0 text-center p-0 fw-bold"
+                                                                x-model.number="actor.fatigueCost">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-3" title="Azioni Rimaste">
+                                                        <div
+                                                            class="bg-primary bg-opacity-10 p-1 rounded border border-primary border-opacity-25 text-center">
+                                                            <div class="x-small text-primary fw-bold"
+                                                                style="font-size: 0.6rem;">AZIONI</div>
+                                                            <input type="number"
+                                                                class="form-control form-control-sm bg-transparent text-white border-0 text-center p-0 fw-bold underline-0"
+                                                                x-model.number="actor.actions">
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- PC Actions Display -->
+                                                <div x-show="actor.type === 'pc'" class="mb-2">
+                                                    <div
+                                                        class="bg-primary bg-opacity-10 p-1 rounded border border-primary border-opacity-10 d-flex justify-content-between align-items-center px-2">
+                                                        <span class="x-small text-primary fw-bold text-uppercase">Azioni
+                                                            Disponibili</span>
+                                                        <input type="number"
+                                                            class="form-control form-control-sm bg-transparent text-white border-0 text-end p-0 fw-bold"
+                                                            x-model.number="actor.actions" style="width: 40px;">
+                                                    </div>
+                                                </div>
+
+                                                <!-- Minion Triggers -->
+                                                <div x-show="actor.type === 'minion' && actor.statusMessage"
+                                                    class="alert alert-danger p-1 x-small mb-2">
+                                                    <i class="bi bi-exclamation-triangle"></i> <span
+                                                        x-text="actor.statusMessage"></span>
+                                                </div>
+
+                                                <!-- Initiative -->
+                                                <div class="mb-2">
+                                                    <label class="x-small text-muted">Iniziativa</label>
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="number"
+                                                            class="form-control bg-dark text-white border-secondary"
+                                                            x-model.number="actor.initiative">
+                                                        <button class="btn btn-sm btn-outline-warning"
+                                                            @click="rollInitiative(actor)"
+                                                            title="Tira 1d10 + caratteristica">
+                                                            🎲
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Attributes & Skills -->
+                                                <template x-if="actor.type !== 'minion'">
+                                                    <div class="mb-2">
+                                                        <div
+                                                            class="d-flex justify-content-between bg-secondary bg-opacity-25 p-1 rounded mb-1">
+                                                            <span class="x-small fw-bold">CARATTERISTICHE</span>
+                                                        </div>
+
+                                                        <!-- PC: 6 Inabion Characteristics -->
+                                                        <template x-if="actor.type === 'pc'">
+                                                            <div>
+                                                                <!-- Fisiche -->
+                                                                <div class="x-small text-muted mb-1">Fisiche</div>
+                                                                <div class="d-flex gap-1 mb-2">
+                                                                    <input type="number"
+                                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                        placeholder="VIG" x-model.number="actor.stats.vig"
+                                                                        title="Vigore">
+                                                                    <input type="number"
+                                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                        placeholder="DES" x-model.number="actor.stats.des"
+                                                                        title="Destrezza">
+                                                                </div>
+
+                                                                <!-- Mente -->
+                                                                <div class="x-small text-muted mb-1">Mente</div>
+                                                                <div class="d-flex gap-1 mb-2">
+                                                                    <input type="number"
+                                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                        placeholder="INT" x-model.number="actor.stats.int"
+                                                                        title="Intuito">
+                                                                    <input type="number"
+                                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                        placeholder="RAG" x-model.number="actor.stats.rag"
+                                                                        title="Ragione">
+                                                                </div>
+
+                                                                <!-- Anima -->
+                                                                <div class="x-small text-muted mb-1">Anima</div>
+                                                                <div class="d-flex gap-1 mb-2">
+                                                                    <input type="number"
+                                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                        placeholder="CAR" x-model.number="actor.stats.car"
+                                                                        title="Carisma">
+                                                                    <input type="number"
+                                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                        placeholder="SPI" x-model.number="actor.stats.spi"
+                                                                        title="Spirito">
+                                                                </div>
+                                                            </div>
+                                                        </template>
+
+                                                        <!-- Enemy: 3 Stats -->
+                                                        <template x-if="actor.type === 'enemy'">
+                                                            <div class="d-flex gap-1 mb-2">
+                                                                <input type="number"
+                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                    placeholder="FIS" x-model.number="actor.stats.fis"
+                                                                    title="Fisico">
+                                                                <input type="number"
+                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                    placeholder="MEN" x-model.number="actor.stats.men"
+                                                                    title="Mentale">
+                                                                <input type="number"
+                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                    placeholder="SOC" x-model.number="actor.stats.soc"
+                                                                    title="Sociale">
+                                                            </div>
+                                                        </template>
+
+                                                        <div
+                                                            class="d-flex justify-content-between bg-secondary bg-opacity-25 p-1 rounded mb-1">
+                                                            <span class="x-small fw-bold">ABILITÀ VELOCI</span>
+                                                        </div>
+                                                        <div class="d-flex gap-1">
+                                                            <button @click="quickRoll(actor, 'mischia')"
+                                                                class="btn btn-outline-danger btn-sm flex-grow-1 x-small"
+                                                                title="Attacco Mischia (VIG)">MIS</button>
+                                                            <button @click="quickRoll(actor, 'tiro')"
+                                                                class="btn btn-outline-warning btn-sm flex-grow-1 x-small"
+                                                                title="Attacco Distanza (DES)">TIR</button>
+                                                            <button @click="quickRoll(actor, 'tecnica')"
+                                                                class="btn btn-outline-info btn-sm flex-grow-1 x-small"
+                                                                title="Prova Tecnica (INT)">TEC</button>
+                                                            <button @click="quickRoll(actor, 'magia')"
+                                                                class="btn btn-outline-success btn-sm flex-grow-1 x-small"
+                                                                title="Prova Magia (SPI)">MAG</button>
+                                                        </div>
                                                     </div>
                                                 </template>
-                                                <div class="col-6">
-                                                    <label class="x-small text-muted">Traumi</label>
-                                                    <input type="number"
-                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                        x-model.number="actor.traumas">
+
+                                                <!-- Notes -->
+                                                <div>
+                                                    <label class="x-small text-muted">Stati & Note</label>
+                                                    <textarea
+                                                        class="form-control form-control-sm bg-dark text-white border-secondary p-1"
+                                                        rows="2" x-model="actor.notes"></textarea>
                                                 </div>
+
                                             </div>
-
-                                            <div class="mb-2">
-                                                <label class="x-small text-muted d-block mb-1">Difese</label>
-                                                <div class="d-flex gap-1">
-                                                    <input type="number"
-                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                        placeholder="MIS" x-model.number="actor.defenses.mischia"
-                                                        title="Difesa Mischia">
-                                                    <input type="number"
-                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                        placeholder="TIR" x-model.number="actor.defenses.tiro"
-                                                        title="Difesa Tiro">
-                                                    <input type="number"
-                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                        placeholder="MAG" x-model.number="actor.defenses.magia"
-                                                        title="Difesa Magia">
-                                                </div>
-                                            </div>
-
-                                            <!-- Minion Triggers -->
-                                            <div x-show="actor.type === 'minion' && actor.statusMessage"
-                                                class="alert alert-danger p-1 x-small mb-2">
-                                                <i class="bi bi-exclamation-triangle"></i> <span
-                                                    x-text="actor.statusMessage"></span>
-                                            </div>
-
-                                            <!-- Initiative -->
-                                            <div class="mb-2">
-                                                <label class="x-small text-muted">Iniziativa</label>
-                                                <div class="input-group input-group-sm">
-                                                    <input type="number"
-                                                        class="form-control bg-dark text-white border-secondary"
-                                                        x-model.number="actor.initiative">
-                                                    <button class="btn btn-sm btn-outline-warning"
-                                                        @click="rollInitiative(actor)" title="Tira 1d10 + caratteristica">
-                                                        🎲
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <!-- Attributes & Skills -->
-                                            <template x-if="actor.type !== 'minion'">
-                                                <div class="mb-2">
-                                                    <div
-                                                        class="d-flex justify-content-between bg-secondary bg-opacity-25 p-1 rounded mb-1">
-                                                        <span class="x-small fw-bold">CARATTERISTICHE</span>
-                                                    </div>
-
-                                                    <!-- PC: 6 Inabion Characteristics -->
-                                                    <template x-if="actor.type === 'pc'">
-                                                        <div>
-                                                            <!-- Fisiche -->
-                                                            <div class="x-small text-muted mb-1">Fisiche</div>
-                                                            <div class="d-flex gap-1 mb-2">
-                                                                <input type="number"
-                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                                    placeholder="VIG" x-model.number="actor.stats.vig"
-                                                                    title="Vigore">
-                                                                <input type="number"
-                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                                    placeholder="DES" x-model.number="actor.stats.des"
-                                                                    title="Destrezza">
-                                                            </div>
-
-                                                            <!-- Mente -->
-                                                            <div class="x-small text-muted mb-1">Mente</div>
-                                                            <div class="d-flex gap-1 mb-2">
-                                                                <input type="number"
-                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                                    placeholder="INT" x-model.number="actor.stats.int"
-                                                                    title="Intuito">
-                                                                <input type="number"
-                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                                    placeholder="RAG" x-model.number="actor.stats.rag"
-                                                                    title="Ragione">
-                                                            </div>
-
-                                                            <!-- Anima -->
-                                                            <div class="x-small text-muted mb-1">Anima</div>
-                                                            <div class="d-flex gap-1 mb-2">
-                                                                <input type="number"
-                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                                    placeholder="CAR" x-model.number="actor.stats.car"
-                                                                    title="Carisma">
-                                                                <input type="number"
-                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                                    placeholder="SPI" x-model.number="actor.stats.spi"
-                                                                    title="Spirito">
-                                                            </div>
-                                                        </div>
-                                                    </template>
-
-                                                    <!-- Enemy: 3 Stats -->
-                                                    <template x-if="actor.type === 'enemy'">
-                                                        <div class="d-flex gap-1 mb-2">
-                                                            <input type="number"
-                                                                class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                                placeholder="FIS" x-model.number="actor.stats.fis"
-                                                                title="Fisico">
-                                                            <input type="number"
-                                                                class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                                placeholder="MEN" x-model.number="actor.stats.men"
-                                                                title="Mentale">
-                                                            <input type="number"
-                                                                class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                                placeholder="SOC" x-model.number="actor.stats.soc"
-                                                                title="Sociale">
-                                                        </div>
-                                                    </template>
-
-                                                    <div
-                                                        class="d-flex justify-content-between bg-secondary bg-opacity-25 p-1 rounded mb-1">
-                                                        <span class="x-small fw-bold">ABILITÀ VELOCI</span>
-                                                    </div>
-                                                    <div class="d-flex gap-1">
-                                                        <button @click="quickRoll(actor, 'mischia')"
-                                                            class="btn btn-outline-danger btn-sm flex-grow-1 x-small"
-                                                            title="Attacco Mischia (VIG)">MIS</button>
-                                                        <button @click="quickRoll(actor, 'tiro')"
-                                                            class="btn btn-outline-warning btn-sm flex-grow-1 x-small"
-                                                            title="Attacco Distanza (DES)">TIR</button>
-                                                        <button @click="quickRoll(actor, 'tecnica')"
-                                                            class="btn btn-outline-info btn-sm flex-grow-1 x-small"
-                                                            title="Prova Tecnica (INT)">TEC</button>
-                                                        <button @click="quickRoll(actor, 'magia')"
-                                                            class="btn btn-outline-success btn-sm flex-grow-1 x-small"
-                                                            title="Prova Magia (SPI)">MAG</button>
-                                                    </div>
-                                                </div>
-                                            </template>
-
-                                            <!-- Notes -->
-                                            <div>
-                                                <label class="x-small text-muted">Stati & Note</label>
-                                                <textarea
-                                                    class="form-control form-control-sm bg-dark text-white border-secondary p-1"
-                                                    rows="2" x-model="actor.notes"></textarea>
-                                            </div>
-
                                         </div>
-                                    </div>
-                            </template>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MODALS -->
-
-            <!-- Load Session Modal -->
-            <div class="modal fade" x-show="loadSessionModal" x-cloak :class="{ 'show d-block': loadSessionModal }"
-                id="loadSessionModal" tabindex="-1" role="dialog" aria-hidden="true" @click.self="loadSessionModal = false"
-                :style="loadSessionModal ? 'background: rgba(0,0,0,0.8);' : ''">
-                <div class="modal-dialog">
-                    <div class="modal-content bg-dark text-white border-secondary">
-                        <div class="modal-header border-secondary">
-                            <h5 class="modal-title">Carica Sessione Powerfail</h5>
-                            <button type="button" class="btn-close btn-close-white"
-                                @click="loadSessionModal = false"></button>
-                        </div>
-                        <div class="modal-body">
-                            <!-- New Session Option -->
-                            <button class="btn btn-success w-100 mb-2 py-2 fw-bold"
-                                @click="loadSessionModal = false; startNewSession();">
-                                <i class="bi bi-plus-circle"></i> Inizia Nuova Sessione
-                            </button>
-
-                            <div class="border-top border-secondary my-3"></div>
-
-                            <button class="btn btn-sm btn-outline-light mb-3 w-100" @click="loadSessionsList()">🔄 Aggiorna
-                                Lista</button>
-                            <div class="list-group">
-                                <template x-for="s in availableSessions" :key="s.id">
-                                    <button
-                                        class="list-group-item list-group-item-action bg-dark text-white border-secondary d-flex justify-content-between"
-                                        @click="loadSession(s.id)">
-                                        <span x-text="s.name"></span>
-                                        <span class="small text-muted"
-                                            x-text="new Date(s.updated_at).toLocaleString()"></span>
-                                    </button>
                                 </template>
-                                <div x-show="availableSessions.length === 0" class="text-center text-muted p-3">
-                                    Nessuna sessione trovata.
-                                </div>
+
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Bestiary Modal -->
-            <div class="modal fade" x-show="bestiaryModal" x-cloak :class="{ 'show d-block': bestiaryModal }"
-                id="bestiaryModal" tabindex="-1" role="dialog" aria-hidden="true" @click.self="bestiaryModal = false"
-                :style="bestiaryModal ? 'background: rgba(0,0,0,0.8);' : ''">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content bg-dark text-white border-secondary">
-                        <div class="modal-header border-secondary">
-                            <h5 class="modal-title">Archivio Mostri & NPC</h5>
-                            <button type="button" class="btn-close btn-close-white" @click="bestiaryModal = false"></button>
-                        </div>
-                        <div class="modal-body">
-                            <!-- LIST VIEW -->
-                            <div x-show="bestiaryView === 'list'">
-                                <button class="btn btn-primary w-100 mb-3" @click="openMonsterForm()">
-                                    <i class="bi bi-plus-circle"></i> Nuovo Mostro
+                <!-- MODALS -->
+
+                <!-- Load Session Modal -->
+                <div class="modal fade" x-show="loadSessionModal" x-cloak :class="{ 'show d-block': loadSessionModal }"
+                    id="loadSessionModal" tabindex="-1" role="dialog" aria-hidden="true"
+                    @click.self="loadSessionModal = false" :style="loadSessionModal ? 'background: rgba(0,0,0,0.8);' : ''">
+                    <div class="modal-dialog">
+                        <div class="modal-content bg-dark text-white border-secondary">
+                            <div class="modal-header border-secondary">
+                                <h5 class="modal-title">Carica Sessione Powerfail</h5>
+                                <button type="button" class="btn-close btn-close-white"
+                                    @click="loadSessionModal = false"></button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- New Session Option -->
+                                <button class="btn btn-success w-100 mb-2 py-2 fw-bold"
+                                    @click="loadSessionModal = false; startNewSession();">
+                                    <i class="bi bi-plus-circle"></i> Inizia Nuova Sessione
                                 </button>
 
-                                <div class="row g-3">
-                                    <template x-for="monster in bestiary" :key="monster.id">
-                                        <div class="col-md-6">
-                                            <div
-                                                class="card bg-secondary bg-opacity-10 border-secondary h-100 position-relative">
+                                <div class="border-top border-secondary my-3"></div>
 
-                                                <!-- Edit/Delete Controls -->
-                                                <div class="position-absolute top-0 end-0 p-1">
-                                                    <button class="btn btn-sm btn-link text-warning p-0 me-1"
-                                                        @click="openMonsterForm(monster)">
-                                                        <i class="bi bi-pencil-square"></i>
-                                                    </button>
-                                                    <button class="btn btn-sm btn-link text-danger p-0"
-                                                        @click="deleteMonster(monster.id)">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </div>
-
-                                                <div class="card-body d-flex justify-content-between align-items-center">
-                                                    <div>
-                                                        <h6 class="mb-0 fw-bold" x-text="monster.name"></h6>
-                                                        <div class="small text-muted">
-                                                            <span x-text="monster.stats?.fis || 2"></span>/<span
-                                                                x-text="monster.stats?.men || 2"></span>/<span
-                                                                x-text="monster.stats?.soc || 2"></span> |
-                                                            <span class="badge bg-dark border border-secondary"
-                                                                x-text="(monster.stats?.type || 'enemy').toUpperCase()"></span>
-                                                        </div>
-                                                    </div>
-                                                    <button class="btn btn-sm btn-outline-success"
-                                                        @click="addFromBestiary(monster)">
-                                                        <i class="bi bi-plus-lg"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
+                                <button class="btn btn-sm btn-outline-light mb-3 w-100" @click="loadSessionsList()">🔄
+                                    Aggiorna
+                                    Lista</button>
+                                <div class="list-group">
+                                    <template x-for="s in availableSessions" :key="s.id">
+                                        <button
+                                            class="list-group-item list-group-item-action bg-dark text-white border-secondary d-flex justify-content-between"
+                                            @click="loadSession(s.id)">
+                                            <span x-text="s.name"></span>
+                                            <span class="small text-muted"
+                                                x-text="new Date(s.updated_at).toLocaleString()"></span>
+                                        </button>
                                     </template>
-                                    <div x-show="bestiary.length === 0" class="text-center text-muted col-12">
-                                        Nessun mostro in archivio.
+                                    <div x-show="availableSessions.length === 0" class="text-center text-muted p-3">
+                                        Nessuna sessione trovata.
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
 
-                            <!-- FORM VIEW -->
-                            <div x-show="bestiaryView === 'form'">
-                                <h6 class="mb-3 border-bottom border-secondary pb-2">
-                                    <span x-text="editingMonsterId ? 'Modifica Mostro' : 'Nuovo Mostro'"></span>
-                                </h6>
-                                <div class="row g-2">
-                                    <div class="col-8">
-                                        <label class="small text-muted">Nome</label>
-                                        <input type="text" class="form-control bg-dark text-white border-secondary"
-                                            x-model="monsterForm.name">
-                                    </div>
-                                    <div class="col-4">
-                                        <label class="small text-muted">Tipo</label>
-                                        <select class="form-select bg-dark text-white border-secondary"
-                                            x-model="monsterForm.type">
-                                            <option value="enemy">Nemico</option>
-                                            <option value="minion">Minion</option>
-                                        </select>
-                                    </div>
+                <!-- Bestiary Modal -->
+                <div class="modal fade" x-show="bestiaryModal" x-cloak :class="{ 'show d-block': bestiaryModal }"
+                    id="bestiaryModal" tabindex="-1" role="dialog" aria-hidden="true" @click.self="bestiaryModal = false"
+                    :style="bestiaryModal ? 'background: rgba(0,0,0,0.8);' : ''">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content bg-dark text-white border-secondary">
+                            <div class="modal-header border-secondary">
+                                <h5 class="modal-title">Archivio Mostri & NPC</h5>
+                                <button type="button" class="btn-close btn-close-white"
+                                    @click="bestiaryModal = false"></button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- LIST VIEW -->
+                                <div x-show="bestiaryView === 'list'">
+                                    <button class="btn btn-primary w-100 mb-3" @click="openMonsterForm()">
+                                        <i class="bi bi-plus-circle"></i> Nuovo Mostro
+                                    </button>
 
-                                    <div class="col-4">
-                                        <label class="small text-muted">FIS</label>
-                                        <input type="number" class="form-control bg-dark text-white border-secondary"
-                                            x-model.number="monsterForm.fis">
+                                    <div class="row g-3">
+                                        <template x-for="monster in bestiary" :key="monster.id">
+                                            <div class="col-md-6">
+                                                <div
+                                                    class="card bg-secondary bg-opacity-10 border-secondary h-100 position-relative">
+
+                                                    <!-- Edit/Delete Controls -->
+                                                    <div class="position-absolute top-0 end-0 p-1">
+                                                        <button class="btn btn-sm btn-link text-warning p-0 me-1"
+                                                            @click="openMonsterForm(monster)">
+                                                            <i class="bi bi-pencil-square"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-link text-danger p-0"
+                                                            @click="deleteMonster(monster.id)">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </div>
+
+                                                    <div
+                                                        class="card-body d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <h6 class="mb-0 fw-bold" x-text="monster.name"></h6>
+                                                            <div class="small text-muted">
+                                                                <span x-text="monster.stats?.fis || 2"></span>/<span
+                                                                    x-text="monster.stats?.men || 2"></span>/<span
+                                                                    x-text="monster.stats?.soc || 2"></span> |
+                                                                <span class="badge bg-dark border border-secondary"
+                                                                    x-text="(monster.stats?.type || 'enemy').toUpperCase()"></span>
+                                                            </div>
+                                                        </div>
+                                                        <button class="btn btn-sm btn-outline-success"
+                                                            @click="addFromBestiary(monster)">
+                                                            <i class="bi bi-plus-lg"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <div x-show="bestiary.length === 0" class="text-center text-muted col-12">
+                                            Nessun mostro in archivio.
+                                        </div>
                                     </div>
-                                    <div class="col-4">
-                                        <label class="small text-muted">MEN</label>
-                                        <input type="number" class="form-control bg-dark text-white border-secondary"
-                                            x-model.number="monsterForm.men">
+                                </div>
+
+                                <!-- FORM VIEW -->
+                                <div x-show="bestiaryView === 'form'">
+                                    <h6 class="mb-3 border-bottom border-secondary pb-2">
+                                        <span x-text="editingMonsterId ? 'Modifica Mostro' : 'Nuovo Mostro'"></span>
+                                    </h6>
+                                    <div class="row g-2">
+                                        <div class="col-8">
+                                            <label class="small text-muted">Nome</label>
+                                            <input type="text" class="form-control bg-dark text-white border-secondary"
+                                                x-model="monsterForm.name">
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="small text-muted">Tipo</label>
+                                            <select class="form-select bg-dark text-white border-secondary"
+                                                x-model="monsterForm.type">
+                                                <option value="enemy">Nemico</option>
+                                                <option value="minion">Minion</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-4">
+                                            <label class="small text-muted">FIS</label>
+                                            <input type="number" class="form-control bg-dark text-white border-secondary"
+                                                x-model.number="monsterForm.fis">
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="small text-muted">MEN</label>
+                                            <input type="number" class="form-control bg-dark text-white border-secondary"
+                                                x-model.number="monsterForm.men">
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="small text-muted">SOC</label>
+                                            <input type="number" class="form-control bg-dark text-white border-secondary"
+                                                x-model.number="monsterForm.soc">
+                                        </div>
+
+                                        <!-- Combat Stats -->
+                                        <div class="col-4">
+                                            <label class="small text-danger">ATK (Dadi)</label>
+                                            <input type="number"
+                                                class="form-control bg-dark text-white border-danger border-opacity-25"
+                                                x-model.number="monsterForm.attackDice">
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="small text-warning">DMG (Danni)</label>
+                                            <input type="number"
+                                                class="form-control bg-dark text-white border-warning border-opacity-25"
+                                                x-model.number="monsterForm.damageInflicted">
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="small text-info">FAT (Costo)</label>
+                                            <input type="number"
+                                                class="form-control bg-dark text-white border-info border-opacity-25"
+                                                x-model.number="monsterForm.fatigueCost">
+                                        </div>
+
+                                        <!-- Defenses -->
+                                        <div class="col-4">
+                                            <label class="small text-muted">Def. MIS</label>
+                                            <input type="number" class="form-control bg-dark text-white border-secondary"
+                                                x-model.number="monsterForm.def_m">
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="small text-muted">Def. TIR</label>
+                                            <input type="number" class="form-control bg-dark text-white border-secondary"
+                                                x-model.number="monsterForm.def_t">
+                                        </div>
+                                        </div>
                                     </div>
-                                    <div class="col-4">
-                                        <label class="small text-muted">SOC</label>
-                                        <input type="number" class="form-control bg-dark text-white border-secondary"
-                                            x-model.number="monsterForm.soc">
                                     </div>
                                     <div class="col-12">
                                         <label class="small text-muted">Note</label>
@@ -624,7 +756,8 @@
                                 <li class="mb-2"><strong>🎲 Base:</strong> Tira una pool di d10.</li>
                                 <li class="mb-2"><strong>✅ Successo:</strong> Risultato 8+ (o 7+ a Lv.4+).</li>
                                 <li class="mb-2"><strong>❌ Fallimento:</strong> Risultato 1. Cancella 1 successo.</li>
-                                <li class="mb-2"><strong>💥 Esplosioni (Lv.2+):</strong> Ogni 10 permette di tirare un dado
+                                <li class="mb-2"><strong>💥 Esplosioni (Lv.2+):</strong> Ogni 10 permette di tirare un
+                                    dado
                                     extra.</li>
                                 <li class="mb-2"><strong>🔄 Reroll (Lv.3+):</strong> Puoi ritirare 1 dado dal tavolo, ma
                                     SOLO
@@ -640,6 +773,30 @@
                 </div>
             </div>
 
+            <!-- Utility Modal (Alert/Prompt) -->
+            <div class="modal fade" x-show="utilModal.show" x-cloak :class="{ 'show d-block': utilModal.show }"
+                style="background: rgba(0,0,0,0.8); z-index: 1060;">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content bg-dark text-white border-primary shadow-lg">
+                        <div class="modal-header border-primary">
+                            <h5 class="modal-title" x-text="utilModal.title"></h5>
+                        </div>
+                        <div class="modal-body">
+                            <p x-text="utilModal.message"></p>
+                            <template x-if="utilModal.type === 'prompt'">
+                                <input type="text" class="form-control bg-secondary text-white border-primary" 
+                                    x-model="utilModal.inputValue" 
+                                    @keyup.enter="utilModal.onConfirm(utilModal.inputValue); utilModal.show = false">
+                            </template>
+                        </div>
+                        <div class="modal-footer border-primary">
+                            <button type="button" class="btn btn-outline-secondary" @click="utilModal.show = false">Annulla</button>
+                            <button type="button" class="btn btn-primary" 
+                                @click="utilModal.onConfirm(utilModal.inputValue); utilModal.show = false">Conferma</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <script>
@@ -683,7 +840,16 @@
                     bestiary: [],
                     bestiaryView: 'list', // 'list' or 'form'
                     editingMonsterId: null,
-                    monsterForm: { name: '', type: 'enemy', fis: 2, men: 2, soc: 2, notes: '' },
+                    monsterForm: {
+                        name: '',
+                        type: 'enemy',
+                        fis: 2, men: 2, soc: 2,
+                        def_m: 0, def_t: 0, def_a: 0,
+                        attackDice: 1,
+                        damageInflicted: 2,
+                        fatigueCost: 1,
+                        notes: ''
+                    },
 
                     saveTimer: null,
 
@@ -718,6 +884,13 @@
                         if (actor.fatigue === undefined) actor.fatigue = 0;
                         if (actor.traumas === undefined) actor.traumas = 0;
                         if (actor.initiative === undefined) actor.initiative = 0;
+                        if (actor.actions === undefined) {
+                            const base = actor.type === 'pc' ? (actor.stats.des || 2) : (actor.stats.fis || 2);
+                            actor.actions = base;
+                        }
+                        if (actor.attackDice === undefined) actor.attackDice = 1;
+                        if (actor.damageInflicted === undefined) actor.damageInflicted = 2;
+                        if (actor.fatigueCost === undefined) actor.fatigueCost = 1;
                         if (!actor.stats) actor.stats = actor.type === 'pc' ? { vig: 2, des: 2, int: 2, rag: 2, car: 2, spi: 2 } : { fis: 2, men: 2, soc: 2 };
                         return actor;
                     },
@@ -778,6 +951,12 @@
                                 fis: s.fis || 2,
                                 men: s.men || 2,
                                 soc: s.soc || 2,
+                                def_m: s.def_m || 0,
+                                def_t: s.def_t || 0,
+                                def_a: s.def_a || 0,
+                                attackDice: s.attackDice || 1,
+                                damageInflicted: s.damageInflicted || 2,
+                                fatigueCost: s.fatigueCost || 1,
                                 notes: s.notes || ''
                             };
                         } else {
@@ -786,6 +965,10 @@
                                 name: '',
                                 type: 'enemy',
                                 fis: 2, men: 2, soc: 2,
+                                def_m: 0, def_t: 0, def_a: 0,
+                                attackDice: 1,
+                                damageInflicted: 2,
+                                fatigueCost: 1,
                                 notes: ''
                             };
                         }
@@ -801,6 +984,12 @@
                                 fis: this.monsterForm.fis,
                                 men: this.monsterForm.men,
                                 soc: this.monsterForm.soc,
+                                def_m: this.monsterForm.def_m || 0,
+                                def_t: this.monsterForm.def_t || 0,
+                                def_a: this.monsterForm.def_a || 0,
+                                attackDice: this.monsterForm.attackDice || 1,
+                                damageInflicted: this.monsterForm.damageInflicted || 2,
+                                fatigueCost: this.monsterForm.fatigueCost || 1,
                                 notes: this.monsterForm.notes
                             }
                         };
@@ -860,6 +1049,10 @@
                             traumas: 0,
                             initiative: 0,
                             defenses: { mischia: 0, tiro: 0, magia: 0 },
+                            // Combat Stats
+                            attackDice: 1,
+                            damageInflicted: 2,
+                            fatigueCost: 1,
                             // PCs use Inabion 6 characteristics (Fisiche, Mente, Anima), others use simplified 3
                             stats: isPc ? {
                                 vig: 2, des: 2,          // Fisiche
@@ -894,7 +1087,14 @@
                             fatigue: 0,
                             traumas: 0,
                             initiative: 0,
-                            defenses: { mischia: 0, tiro: 0, magia: 0 },
+                            defenses: {
+                                mischia: s.def_m || 0,
+                                tiro: s.def_t || 0,
+                                magia: s.def_a || 0
+                            },
+                            attackDice: s.attackDice || 1,
+                            damageInflicted: s.damageInflicted || 2,
+                            fatigueCost: s.fatigueCost || 1,
                             stats: {
                                 fis: s.fis || 2,
                                 men: s.men || 2,
@@ -929,33 +1129,43 @@
                         });
                     },
 
-                    checkHpTriggers(actor) {
-                        // Kept for minions compatibility, but PCs use getDamageState
-                        if (actor.type === 'minion') {
-                            const threshold = (actor.stats.fis || 2) * 2;
-                            if (actor.damage >= threshold * 1) {
-                                actor.statusMessage = 'ELIMINATO - Rimuovi dal gioco';
-                            } else if (actor.damage >= threshold * 0.5) {
-                                actor.statusMessage = 'FERITO - -1 Azione';
-                            } else {
-                                actor.statusMessage = '';
-                            }
-                        }
-                    },
-
                     getDamageState(actor) {
-                        // Inabion damage system: thresholds based on VIG * 2
                         const vig = actor.stats.vig || actor.stats.fis || 2;
                         const base = vig * 2;
                         const dmg = actor.damage || 0;
 
-                        // Thresholds: Illeso (0 to base*1), Malconcio (base*1+1 to base*2), etc.
-                        if (dmg <= base * 1) return { state: 'Illeso', penalty: '', class: 'text-success' };
-                        if (dmg <= base * 2) return { state: 'Malconcio', penalty: '', class: 'text-warning' };
-                        if (dmg <= base * 3) return { state: 'Contuso', penalty: '-1 azione', class: 'text-warning' };
-                        if (dmg <= base * 4) return { state: 'Colpito', penalty: '-2 azioni', class: 'text-danger' };
-                        if (dmg <= base * 5) return { state: 'Ferito', penalty: 'Trauma, -3 azioni', class: 'text-danger fw-bold' };
-                        return { state: 'Inerme', penalty: 'Altro Trauma, Nessuna azione', class: 'bg-danger text-white' };
+                        if (dmg <= base * 1) return { state: 'Illeso', penalty: '', penaltyVal: 0, class: 'text-success' };
+                        if (dmg <= base * 2) return { state: 'Malconcio', penalty: '', penaltyVal: 0, class: 'text-warning' };
+                        if (dmg <= base * 3) return { state: 'Contuso', penalty: '-1 azione', penaltyVal: 1, class: 'text-warning' };
+                        if (dmg <= base * 4) return { state: 'Colpito', penalty: '-2 azioni', penaltyVal: 2, class: 'text-danger' };
+                        if (dmg <= base * 5) return { state: 'Ferito', penalty: 'Trauma, -3 az.', penaltyVal: 3, class: 'text-danger fw-bold' };
+                        return { state: 'Inerme', penalty: 'Inerme', penaltyVal: 5, class: 'bg-danger text-white' };
+                    },
+
+                    checkHpTriggers(actor) {
+                        // 1. Minion Message logic
+                        if (actor.type === 'minion') {
+                            const threshold = (actor.stats.fis || 2) * 2;
+                            if (actor.damage >= threshold * 1) {
+                                actor.statusMessage = 'ELIMINATO';
+                            } else if (actor.damage >= threshold * 0.5) {
+                                actor.statusMessage = 'FERITO - Metà Azioni';
+                            } else {
+                                actor.statusMessage = '';
+                            }
+                        }
+
+                        // 2. Automatic Action Scaling (FIS or DES - Base Penalties)
+                        const baseActions = actor.type === 'pc' ? (actor.stats.des || 2) : (actor.stats.fis || 2);
+                        const state = this.getDamageState(actor);
+                        let finalActions = baseActions - state.penaltyVal;
+
+                        // Minion wounding rule (halve)
+                        if (actor.type === 'minion' && actor.damage >= ((actor.stats.fis || 2) * 2) * 0.5) {
+                            finalActions = Math.floor(finalActions / 2);
+                        }
+
+                        actor.actions = Math.max(0, finalActions);
                     },
 
                     // --- DICE LOGIC REVISED ---
@@ -1141,22 +1351,32 @@
                     },
 
                     async executeSave(silent = false) {
-                        console.log("Executing save... Silent:", silent, "ID:", this.currentSessionId);
-                        const payload = {
-                            name: this.scene.name || 'Nuova Scena',
-                            system: 'powerfail',
-                            data: {
-                                scene: this.scene,
-                                actors: this.actors,
-                                activeActorIndex: this.activeActorIndex,
-                                diceLog: this.diceLog
-                            }
-                        };
-
-                        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                        const headers = { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token };
-
                         try {
+                            const nameToSave = this.scene.name || 'Nuova Scena';
+                            console.log("Saving Session. ID:", this.currentSessionId, "Name:", nameToSave);
+
+                            const payload = {
+                                name: nameToSave,
+                                system: 'powerfail',
+                                data: {
+                                    scene: this.scene,
+                                    actors: this.actors,
+                                    activeActorIndex: this.activeActorIndex,
+                                    diceLog: this.diceLog
+                                }
+                            };
+
+                            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                            const headers = {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            };
+
+                            console.log("Saving Session via FETCH...");
+                            console.log("Endpoint:", !this.currentSessionId ? '/dm/api/sessions (POST)' : `/dm/api/sessions/${this.currentSessionId} (PATCH)`);
+                            console.log("Payload Name:", nameToSave);
+
                             let response;
                             if (!this.currentSessionId) {
                                 response = await fetch('/dm/api/sessions', { method: 'POST', headers, body: JSON.stringify(payload) });
@@ -1164,17 +1384,23 @@
                                 response = await fetch(`/dm/api/sessions/${this.currentSessionId}`, { method: 'PATCH', headers, body: JSON.stringify(payload) });
                             }
 
+                            console.info("Server Response Status:", response.status);
+
                             if (response.ok) {
                                 const data = await response.json();
+                                console.info("Save Successful. New ID?", data.id);
                                 if (data.id) this.currentSessionId = data.id;
                                 if (data.share_code) this.currentSessionCode = data.share_code;
-                                if (!silent) this.showAlert("Salvato", "Sessione salvata correttamente!");
+                                if (!silent) this.showAlert("Salvato", "Sessione salvata: " + (data.name || nameToSave));
                                 this.loadSessionsList();
-                            } else if (!silent) {
-                                this.showAlert("Errore", "Errore server nel salvataggio.");
+                            } else {
+                                const errData = await response.json();
+                                console.error("Save failed:", errData);
+                                if (!silent) this.showAlert("Errore", "Errore salvataggio: " + (errData.error || response.statusText));
                             }
                         } catch (e) {
-                            if (!silent) this.showAlert("Errore", 'Errore: ' + e);
+                            console.error("Critical Save Error:", e);
+                            if (!silent) this.showAlert("Errore", 'Errore Connessione: ' + e);
                         }
                     },
 
