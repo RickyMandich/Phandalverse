@@ -14,13 +14,21 @@
 @section('content')
     <div class="container-fluid" x-data="powerfailMaster()">
         <!-- Header -->
-        <div class="row bg-dark text-white p-2 align-items-center mb-3">
-            <div class="col-md-6">
-                <h3 class="m-0">⚡ Powerfail System 5.3 <span class="badge bg-secondary fs-6">Master Screen</span></h3>
+        <div class="row bg-dark text-white p-2 align-items-center mb-3 border-bottom border-secondary">
+            <div class="col-md-6 d-flex align-items-center">
+                <h4 class="m-0 me-3 text-warning"><i class="bi bi-shield-shaded"></i> <span x-text="scene.name"></span></h4>
+                <div x-show="currentSessionCode" class="badge bg-secondary font-monospace p-2">
+                    CODE: <span x-text="currentSessionCode"></span>
+                </div>
+                <!-- SHARE BUTTON -->
+                <button class="btn btn-sm btn-outline-info ms-2 border-0" x-show="currentSessionCode"
+                    @click="copySessionLink()" title="Copia link per i giocatori">
+                    <i class="bi bi-share-fill"></i>
+                </button>
             </div>
             <div class="col-md-6 text-end">
                 <button class="btn btn-sm btn-outline-light me-2" @click="saveSession()">
-                    <i class="bi bi-save"></i> Salva Sessione
+                    <i class="bi bi-save"></i> Salva
                 </button>
                 <button class="btn btn-sm btn-outline-warning" @click="loadSessionModal = true">
                     <i class="bi bi-folder2-open"></i> Carica
@@ -115,11 +123,11 @@
                                                     class="btn btn-sm p-0 d-flex justify-content-center align-items-center rounded-circle"
                                                     style="width: 28px; height: 28px;"
                                                     :class="{
-                                                                                                                                                                                                                'btn-success': isSuccess(die),
-                                                                                                                                                                                                                'btn-danger': die === 1,
-                                                                                                                                                                                                                'btn-secondary': !isSuccess(die) && die !== 1,
-                                                                                                                                                                                                                'border border-warning border-2': die === 10
-                                                                                                                                                                                                            }"
+                                                                                                                                                                                                                                'btn-success': isSuccess(die),
+                                                                                                                                                                                                                                'btn-danger': die === 1,
+                                                                                                                                                                                                                                'btn-secondary': !isSuccess(die) && die !== 1,
+                                                                                                                                                                                                                                'border border-warning border-2': die === 10
+                                                                                                                                                                                                                            }"
                                                     @click="rerollDie(genIdx, dieIdx)" :disabled="!canReroll()"
                                                     :title="canReroll() ? 'Clicca per ritirare (Livello 3+)' : ''">
                                                     <span class="fw-bold" x-text="die"></span>
@@ -175,11 +183,11 @@
                                                 <template x-for="die in gen">
                                                     <span class="badge"
                                                         :class="{
-                                                                                                                                                                                                                    'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
-                                                                                                                                                                                                                    'bg-danger': die === 1, 
-                                                                                                                                                                                                                    'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
-                                                                                                                                                                                                                    'border border-warning': die === 10
-                                                                                                                                                                                                                }"
+                                                                                                                                                                                                                                    'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
+                                                                                                                                                                                                                                    'bg-danger': die === 1, 
+                                                                                                                                                                                                                                    'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
+                                                                                                                                                                                                                                    'border border-warning': die === 10
+                                                                                                                                                                                                                                }"
                                                         x-text="die"></span>
                                                 </template>
                                             </div>
@@ -413,11 +421,19 @@
                                                         <span class="x-small fw-bold">ABILITÀ VELOCI</span>
                                                     </div>
                                                     <div class="d-flex gap-1">
-                                            <button @click="quickRoll(actor, 'mischia')" class="btn btn-outline-danger btn-sm flex-grow-1 x-small" title="Attacco Mischia (VIG)">MIS</button>
-                                            <button @click="quickRoll(actor, 'tiro')" class="btn btn-outline-warning btn-sm flex-grow-1 x-small" title="Attacco Distanza (DES)">TIR</button>
-                                            <button @click="quickRoll(actor, 'tecnica')" class="btn btn-outline-info btn-sm flex-grow-1 x-small" title="Prova Tecnica (INT)">TEC</button>
-                                            <button @click="quickRoll(actor, 'magia')" class="btn btn-outline-success btn-sm flex-grow-1 x-small" title="Prova Magia (SPI)">MAG</button>
-                                        </div>
+                                                        <button @click="quickRoll(actor, 'mischia')"
+                                                            class="btn btn-outline-danger btn-sm flex-grow-1 x-small"
+                                                            title="Attacco Mischia (VIG)">MIS</button>
+                                                        <button @click="quickRoll(actor, 'tiro')"
+                                                            class="btn btn-outline-warning btn-sm flex-grow-1 x-small"
+                                                            title="Attacco Distanza (DES)">TIR</button>
+                                                        <button @click="quickRoll(actor, 'tecnica')"
+                                                            class="btn btn-outline-info btn-sm flex-grow-1 x-small"
+                                                            title="Prova Tecnica (INT)">TEC</button>
+                                                        <button @click="quickRoll(actor, 'magia')"
+                                                            class="btn btn-outline-success btn-sm flex-grow-1 x-small"
+                                                            title="Prova Magia (SPI)">MAG</button>
+                                                    </div>
                                                 </div>
                                             </template>
 
@@ -520,9 +536,8 @@
                                                     <div>
                                                         <h6 class="mb-0 fw-bold" x-text="monster.name"></h6>
                                                         <div class="small text-muted">
-                                                            HP: <span x-text="monster.stats?.hp || 0"></span> |
-                                                            <span class="badge bg-dark border border-secondary"
-                                                                x-text="monster.stats?.type || 'enemy'"></span>
+                                                            <span x-text="monster.stats?.fis || 2"></span>/<span x-text="monster.stats?.men || 2"></span>/<span x-text="monster.stats?.soc || 2"></span> |
+                                                            <span class="badge bg-dark border border-secondary" x-text="(monster.stats?.type || 'enemy').toUpperCase()"></span>
                                                         </div>
                                                     </div>
                                                     <button class="btn btn-sm btn-outline-success"
@@ -633,12 +648,24 @@
                         notes: ''
                     },
                     actors: [],
+                    activeActorIndex: 0, // Track whose turn it is
                     diceLog: [],
                     currentSessionId: null,
+                    currentSessionCode: null, // Public share code
                     loadSessionModal: false,
                     bestiaryModal: false,
                     helpModal: false,
                     availableSessions: [],
+
+                    // Utility Modal (Replacement for alert/prompt)
+                    utilModal: {
+                        show: false,
+                        type: 'alert', // 'alert' or 'prompt'
+                        title: '',
+                        message: '',
+                        inputValue: '',
+                        onConfirm: null
+                    },
 
                     roller: {
                         active: false,
@@ -652,13 +679,43 @@
                     bestiary: [],
                     bestiaryView: 'list', // 'list' or 'form'
                     editingMonsterId: null,
-                    monsterForm: { name: '', hp: 10, maxHp: 10, type: 'enemy', fis: 2, men: 2, soc: 2, notes: '' },
+                    monsterForm: { name: '', type: 'enemy', fis: 2, men: 2, soc: 2, notes: '' },
 
                     init() {
                         this.loadSessionsList();
                         this.loadBestiary();
                         // Auto-open load session modal on start
-                        this.loadSessionModal = true;
+                        setTimeout(() => this.loadSessionModal = true, 500);
+                    },
+
+                    // UI UTILITIES
+                    showAlert(title, message) {
+                        this.utilModal = {
+                            show: true,
+                            type: 'alert',
+                            title: title,
+                            message: message,
+                            onConfirm: () => { }
+                        };
+                    },
+
+                    showPrompt(title, message, defaultValue, callback) {
+                        this.utilModal = {
+                            show: true,
+                            type: 'prompt',
+                            title: title,
+                            message: message,
+                            inputValue: defaultValue || '',
+                            onConfirm: callback
+                        };
+                    },
+
+                    copySessionLink() {
+                        if (!this.currentSessionCode) return;
+                        const link = `${window.location.origin}/dm/player/${this.currentSessionCode}`;
+                        navigator.clipboard.writeText(link).then(() => {
+                            this.showAlert("Link Copiato!", "Il link per i giocatori è stato copiato negli appunti.");
+                        });
                     },
 
                     // --- BESTIARY MANAGEMENT ---
@@ -730,26 +787,30 @@
                             if (res.ok) {
                                 await this.loadBestiary();
                                 this.bestiaryView = 'list';
+                                this.showAlert("Successo", "Mostro salvato correttamente.");
                             } else {
-                                alert("Errore salvataggio mostro");
+                                this.showAlert("Errore", "Errore salvataggio mostro");
                             }
                         } catch (e) {
                             console.error(e);
-                            alert("Errore di connessione");
+                            this.showAlert("Errore", "Errore di connessione");
                         }
                     },
 
                     async deleteMonster(id) {
-                        if (!confirm("Eliminare definitivamente questo mostro?")) return;
-                        try {
-                            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                            const res = await fetch(`/dm/api/characters/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': token } });
-                            if (res.ok) {
-                                await this.loadBestiary();
-                            } else {
-                                alert("Errore eliminazione");
-                            }
-                        } catch (e) { console.error(e); }
+                        this.showPrompt("Conferma", "Scrivi 'ELIMINA' per confermare l'eliminazione:", "", async (val) => {
+                            if (val !== 'ELIMINA') return;
+                            try {
+                                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                                const res = await fetch(`/dm/api/characters/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': token } });
+                                if (res.ok) {
+                                    await this.loadBestiary();
+                                    this.showAlert("Eliminato", "Mostro rimosso dall'archivio.");
+                                } else {
+                                    this.showAlert("Errore", "Errore eliminazione");
+                                }
+                            } catch (e) { console.error(e); }
+                        });
                     },
 
                     // --- ACTOR MANAGEMENT ---
@@ -890,7 +951,7 @@
 
                     rerollDie(genIdx, dieIdx) {
                         if (!this.canReroll()) {
-                            alert("Puoi ritirare solo se NON ci sono esplosioni pendenti!");
+                            this.showAlert("Azione non consentita", "Puoi ritirare solo se NON ci sono esplosioni pendenti!");
                             return;
                         }
 
@@ -1021,12 +1082,26 @@
                     // --- SESSION PERSISTENCE ---
 
                     async saveSession() {
+                        if (!this.currentSessionId) {
+                            this.showPrompt("Nuova Sessione", "Inserisic il nome della sessione:", this.scene.name, (name) => {
+                                if (name) {
+                                    this.scene.name = name;
+                                    this.executeSave();
+                                }
+                            });
+                        } else {
+                            this.executeSave();
+                        }
+                    },
+
+                    async executeSave() {
                         const payload = {
                             name: this.scene.name,
                             system: 'powerfail',
                             data: {
                                 scene: this.scene,
                                 actors: this.actors,
+                                activeActorIndex: this.activeActorIndex,
                                 diceLog: this.diceLog
                             }
                         };
@@ -1037,11 +1112,6 @@
                         try {
                             let response;
                             if (!this.currentSessionId) {
-                                const name = prompt("Nome della nuova sessione:", this.scene.name);
-                                if (!name) return;
-                                this.scene.name = name;
-                                payload.name = name;
-
                                 response = await fetch('/dm/api/sessions', { method: 'POST', headers, body: JSON.stringify(payload) });
                             } else {
                                 response = await fetch(`/dm/api/sessions/${this.currentSessionId}`, { method: 'PATCH', headers, body: JSON.stringify(payload) });
@@ -1049,14 +1119,15 @@
 
                             if (response.ok) {
                                 const data = await response.json();
-                                if (data.id) this.currentSessionId = data.id; // update ID if new
-                                alert('Sessione salvata!');
-                                this.loadSessionsList(); // Refresh list
+                                if (data.id) this.currentSessionId = data.id;
+                                if (data.share_code) this.currentSessionCode = data.share_code;
+                                this.showAlert("Salvato", "Sessione salvata correttamente!");
+                                this.loadSessionsList();
                             } else {
-                                alert('Errore server nel salvataggio.');
+                                this.showAlert("Errore", "Errore server nel salvataggio.");
                             }
                         } catch (e) {
-                            alert('Errore: ' + e);
+                            this.showAlert("Errore", 'Errore: ' + e);
                         }
                     },
 
@@ -1086,15 +1157,17 @@
                             const session = await response.json();
 
                             this.currentSessionId = session.id;
+                            this.currentSessionCode = session.share_code;
                             this.scene = session.data.scene || this.scene;
                             this.actors = session.data.actors || [];
+                            this.activeActorIndex = session.data.activeActorIndex || 0;
                             this.diceLog = session.data.diceLog || [];
 
                             this.loadSessionModal = false;
-                            console.log("Loaded Session:", this.currentSessionId);
+                            this.showAlert("Sessione Caricata", "Benvenuto in " + session.name);
                         } catch (e) {
                             console.error("Load failed", e);
-                            alert("Errore caricamento sessione.");
+                            this.showAlert("Errore", "Errore caricamento sessione.");
                         }
                     }
                 }

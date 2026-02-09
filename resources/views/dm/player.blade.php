@@ -2,9 +2,9 @@
 
 @section('content')
     <div class="container-fluid py-4" x-data="playerView({ 
-                                    shareCode: '{{ $session->share_code }}',
-                                    sessionId: {{ $session->id }}
-                                })">
+                                        shareCode: '{{ $session->share_code }}',
+                                        sessionId: {{ $session->id }}
+                                    })">
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <!-- HEADER PUBBLICO -->
@@ -26,9 +26,9 @@
                     <template x-for="(combatant, index) in combatants" :key="combatant.instanceId">
                         <div class="list-group-item mb-2 rounded border-0 shadow-sm combatant-card p-0 overflow-hidden"
                             x-show="!hideDead || combatant.hp > 0 || combatant.type === 'player'" :class="{
-                                                            'active-turn': currentTurnIndex === index,
-                                                            'dead-combatant bg-black bg-opacity-50 opacity-50': combatant.hp <= 0 && combatant.type !== 'player'
-                                                        }">
+                                                                'active-turn': currentTurnIndex === index,
+                                                                'dead-combatant bg-black bg-opacity-50 opacity-50': combatant.hp <= 0 && combatant.type !== 'player'
+                                                            }">
 
                             <div class="d-flex align-items-center p-3">
                                 <!-- INITIATIVE -->

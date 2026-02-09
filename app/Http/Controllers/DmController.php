@@ -273,6 +273,11 @@ class DmController extends Controller
     {
         try {
             $session = DmSession::where('share_code', $share_code)->firstOrFail();
+
+            if ($session->system === 'powerfail') {
+                return view('dm.player_powerfail', compact('session'));
+            }
+
             return view('dm.player', compact('session'));
         } catch (\Exception $e) {
             return redirect()->route('dm.player.index')->with('error', 'Sessione non trovata');
