@@ -115,11 +115,11 @@
                                                     class="btn btn-sm p-0 d-flex justify-content-center align-items-center rounded-circle"
                                                     style="width: 28px; height: 28px;"
                                                     :class="{
-                                                                                                                                                                                        'btn-success': isSuccess(die),
-                                                                                                                                                                                        'btn-danger': die === 1,
-                                                                                                                                                                                        'btn-secondary': !isSuccess(die) && die !== 1,
-                                                                                                                                                                                        'border border-warning border-2': die === 10
-                                                                                                                                                                                    }"
+                                                                                                                                                                                                                'btn-success': isSuccess(die),
+                                                                                                                                                                                                                'btn-danger': die === 1,
+                                                                                                                                                                                                                'btn-secondary': !isSuccess(die) && die !== 1,
+                                                                                                                                                                                                                'border border-warning border-2': die === 10
+                                                                                                                                                                                                            }"
                                                     @click="rerollDie(genIdx, dieIdx)" :disabled="!canReroll()"
                                                     :title="canReroll() ? 'Clicca per ritirare (Livello 3+)' : ''">
                                                     <span class="fw-bold" x-text="die"></span>
@@ -175,11 +175,11 @@
                                                 <template x-for="die in gen">
                                                     <span class="badge"
                                                         :class="{
-                                                                                                                                                                                            'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
-                                                                                                                                                                                            'bg-danger': die === 1, 
-                                                                                                                                                                                            'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
-                                                                                                                                                                                            'border border-warning': die === 10
-                                                                                                                                                                                        }"
+                                                                                                                                                                                                                    'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
+                                                                                                                                                                                                                    'bg-danger': die === 1, 
+                                                                                                                                                                                                                    'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
+                                                                                                                                                                                                                    'border border-warning': die === 10
+                                                                                                                                                                                                                }"
                                                         x-text="die"></span>
                                                 </template>
                                             </div>
@@ -212,6 +212,10 @@
                         class="card-header bg-secondary bg-opacity-25 fw-bold d-flex justify-content-between align-items-center">
                         <span>👥 Attori in Scena</span>
                         <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-success" @click="nextTurn()"
+                                x-show="scene.state === 'combat'">
+                                <i class="bi bi-play-fill"></i> Prossimo Turno
+                            </button>
                             <button class="btn btn-sm btn-outline-warning" @click="sortActorsByInitiative()"
                                 title="Ordina per Iniziativa">
                                 <i class="bi bi-sort-numeric-down"></i> Ordina
@@ -222,860 +226,902 @@
                             <button class="btn btn-sm btn-outline-secondary" @click="addActor('minion')">+ Minion</button>
                         </div>
                     </div>
-                    <div class="card-body overflow-auto custom-scrollbar d-flex gap-3 flex-wrap align-items-start">
-
-                        <template x-for="(actor, index) in actors" :key="actor.id">
-                            <div class="card border-0 shadow-lg" style="width: 300px;"
-                                :class="{
-                                                                                                                                                                'bg-dark': actor.type === 'pc',
-                                                                                                                                                                'bg-danger bg-opacity-10': actor.type === 'enemy',
-                                                                                                                                                                'bg-secondary bg-opacity-10': actor.type === 'minion'
-                                                                                                                                                            }">
-
-                                <!-- Header Attore -->
-                                <div class="card-header py-1 d-flex justify-content-between align-items-center"
-                                    :class="{
-                                                                                                                                                                    'bg-info text-dark': actor.type === 'pc',
-                                                                                                                                                                    'bg-danger text-white': actor.type === 'enemy',
-                                                                                                                                                                    'bg-secondary text-white': actor.type === 'minion'
-                                                                                                                                                                }">
-                                    <input type="text"
-                                        class="form-control form-control-sm bg-transparent border-0 fw-bold p-0"
-                                        :class="actor.type === 'pc' ? 'text-dark' : 'text-white'" x-model="actor.name">
-                                    <div>
-                                        <button class="btn btn-sm btn-link p-0 me-1"
-                                            :class="actor.type === 'pc' ? 'text-dark' : 'text-white'"
-                                            @click="cloneActor(actor)" title="Clona Attore">
-                                            <i class="bi bi-files"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-link p-0"
-                                            :class="actor.type === 'pc' ? 'text-dark' : 'text-white'"
-                                            @click="removeActor(index)">
-                                            <i class="bi bi-x-lg"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="card-body p-2">
-                                    <!-- Damage & Wound State (Inabion System) -->
-                                    <div class="mb-2">
-                                        <label class="x-small text-muted">Danni Attuali</label>
-                                        <input type="number"
-                                            class="form-control form-control-sm bg-dark text-white border-secondary"
-                                            x-model.number="actor.damage" @input="checkHpTriggers(actor)" min="0">
-
-                                        <!-- Wound State Display -->
-                                        <div class="mt-1 p-1 rounded text-center x-small"
-                                            :class="getDamageState(actor).class">
-                                            <strong x-text="getDamageState(actor).state"></strong>
-                                            <span x-show="getDamageState(actor).penalty"
-                                                x-text="' - ' + getDamageState(actor).penalty"></span>
-                                        </div>
-
-                                        <!-- Thresholds Reference (for PCs) -->
-                                        <template x-if="actor.type === 'pc'">
-                                            <div class="x-small text-muted mt-1">
-                                                Soglie: <span x-text="(actor.stats.vig || 2) * 2"></span> /
-                                                <span x-text="(actor.stats.vig || 2) * 4"></span> /
-                                                <span x-text="(actor.stats.vig || 2) * 6"></span> /
-                                                <span x-text="(actor.stats.vig || 2) * 8"></span>
+                    <div class="card-body p-2 overflow-auto" style="min-height: 400px;">
+                        <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-2">
+                            <template x-for="(actor, index) in actors" :key="actor.id">
+                                <div class="col">
+                                    <div class="card bg-secondary bg-opacity-10 border-secondary h-100 position-relative"
+                                        :class="{ 'border-warning shadow-sm': index === activeActorIndex && scene.state === 'combat' }">
+                                        <div
+                                            class="card-header p-1 d-flex justify-content-between align-items-center bg-secondary bg-opacity-25">
+                                            <div class="d-flex align-items-center">
+                                                <span x-show="index === activeActorIndex && scene.state === 'combat'"
+                                                    class="me-1 text-warning">▶</span>
+                                                <input type="text"
+                                                    class="form-control form-control-sm bg-transparent border-0 text-white fw-bold p-0"
+                                                    x-model="actor.name" style="width: auto;">
                                             </div>
-                                        </template>
-                                    </div>
-
-                                    <!-- Fatigue (only for non-minions) -->
-                                    <template x-if="actor.type !== 'minion'">
-                                        <div class="mb-2">
-                                            <label class="x-small text-muted">Fatica</label>
-                                            <input type="number"
-                                                class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                x-model.number="actor.fatigue">
+                                            <div>
+                                                <button class="btn btn-sm btn-link p-0 me-1 text-white"
+                                                    @click="cloneActor(actor)" title="Clona">
+                                                    <i class="bi bi-files"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-link p-0 text-danger"
+                                                    @click="removeActor(index)">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                    </template>
 
-                                    <!-- Minion Triggers -->
-                                    <div x-show="actor.type === 'minion' && actor.statusMessage"
-                                        class="alert alert-danger p-1 x-small mb-2">
-                                        <i class="bi bi-exclamation-triangle"></i> <span
-                                            x-text="actor.statusMessage"></span>
-                                    </div>
+                                        <div class="card-body p-2">
+                                            <!-- Damage & Wound State (Inabion System) -->
+                                            <div class="mb-2">
+                                                <label class="x-small text-muted">Danni Attuali</label>
+                                                <input type="number"
+                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                    x-model.number="actor.damage" @input="checkHpTriggers(actor)" min="0">
 
-                                    <!-- Initiative -->
-                                    <div class="mb-2">
-                                        <label class="x-small text-muted">Iniziativa</label>
-                                        <div class="input-group input-group-sm">
-                                            <input type="number" class="form-control bg-dark text-white border-secondary"
-                                                x-model.number="actor.initiative">
-                                            <button class="btn btn-sm btn-outline-warning" @click="rollInitiative(actor)"
-                                                title="Tira 1d10 + caratteristica">
-                                                🎲
-                                            </button>
-                                        </div>
-                                    </div>
+                                                <!-- Wound State Display -->
+                                                <div class="mt-1 p-1 rounded text-center x-small"
+                                                    :class="getDamageState(actor).class">
+                                                    <strong x-text="getDamageState(actor).state"></strong>
+                                                    <span x-show="getDamageState(actor).penalty"
+                                                        x-text="' - ' + getDamageState(actor).penalty"></span>
+                                                </div>
 
-                                    <!-- Attributes & Skills -->
-                                    <template x-if="actor.type !== 'minion'">
-                                        <div class="mb-2">
-                                            <div
-                                                class="d-flex justify-content-between bg-secondary bg-opacity-25 p-1 rounded mb-1">
-                                                <span class="x-small fw-bold">CARATTERISTICHE</span>
+                                                <!-- Thresholds Reference (for PCs) -->
+                                                <template x-if="actor.type === 'pc'">
+                                                    <div class="x-small text-muted mt-1">
+                                                        Soglie: <span x-text="(actor.stats.vig || 2) * 1"></span> /
+                                                        <span x-text="(actor.stats.vig || 2) * 2"></span> /
+                                                        <span x-text="(actor.stats.vig || 2) * 3"></span> /
+                                                        <span x-text="(actor.stats.vig || 2) * 4"></span> /
+                                                        <span x-text="(actor.stats.vig || 2) * 5"></span>
+                                                    </div>
+                                                </template>
                                             </div>
 
-                                            <!-- PC: 6 Inabion Characteristics -->
-                                            <template x-if="actor.type === 'pc'">
-                                                <div>
-                                                    <!-- Fisiche -->
-                                                    <div class="x-small text-muted mb-1">Fisiche</div>
-                                                    <div class="d-flex gap-1 mb-2">
+                                            <!-- Fatigue, Traumas & Defenses -->
+                                            <div class="row g-2 mb-2">
+                                                <template x-if="actor.type !== 'minion'">
+                                                    <div class="col-6">
+                                                        <label class="x-small text-muted">Fatica</label>
                                                         <input type="number"
                                                             class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                            placeholder="VIG" x-model.number="actor.stats.vig"
-                                                            title="Vigore">
-                                                        <input type="number"
-                                                            class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                            placeholder="DES" x-model.number="actor.stats.des"
-                                                            title="Destrezza">
+                                                            x-model.number="actor.fatigue">
+                                                    </div>
+                                                </template>
+                                                <div class="col-6">
+                                                    <label class="x-small text-muted">Traumi</label>
+                                                    <input type="number"
+                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                        x-model.number="actor.traumas">
+                                                </div>
+                                            </div>
+
+                                            <div class="mb-2">
+                                                <label class="x-small text-muted d-block mb-1">Difese</label>
+                                                <div class="d-flex gap-1">
+                                                    <input type="number"
+                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                        placeholder="MIS" x-model.number="actor.defenses.mischia"
+                                                        title="Difesa Mischia">
+                                                    <input type="number"
+                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                        placeholder="TIR" x-model.number="actor.defenses.tiro"
+                                                        title="Difesa Tiro">
+                                                    <input type="number"
+                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                        placeholder="MAG" x-model.number="actor.defenses.magia"
+                                                        title="Difesa Magia">
+                                                </div>
+                                            </div>
+
+                                            <!-- Minion Triggers -->
+                                            <div x-show="actor.type === 'minion' && actor.statusMessage"
+                                                class="alert alert-danger p-1 x-small mb-2">
+                                                <i class="bi bi-exclamation-triangle"></i> <span
+                                                    x-text="actor.statusMessage"></span>
+                                            </div>
+
+                                            <!-- Initiative -->
+                                            <div class="mb-2">
+                                                <label class="x-small text-muted">Iniziativa</label>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number"
+                                                        class="form-control bg-dark text-white border-secondary"
+                                                        x-model.number="actor.initiative">
+                                                    <button class="btn btn-sm btn-outline-warning"
+                                                        @click="rollInitiative(actor)" title="Tira 1d10 + caratteristica">
+                                                        🎲
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Attributes & Skills -->
+                                            <template x-if="actor.type !== 'minion'">
+                                                <div class="mb-2">
+                                                    <div
+                                                        class="d-flex justify-content-between bg-secondary bg-opacity-25 p-1 rounded mb-1">
+                                                        <span class="x-small fw-bold">CARATTERISTICHE</span>
                                                     </div>
 
-                                                    <!-- Mente -->
-                                                    <div class="x-small text-muted mb-1">Mente</div>
-                                                    <div class="d-flex gap-1 mb-2">
-                                                        <input type="number"
-                                                            class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                            placeholder="INT" x-model.number="actor.stats.int"
-                                                            title="Intuito">
-                                                        <input type="number"
-                                                            class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                            placeholder="RAG" x-model.number="actor.stats.rag"
-                                                            title="Ragione">
-                                                    </div>
+                                                    <!-- PC: 6 Inabion Characteristics -->
+                                                    <template x-if="actor.type === 'pc'">
+                                                        <div>
+                                                            <!-- Fisiche -->
+                                                            <div class="x-small text-muted mb-1">Fisiche</div>
+                                                            <div class="d-flex gap-1 mb-2">
+                                                                <input type="number"
+                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                    placeholder="VIG" x-model.number="actor.stats.vig"
+                                                                    title="Vigore">
+                                                                <input type="number"
+                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                    placeholder="DES" x-model.number="actor.stats.des"
+                                                                    title="Destrezza">
+                                                            </div>
 
-                                                    <!-- Anima -->
-                                                    <div class="x-small text-muted mb-1">Anima</div>
-                                                    <div class="d-flex gap-1 mb-2">
-                                                        <input type="number"
-                                                            class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                            placeholder="CAR" x-model.number="actor.stats.car"
-                                                            title="Carisma">
-                                                        <input type="number"
-                                                            class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                            placeholder="SPI" x-model.number="actor.stats.spi"
-                                                            title="Spirito">
+                                                            <!-- Mente -->
+                                                            <div class="x-small text-muted mb-1">Mente</div>
+                                                            <div class="d-flex gap-1 mb-2">
+                                                                <input type="number"
+                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                    placeholder="INT" x-model.number="actor.stats.int"
+                                                                    title="Intuito">
+                                                                <input type="number"
+                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                    placeholder="RAG" x-model.number="actor.stats.rag"
+                                                                    title="Ragione">
+                                                            </div>
+
+                                                            <!-- Anima -->
+                                                            <div class="x-small text-muted mb-1">Anima</div>
+                                                            <div class="d-flex gap-1 mb-2">
+                                                                <input type="number"
+                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                    placeholder="CAR" x-model.number="actor.stats.car"
+                                                                    title="Carisma">
+                                                                <input type="number"
+                                                                    class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                    placeholder="SPI" x-model.number="actor.stats.spi"
+                                                                    title="Spirito">
+                                                            </div>
+                                                        </div>
+                                                    </template>
+
+                                                    <!-- Enemy: 3 Stats -->
+                                                    <template x-if="actor.type === 'enemy'">
+                                                        <div class="d-flex gap-1 mb-2">
+                                                            <input type="number"
+                                                                class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                placeholder="FIS" x-model.number="actor.stats.fis"
+                                                                title="Fisico">
+                                                            <input type="number"
+                                                                class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                placeholder="MEN" x-model.number="actor.stats.men"
+                                                                title="Mentale">
+                                                            <input type="number"
+                                                                class="form-control form-control-sm bg-dark text-white border-secondary"
+                                                                placeholder="SOC" x-model.number="actor.stats.soc"
+                                                                title="Sociale">
+                                                        </div>
+                                                    </template>
+
+                                                    <div
+                                                        class="d-flex justify-content-between bg-secondary bg-opacity-25 p-1 rounded mb-1">
+                                                        <span class="x-small fw-bold">ABILITÀ VELOCI</span>
                                                     </div>
+                                                    <div class="d-flex gap-1">
+                                            <button @click="quickRoll(actor, 'mischia')" class="btn btn-outline-danger btn-sm flex-grow-1 x-small" title="Attacco Mischia (VIG)">MIS</button>
+                                            <button @click="quickRoll(actor, 'tiro')" class="btn btn-outline-warning btn-sm flex-grow-1 x-small" title="Attacco Distanza (DES)">TIR</button>
+                                            <button @click="quickRoll(actor, 'tecnica')" class="btn btn-outline-info btn-sm flex-grow-1 x-small" title="Prova Tecnica (INT)">TEC</button>
+                                            <button @click="quickRoll(actor, 'magia')" class="btn btn-outline-success btn-sm flex-grow-1 x-small" title="Prova Magia (SPI)">MAG</button>
+                                        </div>
                                                 </div>
                                             </template>
 
-                                            <!-- Enemy: 3 Stats -->
-                                            <template x-if="actor.type === 'enemy'">
-                                                <div class="d-flex gap-1 mb-2">
-                                                    <input type="number"
-                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                        placeholder="FIS" x-model.number="actor.stats.fis" title="Fisico">
-                                                    <input type="number"
-                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                        placeholder="MEN" x-model.number="actor.stats.men" title="Mentale">
-                                                    <input type="number"
-                                                        class="form-control form-control-sm bg-dark text-white border-secondary"
-                                                        placeholder="SOC" x-model.number="actor.stats.soc" title="Sociale">
-                                                </div>
-                                            </template>
+                                            <!-- Notes -->
+                                            <div>
+                                                <label class="x-small text-muted">Stati & Note</label>
+                                                <textarea
+                                                    class="form-control form-control-sm bg-dark text-white border-secondary p-1"
+                                                    rows="2" x-model="actor.notes"></textarea>
+                                            </div>
 
-                                            <div
-                                                class="d-flex justify-content-between bg-secondary bg-opacity-25 p-1 rounded mb-1">
-                                                <span class="x-small fw-bold">ABILITÀ VELOCI</span>
-                                            </div>
-                                            <div class="d-flex flex-wrap gap-1">
-                                                <button class="btn btn-xs btn-outline-light flex-grow-1"
-                                                    @click="quickRoll(actor, 'mischia')">Mischia</button>
-                                                <button class="btn btn-xs btn-outline-light flex-grow-1"
-                                                    @click="quickRoll(actor, 'tiro')">Tiro</button>
-                                                <button class="btn btn-xs btn-outline-light flex-grow-1"
-                                                    @click="quickRoll(actor, 'tecnica')">Tecnica</button>
-                                            </div>
                                         </div>
-                                    </template>
-
-                                    <!-- Notes -->
-                                    <div>
-                                        <label class="x-small text-muted">Stati & Note</label>
-                                        <textarea
-                                            class="form-control form-control-sm bg-dark text-white border-secondary p-1"
-                                            rows="2" x-model="actor.notes"></textarea>
                                     </div>
-
-                                </div>
-                            </div>
-                        </template>
-
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- MODALS -->
-
-        <!-- Load Session Modal -->
-        <div class="modal fade" x-show="loadSessionModal" x-cloak :class="{ 'show d-block': loadSessionModal }"
-            id="loadSessionModal" tabindex="-1" role="dialog" aria-hidden="true" @click.self="loadSessionModal = false"
-            :style="loadSessionModal ? 'background: rgba(0,0,0,0.8);' : ''">
-            <div class="modal-dialog">
-                <div class="modal-content bg-dark text-white border-secondary">
-                    <div class="modal-header border-secondary">
-                        <h5 class="modal-title">Carica Sessione Powerfail</h5>
-                        <button type="button" class="btn-close btn-close-white" @click="loadSessionModal = false"></button>
-                    </div>
-                    <div class="modal-body">
-                        <!-- New Session Option -->
-                        <button class="btn btn-success w-100 mb-2 py-2 fw-bold"
-                            @click="loadSessionModal = false; scene = { name: 'Nuova Scena', state: 'narrative', notes: '' }; actors = []; diceLog = []; currentSessionId = null;">
-                            <i class="bi bi-plus-circle"></i> Inizia Nuova Sessione
-                        </button>
-
-                        <div class="border-top border-secondary my-3"></div>
-
-                        <button class="btn btn-sm btn-outline-light mb-3 w-100" @click="loadSessionsList()">🔄 Aggiorna
-                            Lista</button>
-                        <div class="list-group">
-                            <template x-for="s in availableSessions" :key="s.id">
-                                <button
-                                    class="list-group-item list-group-item-action bg-dark text-white border-secondary d-flex justify-content-between"
-                                    @click="loadSession(s.id)">
-                                    <span x-text="s.name"></span>
-                                    <span class="small text-muted" x-text="new Date(s.updated_at).toLocaleString()"></span>
-                                </button>
                             </template>
-                            <div x-show="availableSessions.length === 0" class="text-center text-muted p-3">
-                                Nessuna sessione trovata.
-                            </div>
+
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Bestiary Modal -->
-        <div class="modal fade" x-show="bestiaryModal" x-cloak :class="{ 'show d-block': bestiaryModal }" id="bestiaryModal"
-            tabindex="-1" role="dialog" aria-hidden="true" @click.self="bestiaryModal = false"
-            :style="bestiaryModal ? 'background: rgba(0,0,0,0.8);' : ''">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content bg-dark text-white border-secondary">
-                    <div class="modal-header border-secondary">
-                        <h5 class="modal-title">Archivio Mostri & NPC</h5>
-                        <button type="button" class="btn-close btn-close-white" @click="bestiaryModal = false"></button>
-                    </div>
-                    <div class="modal-body">
-                        <!-- LIST VIEW -->
-                        <div x-show="bestiaryView === 'list'">
-                            <button class="btn btn-primary w-100 mb-3" @click="openMonsterForm()">
-                                <i class="bi bi-plus-circle"></i> Nuovo Mostro
+            <!-- MODALS -->
+
+            <!-- Load Session Modal -->
+            <div class="modal fade" x-show="loadSessionModal" x-cloak :class="{ 'show d-block': loadSessionModal }"
+                id="loadSessionModal" tabindex="-1" role="dialog" aria-hidden="true" @click.self="loadSessionModal = false"
+                :style="loadSessionModal ? 'background: rgba(0,0,0,0.8);' : ''">
+                <div class="modal-dialog">
+                    <div class="modal-content bg-dark text-white border-secondary">
+                        <div class="modal-header border-secondary">
+                            <h5 class="modal-title">Carica Sessione Powerfail</h5>
+                            <button type="button" class="btn-close btn-close-white"
+                                @click="loadSessionModal = false"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- New Session Option -->
+                            <button class="btn btn-success w-100 mb-2 py-2 fw-bold"
+                                @click="loadSessionModal = false; scene = { name: 'Nuova Scena', state: 'narrative', notes: '' }; actors = []; diceLog = []; currentSessionId = null;">
+                                <i class="bi bi-plus-circle"></i> Inizia Nuova Sessione
                             </button>
 
-                            <div class="row g-3">
-                                <template x-for="monster in bestiary" :key="monster.id">
-                                    <div class="col-md-6">
-                                        <div
-                                            class="card bg-secondary bg-opacity-10 border-secondary h-100 position-relative">
+                            <div class="border-top border-secondary my-3"></div>
 
-                                            <!-- Edit/Delete Controls -->
-                                            <div class="position-absolute top-0 end-0 p-1">
-                                                <button class="btn btn-sm btn-link text-warning p-0 me-1"
-                                                    @click="openMonsterForm(monster)">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-link text-danger p-0"
-                                                    @click="deleteMonster(monster.id)">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </div>
+                            <button class="btn btn-sm btn-outline-light mb-3 w-100" @click="loadSessionsList()">🔄 Aggiorna
+                                Lista</button>
+                            <div class="list-group">
+                                <template x-for="s in availableSessions" :key="s.id">
+                                    <button
+                                        class="list-group-item list-group-item-action bg-dark text-white border-secondary d-flex justify-content-between"
+                                        @click="loadSession(s.id)">
+                                        <span x-text="s.name"></span>
+                                        <span class="small text-muted"
+                                            x-text="new Date(s.updated_at).toLocaleString()"></span>
+                                    </button>
+                                </template>
+                                <div x-show="availableSessions.length === 0" class="text-center text-muted p-3">
+                                    Nessuna sessione trovata.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                                            <div class="card-body d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="mb-0 fw-bold" x-text="monster.name"></h6>
-                                                    <div class="small text-muted">
-                                                        HP: <span x-text="monster.stats?.hp || 0"></span> |
-                                                        <span class="badge bg-dark border border-secondary"
-                                                            x-text="monster.stats?.type || 'enemy'"></span>
-                                                    </div>
+            <!-- Bestiary Modal -->
+            <div class="modal fade" x-show="bestiaryModal" x-cloak :class="{ 'show d-block': bestiaryModal }"
+                id="bestiaryModal" tabindex="-1" role="dialog" aria-hidden="true" @click.self="bestiaryModal = false"
+                :style="bestiaryModal ? 'background: rgba(0,0,0,0.8);' : ''">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content bg-dark text-white border-secondary">
+                        <div class="modal-header border-secondary">
+                            <h5 class="modal-title">Archivio Mostri & NPC</h5>
+                            <button type="button" class="btn-close btn-close-white" @click="bestiaryModal = false"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- LIST VIEW -->
+                            <div x-show="bestiaryView === 'list'">
+                                <button class="btn btn-primary w-100 mb-3" @click="openMonsterForm()">
+                                    <i class="bi bi-plus-circle"></i> Nuovo Mostro
+                                </button>
+
+                                <div class="row g-3">
+                                    <template x-for="monster in bestiary" :key="monster.id">
+                                        <div class="col-md-6">
+                                            <div
+                                                class="card bg-secondary bg-opacity-10 border-secondary h-100 position-relative">
+
+                                                <!-- Edit/Delete Controls -->
+                                                <div class="position-absolute top-0 end-0 p-1">
+                                                    <button class="btn btn-sm btn-link text-warning p-0 me-1"
+                                                        @click="openMonsterForm(monster)">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-link text-danger p-0"
+                                                        @click="deleteMonster(monster.id)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
                                                 </div>
-                                                <button class="btn btn-sm btn-outline-success"
-                                                    @click="addFromBestiary(monster)">
-                                                    <i class="bi bi-plus-lg"></i>
-                                                </button>
+
+                                                <div class="card-body d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-0 fw-bold" x-text="monster.name"></h6>
+                                                        <div class="small text-muted">
+                                                            HP: <span x-text="monster.stats?.hp || 0"></span> |
+                                                            <span class="badge bg-dark border border-secondary"
+                                                                x-text="monster.stats?.type || 'enemy'"></span>
+                                                        </div>
+                                                    </div>
+                                                    <button class="btn btn-sm btn-outline-success"
+                                                        @click="addFromBestiary(monster)">
+                                                        <i class="bi bi-plus-lg"></i>
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
+                                    </template>
+                                    <div x-show="bestiary.length === 0" class="text-center text-muted col-12">
+                                        Nessun mostro in archivio.
                                     </div>
-                                </template>
-                                <div x-show="bestiary.length === 0" class="text-center text-muted col-12">
-                                    Nessun mostro in archivio.
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- FORM VIEW -->
-                        <div x-show="bestiaryView === 'form'">
-                            <h6 class="mb-3 border-bottom border-secondary pb-2">
-                                <span x-text="editingMonsterId ? 'Modifica Mostro' : 'Nuovo Mostro'"></span>
-                            </h6>
-                            <div class="row g-2">
-                                <div class="col-8">
-                                    <label class="small text-muted">Nome</label>
-                                    <input type="text" class="form-control bg-dark text-white border-secondary"
-                                        x-model="monsterForm.name">
-                                </div>
-                                <div class="col-4">
-                                    <label class="small text-muted">Tipo</label>
-                                    <select class="form-select bg-dark text-white border-secondary"
-                                        x-model="monsterForm.type">
-                                        <option value="enemy">Nemico</option>
-                                        <option value="minion">Minion</option>
-                                    </select>
-                                </div>
+                            <!-- FORM VIEW -->
+                            <div x-show="bestiaryView === 'form'">
+                                <h6 class="mb-3 border-bottom border-secondary pb-2">
+                                    <span x-text="editingMonsterId ? 'Modifica Mostro' : 'Nuovo Mostro'"></span>
+                                </h6>
+                                <div class="row g-2">
+                                    <div class="col-8">
+                                        <label class="small text-muted">Nome</label>
+                                        <input type="text" class="form-control bg-dark text-white border-secondary"
+                                            x-model="monsterForm.name">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="small text-muted">Tipo</label>
+                                        <select class="form-select bg-dark text-white border-secondary"
+                                            x-model="monsterForm.type">
+                                            <option value="enemy">Nemico</option>
+                                            <option value="minion">Minion</option>
+                                        </select>
+                                    </div>
 
-                                <div class="col-4">
-                                    <label class="small text-muted">FIS</label>
-                                    <input type="number" class="form-control bg-dark text-white border-secondary"
-                                        x-model.number="monsterForm.fis">
+                                    <div class="col-4">
+                                        <label class="small text-muted">FIS</label>
+                                        <input type="number" class="form-control bg-dark text-white border-secondary"
+                                            x-model.number="monsterForm.fis">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="small text-muted">MEN</label>
+                                        <input type="number" class="form-control bg-dark text-white border-secondary"
+                                            x-model.number="monsterForm.men">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="small text-muted">SOC</label>
+                                        <input type="number" class="form-control bg-dark text-white border-secondary"
+                                            x-model.number="monsterForm.soc">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="small text-muted">Note</label>
+                                        <textarea class="form-control bg-dark text-white border-secondary" rows="3"
+                                            x-model="monsterForm.notes"></textarea>
+                                    </div>
                                 </div>
-                                <div class="col-4">
-                                    <label class="small text-muted">MEN</label>
-                                    <input type="number" class="form-control bg-dark text-white border-secondary"
-                                        x-model.number="monsterForm.men">
+                                <div class="mt-3 d-flex justify-content-end gap-2">
+                                    <button class="btn btn-secondary" @click="bestiaryView = 'list'">Annulla</button>
+                                    <button class="btn btn-success" @click="saveMonster()">Salva</button>
                                 </div>
-                                <div class="col-4">
-                                    <label class="small text-muted">SOC</label>
-                                    <input type="number" class="form-control bg-dark text-white border-secondary"
-                                        x-model.number="monsterForm.soc">
-                                </div>
-                                <div class="col-12">
-                                    <label class="small text-muted">Note</label>
-                                    <textarea class="form-control bg-dark text-white border-secondary" rows="3"
-                                        x-model="monsterForm.notes"></textarea>
-                                </div>
-                            </div>
-                            <div class="mt-3 d-flex justify-content-end gap-2">
-                                <button class="btn btn-secondary" @click="bestiaryView = 'list'">Annulla</button>
-                                <button class="btn btn-success" @click="saveMonster()">Salva</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Help Modal -->
-        <div class="modal fade" :class="{ 'show d-block': helpModal }" id="helpModal" tabindex="-1"
-            style="background: rgba(0,0,0,0.8);" role="dialog" aria-hidden="true" @click.self="helpModal = false">
-            <div class="modal-dialog">
-                <div class="modal-content bg-dark text-white border-info">
-                    <div class="modal-header border-info">
-                        <h5 class="modal-title"><i class="bi bi-info-circle"></i> Regole Powerfail System</h5>
-                        <button type="button" class="btn-close btn-close-white" @click="helpModal = false"></button>
-                    </div>
-                    <div class="modal-body small">
-                        <ul class="list-unstyled">
-                            <li class="mb-2"><strong>🎲 Base:</strong> Tira una pool di d10.</li>
-                            <li class="mb-2"><strong>✅ Successo:</strong> Risultato 8+ (o 7+ a Lv.4+).</li>
-                            <li class="mb-2"><strong>❌ Fallimento:</strong> Risultato 1. Cancella 1 successo.</li>
-                            <li class="mb-2"><strong>💥 Esplosioni (Lv.2+):</strong> Ogni 10 permette di tirare un dado
-                                extra.</li>
-                            <li class="mb-2"><strong>🔄 Reroll (Lv.3+):</strong> Puoi ritirare 1 dado dal tavolo, ma SOLO
-                                dopo aver risolto tutte le esplosioni pendenti.</li>
-                        </ul>
-                        <div class="alert alert-info py-1 mb-0">
-                            Premi <strong>TIRA</strong> per iniziare. Se ottieni dei 10, appariranno i tasti per esplodere.
-                            Alla fine, <strong>Conferma</strong> per salvare nel log.
+            <!-- Help Modal -->
+            <div class="modal fade" :class="{ 'show d-block': helpModal }" id="helpModal" tabindex="-1"
+                style="background: rgba(0,0,0,0.8);" role="dialog" aria-hidden="true" @click.self="helpModal = false">
+                <div class="modal-dialog">
+                    <div class="modal-content bg-dark text-white border-info">
+                        <div class="modal-header border-info">
+                            <h5 class="modal-title"><i class="bi bi-info-circle"></i> Regole Powerfail System</h5>
+                            <button type="button" class="btn-close btn-close-white" @click="helpModal = false"></button>
+                        </div>
+                        <div class="modal-body small">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><strong>🎲 Base:</strong> Tira una pool di d10.</li>
+                                <li class="mb-2"><strong>✅ Successo:</strong> Risultato 8+ (o 7+ a Lv.4+).</li>
+                                <li class="mb-2"><strong>❌ Fallimento:</strong> Risultato 1. Cancella 1 successo.</li>
+                                <li class="mb-2"><strong>💥 Esplosioni (Lv.2+):</strong> Ogni 10 permette di tirare un dado
+                                    extra.</li>
+                                <li class="mb-2"><strong>🔄 Reroll (Lv.3+):</strong> Puoi ritirare 1 dado dal tavolo, ma
+                                    SOLO
+                                    dopo aver risolto tutte le esplosioni pendenti.</li>
+                            </ul>
+                            <div class="alert alert-info py-1 mb-0">
+                                Premi <strong>TIRA</strong> per iniziare. Se ottieni dei 10, appariranno i tasti per
+                                esplodere.
+                                Alla fine, <strong>Conferma</strong> per salvare nel log.
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
 
-    </div>
+        <script>
+            console.log("Defining powerfailMaster...");
+            window.powerfailMaster = function () {
+                console.log("Initializing Powerfail Component...");
+                return {
+                    scene: {
+                        name: 'Nuova Scena',
+                        state: 'narrative',
+                        notes: ''
+                    },
+                    actors: [],
+                    diceLog: [],
+                    currentSessionId: null,
+                    loadSessionModal: false,
+                    bestiaryModal: false,
+                    helpModal: false,
+                    availableSessions: [],
 
-    <script>
-        console.log("Defining powerfailMaster...");
-        window.powerfailMaster = function () {
-            console.log("Initializing Powerfail Component...");
-            return {
-                scene: {
-                    name: 'Nuova Scena',
-                    state: 'narrative',
-                    notes: ''
-                },
-                actors: [],
-                diceLog: [],
-                currentSessionId: null,
-                loadSessionModal: false,
-                bestiaryModal: false,
-                helpModal: false,
-                availableSessions: [],
+                    roller: {
+                        active: false,
+                        level: 1, // 1-5
+                        pool: 1,  // Number of dice
+                        generations: [], // [[dice...], [dice...]]
+                        rerollUsed: false
+                    },
 
-                roller: {
-                    active: false,
-                    level: 1, // 1-5
-                    pool: 1,  // Number of dice
-                    generations: [], // [[dice...], [dice...]]
-                    rerollUsed: false
-                },
+                    // Bestiary State
+                    bestiary: [],
+                    bestiaryView: 'list', // 'list' or 'form'
+                    editingMonsterId: null,
+                    monsterForm: { name: '', hp: 10, maxHp: 10, type: 'enemy', fis: 2, men: 2, soc: 2, notes: '' },
 
-                // Bestiary State
-                bestiary: [],
-                bestiaryView: 'list', // 'list' or 'form'
-                editingMonsterId: null,
-                monsterForm: { name: '', hp: 10, maxHp: 10, type: 'enemy', fis: 2, men: 2, soc: 2, notes: '' },
+                    init() {
+                        this.loadSessionsList();
+                        this.loadBestiary();
+                        // Auto-open load session modal on start
+                        this.loadSessionModal = true;
+                    },
 
-                init() {
-                    this.loadSessionsList();
-                    this.loadBestiary();
-                    // Auto-open load session modal on start
-                    this.loadSessionModal = true;
-                },
+                    // --- BESTIARY MANAGEMENT ---
 
-                // --- BESTIARY MANAGEMENT ---
-
-                async loadBestiary() {
-                    try {
-                        const response = await fetch('/dm/api/characters');
-                        if (!response.ok) return;
-                        const data = await response.json();
-                        // Filter for Powerfail system templates
-                        this.bestiary = data.filter(c => c.type === 'template' && c.stats?.system === 'powerfail');
-                    } catch (e) {
-                        console.error("Error loading bestiary", e);
-                    }
-                },
-
-                openMonsterForm(monster = null) {
-                    this.bestiaryView = 'form';
-                    if (monster) {
-                        this.editingMonsterId = monster.id;
-                        // Map stats back to form
-                        const s = monster.stats || {};
-                        this.monsterForm = {
-                            name: monster.name,
-                            type: s.type || 'enemy',
-                            fis: s.fis || 2,
-                            men: s.men || 2,
-                            soc: s.soc || 2,
-                            notes: s.notes || ''
-                        };
-                    } else {
-                        this.editingMonsterId = null;
-                        this.monsterForm = {
-                            name: '',
-                            type: 'enemy',
-                            fis: 2, men: 2, soc: 2,
-                            notes: ''
-                        };
-                    }
-                },
-
-                async saveMonster() {
-                    const payload = {
-                        name: this.monsterForm.name,
-                        type: 'template',
-                        stats: {
-                            system: 'powerfail',
-                            type: this.monsterForm.type,
-                            fis: this.monsterForm.fis,
-                            men: this.monsterForm.men,
-                            soc: this.monsterForm.soc,
-                            notes: this.monsterForm.notes
-                        }
-                    };
-
-                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    const headers = { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token };
-
-                    try {
-                        let url = '/dm/api/characters';
-                        let method = 'POST';
-
-                        if (this.editingMonsterId) {
-                            url += `/${this.editingMonsterId}`;
-                            method = 'PATCH';
-                        }
-
-                        const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
-                        if (res.ok) {
-                            await this.loadBestiary();
-                            this.bestiaryView = 'list';
-                        } else {
-                            alert("Errore salvataggio mostro");
-                        }
-                    } catch (e) {
-                        console.error(e);
-                        alert("Errore di connessione");
-                    }
-                },
-
-                async deleteMonster(id) {
-                    if (!confirm("Eliminare definitivamente questo mostro?")) return;
-                    try {
-                        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                        const res = await fetch(`/dm/api/characters/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': token } });
-                        if (res.ok) {
-                            await this.loadBestiary();
-                        } else {
-                            alert("Errore eliminazione");
-                        }
-                    } catch (e) { console.error(e); }
-                },
-
-                addActor(type) {
-                    const isPc = type === 'pc';
-                    this.actors.push({
-                        id: Date.now(),
-                        type: type,
-                        name: isPc ? 'Nuovo Giocatore' : (type === 'minion' ? 'Minion' : 'Nemico'),
-                        damage: 0,  // Current damage points (Inabion system)
-                        fatigue: 0,
-                        initiative: 0,
-                        // PCs use Inabion 6 characteristics (Fisiche, Mente, Anima), others use simplified 3
-                        stats: isPc ? {
-                            vig: 2, des: 2,          // Fisiche
-                            int: 2, rag: 2,          // Mente
-                            car: 2, spi: 2           // Anima
-                        } : {
-                            fis: 2, men: 2, soc: 2
-                        },
-                        notes: '',
-                        statusMessage: ''
-                    });
-                },
-
-                addFromBestiary(monster) {
-                    const s = monster.stats || {};
-                    const type = s.type === 'minion' ? 'minion' : 'enemy';
-
-                    // Bestiary is mostly enemies, so use 3 stats or 6 if needed.
-                    // For now, assume bestiary = simplified stats unless 'pc' (rare for bestiary).
-                    // If complex NPC, we might need 6 stats, but current bestiary logic supports simplified.
-
-                    this.actors.push({
-                        id: Date.now(),
-                        type: type,
-                        name: monster.name,
-                        damage: 0,  // Current damage points
-                        fatigue: 0,
-                        initiative: 0,
-                        stats: {
-                            fis: s.fis || 2,
-                            men: s.men || 2,
-                            soc: s.soc || 2
-                        },
-                        notes: s.notes || '',
-                        statusMessage: ''
-                    });
-                    this.bestiaryModal = false;
-                },
-
-                cloneActor(actor) {
-                    const count = prompt(`Quante copie di ${actor.name} vuoi creare?`, "1");
-                    const num = parseInt(count);
-                    if (!num || num < 1) return;
-
-                    for (let i = 0; i < num; i++) {
-                        const clone = JSON.parse(JSON.stringify(actor));
-                        clone.id = Date.now() + i; // Ensure unique ID
-                        clone.name = `${actor.name} ${i + 1}`;
-                        this.actors.push(clone);
-                    }
-                },
-
-                removeActor(index) {
-                    if (confirm('Rimuovere questo attore?')) {
-                        this.actors.splice(index, 1);
-                    }
-                },
-
-                checkHpTriggers(actor) {
-                    // Kept for minions compatibility, but PCs use getDamageState
-                    if (actor.type === 'minion') {
-                        const threshold = (actor.stats.fis || 2) * 2;
-                        if (actor.damage >= threshold * 1) {
-                            actor.statusMessage = 'ELIMINATO - Rimuovi dal gioco';
-                        } else if (actor.damage >= threshold * 0.5) {
-                            actor.statusMessage = 'FERITO - -1 Azione';
-                        } else {
-                            actor.statusMessage = '';
-                        }
-                    }
-                },
-
-                getDamageState(actor) {
-                    // Inabion damage system: thresholds based on VIG * 2
-                    const vig = actor.stats.vig || actor.stats.fis || 2;
-                    const base = vig * 2;
-                    const dmg = actor.damage || 0;
-
-                    if (dmg === 0) return { state: 'Illeso', penalty: '', class: 'text-success' };
-                    if (dmg <= base * 1) return { state: 'Malconcio', penalty: '', class: 'text-warning' };
-                    if (dmg <= base * 2) return { state: 'Contuso', penalty: '-1 azione', class: 'text-warning' };
-                    if (dmg <= base * 3) return { state: 'Colpito', penalty: '-2 azioni', class: 'text-danger' };
-                    if (dmg <= base * 4) return { state: 'Ferito', penalty: 'Trauma, -3 azioni', class: 'text-danger fw-bold' };
-                    return { state: 'Inerme', penalty: 'Altro Trauma, Nessuna azione', class: 'bg-danger text-white' };
-                },
-
-                // --- DICE LOGIC REVISED ---
-
-                isSuccess(die) {
-                    const threshold = this.roller.level >= 4 ? 7 : 8;
-                    return die >= threshold;
-                },
-
-                canReroll() {
-                    return this.roller.level >= 3 && !this.roller.rerollUsed && this.countTens() === 0;
-                },
-
-                rollDice() {
-                    if (this.roller.pool < 1) return;
-                    this.roller.active = true;
-                    this.roller.generations = [];
-                    this.roller.rerollUsed = false;
-
-                    // Initial Roll
-                    this.performRoll(this.roller.pool);
-                },
-
-                performRoll(count) {
-                    const results = [];
-                    for (let i = 0; i < count; i++) {
-                        results.push(Math.floor(Math.random() * 10) + 1);
-                    }
-                    this.roller.generations.push(results);
-                },
-
-                rerollDie(genIdx, dieIdx) {
-                    if (!this.canReroll()) {
-                        alert("Puoi ritirare solo se NON ci sono esplosioni pendenti!");
-                        return;
-                    }
-
-                    this.roller.generations[genIdx][dieIdx] = Math.floor(Math.random() * 10) + 1;
-                    this.roller.rerollUsed = true;
-                    // Force reactivity if needed, but typically assignment works. 
-                    // Let's use a splice to be 100% sure for Alpine
-                    // this.roller.generations[genIdx].splice(dieIdx, 1, val);
-                    // But standard assignment is fine in modern Alpine.
-                },
-
-                explode(count) {
-                    // count is number of dice to roll (logic handled by UI buttons passing specific count)
-                    // If user clicks "Explode 2", we roll 2 dice.
-                    // We do NOT clear the 'pending' explosions because 
-                    // the user might have more 10s in the new roll.
-                    // Actually, the UI calculates ALL 10s currently on board.
-                    // If I roll 2 new dice and get a 10, the countTens() increases.
-                    // The UI button says "Roll X".
-                    if (count > 0) {
-                        this.performRoll(count);
-                    } else {
-                        // If user explicitly chooses "0" or "None", maybe finalize?
-                        // For now, let's just do nothing or finalize.
-                        // The user can click "Conferma" to finish.
-                    }
-                },
-
-                countTens() {
-                    // Count 10s in the Last Generation? Or ALL generations?
-                    // Typically explosions happen on the *newly* rolled 10s.
-                    // If I rolled 3 tens in gen 1, I explode 3.
-                    // If I get 1 ten in gen 2, I explode 1.
-                    // So I should only count 10s in the LAST generation?
-                    // "Quando hai una abilità al livello 2 Il dieci esplode"
-                    // Usually this means indefinite explosions.
-                    // The UI should probably offer to roll for 10s in the LAST generation.
-                    // Because previous generations were already handled.
-                    if (this.roller.generations.length === 0) return 0;
-                    const lastGen = this.roller.generations[this.roller.generations.length - 1];
-                    return lastGen.filter(d => d === 10).length;
-                },
-
-                finalizeRoll() {
-                    // Calculate totals
-                    let netSuccesses = 0;
-                    let failures = 0;
-                    const threshold = this.roller.level >= 4 ? 7 : 8;
-
-                    let allDice = [];
-                    this.roller.generations.forEach(gen => {
-                        gen.forEach(die => {
-                            allDice.push(die);
-                            if (die >= threshold) netSuccesses++;
-                            if (die === 1) failures++;
-                        });
-                    });
-
-                    // Failures cancel successes (usually? or mostly just narrative complications? In previous logic it was net)
-                    // Assuming net:
-                    netSuccesses = Math.max(0, netSuccesses - failures);
-
-                    this.diceLog.unshift({
-                        time: new Date().toLocaleTimeString(),
-                        generations: JSON.parse(JSON.stringify(this.roller.generations)),
-                        successes: netSuccesses,
-                        failures: failures,
-                        level: this.roller.level,
-                        source: 'Master'
-                    });
-
-                    // Reset Active State
-                    this.roller.active = false;
-                    this.roller.generations = [];
-                },
-
-                quickRoll(actor, skillName) {
-                    this.roller.level = 3;
-
-                    if (actor.type === 'pc') {
-                        // Inabion system: VIG for melee, DES for ranged, INT for technical
-                        const s = actor.stats || {};
-                        let pool = 2;
-                        switch (skillName) {
-                            case 'mischia': pool = (s.vig || 2); break;  // Vigore for melee
-                            case 'tiro': pool = (s.des || 2); break;     // Destrezza for ranged
-                            case 'tecnica': pool = (s.int || 2); break;  // Intuito for technical
-                            default: pool = 2;
-                        }
-                        this.roller.pool = Math.max(1, pool);
-                    } else {
-                        // Minion/Enemy logic (3 stats)
-                        const s = actor.stats || {};
-                        const fis = s.fis || 2;
-                        const men = s.men || 2;
-
-                        // Heuristic mapping
-                        if (skillName === 'mischia') this.roller.pool = fis;
-                        else if (skillName === 'tiro') this.roller.pool = Math.max(1, fis - 1); // slightly less
-                        else if (skillName === 'tecnica') this.roller.pool = men;
-                        else this.roller.pool = 2;
-                    }
-
-                    this.rollDice();
-                },
-
-                rollInitiative(actor) {
-                    const d10 = Math.floor(Math.random() * 10) + 1;
-                    let modifier = 0;
-
-                    if (actor.type === 'pc') {
-                        modifier = actor.stats.des || 0;
-                    } else {
-                        modifier = actor.stats.fis || 0;
-                    }
-
-                    actor.initiative = d10 + modifier;
-                },
-
-                sortActorsByInitiative() {
-                    this.actors.sort((a, b) => (b.initiative || 0) - (a.initiative || 0));
-                },
-
-                // --- SESSION PERSISTENCE ---
-
-                async saveSession() {
-                    const payload = {
-                        name: this.scene.name,
-                        system: 'powerfail',
-                        data: {
-                            scene: this.scene,
-                            actors: this.actors,
-                            diceLog: this.diceLog
-                        }
-                    };
-
-                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    const headers = { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token };
-
-                    try {
-                        let response;
-                        if (!this.currentSessionId) {
-                            const name = prompt("Nome della nuova sessione:", this.scene.name);
-                            if (!name) return;
-                            this.scene.name = name;
-                            payload.name = name;
-
-                            response = await fetch('/dm/api/sessions', { method: 'POST', headers, body: JSON.stringify(payload) });
-                        } else {
-                            response = await fetch(`/dm/api/sessions/${this.currentSessionId}`, { method: 'PATCH', headers, body: JSON.stringify(payload) });
-                        }
-
-                        if (response.ok) {
+                    async loadBestiary() {
+                        try {
+                            const response = await fetch('/dm/api/characters');
+                            if (!response.ok) return;
                             const data = await response.json();
-                            if (data.id) this.currentSessionId = data.id; // update ID if new
-                            alert('Sessione salvata!');
-                            this.loadSessionsList(); // Refresh list
-                        } else {
-                            alert('Errore server nel salvataggio.');
+                            // Filter for Powerfail system templates
+                            this.bestiary = data.filter(c => c.type === 'template' && c.stats?.system === 'powerfail');
+                        } catch (e) {
+                            console.error("Error loading bestiary", e);
                         }
-                    } catch (e) {
-                        alert('Errore: ' + e);
-                    }
-                },
+                    },
 
-                async loadSessionsList() {
-                    try {
-                        const response = await fetch('/dm/api/sessions');
-                        if (!response.ok) {
-                            console.warn('API Sessioni non raggiungibile o errore server.');
+                    openMonsterForm(monster = null) {
+                        this.bestiaryView = 'form';
+                        if (monster) {
+                            this.editingMonsterId = monster.id;
+                            // Map stats back to form
+                            const s = monster.stats || {};
+                            this.monsterForm = {
+                                name: monster.name,
+                                type: s.type || 'enemy',
+                                fis: s.fis || 2,
+                                men: s.men || 2,
+                                soc: s.soc || 2,
+                                notes: s.notes || ''
+                            };
+                        } else {
+                            this.editingMonsterId = null;
+                            this.monsterForm = {
+                                name: '',
+                                type: 'enemy',
+                                fis: 2, men: 2, soc: 2,
+                                notes: ''
+                            };
+                        }
+                    },
+
+                    async saveMonster() {
+                        const payload = {
+                            name: this.monsterForm.name,
+                            type: 'template',
+                            stats: {
+                                system: 'powerfail',
+                                type: this.monsterForm.type,
+                                fis: this.monsterForm.fis,
+                                men: this.monsterForm.men,
+                                soc: this.monsterForm.soc,
+                                notes: this.monsterForm.notes
+                            }
+                        };
+
+                        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        const headers = { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token };
+
+                        try {
+                            let url = '/dm/api/characters';
+                            let method = 'POST';
+
+                            if (this.editingMonsterId) {
+                                url += `/${this.editingMonsterId}`;
+                                method = 'PATCH';
+                            }
+
+                            const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
+                            if (res.ok) {
+                                await this.loadBestiary();
+                                this.bestiaryView = 'list';
+                            } else {
+                                alert("Errore salvataggio mostro");
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            alert("Errore di connessione");
+                        }
+                    },
+
+                    async deleteMonster(id) {
+                        if (!confirm("Eliminare definitivamente questo mostro?")) return;
+                        try {
+                            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                            const res = await fetch(`/dm/api/characters/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': token } });
+                            if (res.ok) {
+                                await this.loadBestiary();
+                            } else {
+                                alert("Errore eliminazione");
+                            }
+                        } catch (e) { console.error(e); }
+                    },
+
+                    // --- ACTOR MANAGEMENT ---
+
+                    addActor(type) {
+                        const isPc = type === 'pc';
+                        this.actors.push({
+                            id: Date.now(),
+                            type: type,
+                            name: isPc ? 'Nuovo Giocatore' : (type === 'minion' ? 'Minion' : 'Nemico'),
+                            damage: 0,
+                            fatigue: 0,
+                            traumas: 0,
+                            initiative: 0,
+                            defenses: { mischia: 0, tiro: 0, magia: 0 },
+                            // PCs use Inabion 6 characteristics (Fisiche, Mente, Anima), others use simplified 3
+                            stats: isPc ? {
+                                vig: 2, des: 2,          // Fisiche
+                                int: 2, rag: 2,          // Mente
+                                car: 2, spi: 2           // Anima
+                            } : {
+                                fis: 2, men: 2, soc: 2
+                            },
+                            notes: '',
+                            statusMessage: ''
+                        });
+                    },
+
+                    nextTurn() {
+                        if (this.actors.length === 0) return;
+                        this.activeActorIndex = (this.activeActorIndex + 1) % this.actors.length;
+                    },
+
+                    addFromBestiary(monster) {
+                        const s = monster.stats || {};
+                        const type = s.type === 'minion' ? 'minion' : 'enemy';
+
+                        // Bestiary is mostly enemies, so use 3 stats or 6 if needed.
+                        // For now, assume bestiary = simplified stats unless 'pc' (rare for bestiary).
+                        // If complex NPC, we might need 6 stats, but current bestiary logic supports simplified.
+
+                        this.actors.push({
+                            id: Date.now(),
+                            type: type,
+                            name: monster.name,
+                            damage: 0,  // Current damage points
+                            fatigue: 0,
+                            traumas: 0,
+                            initiative: 0,
+                            defenses: { mischia: 0, tiro: 0, magia: 0 },
+                            stats: {
+                                fis: s.fis || 2,
+                                men: s.men || 2,
+                                soc: s.soc || 2
+                            },
+                            notes: s.notes || '',
+                            statusMessage: ''
+                        });
+                        this.bestiaryModal = false;
+                    },
+
+                    cloneActor(actor) {
+                        const count = prompt(`Quante copie di ${actor.name} vuoi creare?`, "1");
+                        const num = parseInt(count);
+                        if (!num || num < 1) return;
+
+                        for (let i = 0; i < num; i++) {
+                            const clone = JSON.parse(JSON.stringify(actor));
+                            clone.id = Date.now() + i; // Ensure unique ID
+                            clone.name = `${actor.name} ${i + 1}`;
+                            this.actors.push(clone);
+                        }
+                    },
+
+                    removeActor(index) {
+                        if (confirm('Rimuovere questo attore?')) {
+                            this.actors.splice(index, 1);
+                        }
+                    },
+
+                    checkHpTriggers(actor) {
+                        // Kept for minions compatibility, but PCs use getDamageState
+                        if (actor.type === 'minion') {
+                            const threshold = (actor.stats.fis || 2) * 2;
+                            if (actor.damage >= threshold * 1) {
+                                actor.statusMessage = 'ELIMINATO - Rimuovi dal gioco';
+                            } else if (actor.damage >= threshold * 0.5) {
+                                actor.statusMessage = 'FERITO - -1 Azione';
+                            } else {
+                                actor.statusMessage = '';
+                            }
+                        }
+                    },
+
+                    getDamageState(actor) {
+                        // Inabion damage system: thresholds based on VIG * 2
+                        const vig = actor.stats.vig || actor.stats.fis || 2;
+                        const base = vig * 2;
+                        const dmg = actor.damage || 0;
+
+                        // Thresholds: Illeso (0 to base*1), Malconcio (base*1+1 to base*2), etc.
+                        if (dmg <= base * 1) return { state: 'Illeso', penalty: '', class: 'text-success' };
+                        if (dmg <= base * 2) return { state: 'Malconcio', penalty: '', class: 'text-warning' };
+                        if (dmg <= base * 3) return { state: 'Contuso', penalty: '-1 azione', class: 'text-warning' };
+                        if (dmg <= base * 4) return { state: 'Colpito', penalty: '-2 azioni', class: 'text-danger' };
+                        if (dmg <= base * 5) return { state: 'Ferito', penalty: 'Trauma, -3 azioni', class: 'text-danger fw-bold' };
+                        return { state: 'Inerme', penalty: 'Altro Trauma, Nessuna azione', class: 'bg-danger text-white' };
+                    },
+
+                    // --- DICE LOGIC REVISED ---
+
+                    isSuccess(die) {
+                        const threshold = this.roller.level >= 4 ? 7 : 8;
+                        return die >= threshold;
+                    },
+
+                    canReroll() {
+                        return this.roller.level >= 3 && !this.roller.rerollUsed && this.countTens() === 0;
+                    },
+
+                    rollDice() {
+                        if (this.roller.pool < 1) return;
+                        this.roller.active = true;
+                        this.roller.generations = [];
+                        this.roller.rerollUsed = false;
+
+                        // Initial Roll
+                        this.performRoll(this.roller.pool);
+                    },
+
+                    performRoll(count) {
+                        const results = [];
+                        for (let i = 0; i < count; i++) {
+                            results.push(Math.floor(Math.random() * 10) + 1);
+                        }
+                        this.roller.generations.push(results);
+                    },
+
+                    rerollDie(genIdx, dieIdx) {
+                        if (!this.canReroll()) {
+                            alert("Puoi ritirare solo se NON ci sono esplosioni pendenti!");
                             return;
                         }
-                        const sessions = await response.json();
-                        if (Array.isArray(sessions)) {
-                            this.availableSessions = sessions.filter(s => s.system === 'powerfail');
+
+                        this.roller.generations[genIdx][dieIdx] = Math.floor(Math.random() * 10) + 1;
+                        this.roller.rerollUsed = true;
+                        // Force reactivity if needed, but typically assignment works. 
+                        // Let's use a splice to be 100% sure for Alpine
+                        // this.roller.generations[genIdx].splice(dieIdx, 1, val);
+                        // But standard assignment is fine in modern Alpine.
+                    },
+
+                    explode(count) {
+                        // count is number of dice to roll (logic handled by UI buttons passing specific count)
+                        // If user clicks "Explode 2", we roll 2 dice.
+                        // We do NOT clear the 'pending' explosions because 
+                        // the user might have more 10s in the new roll.
+                        // Actually, the UI calculates ALL 10s currently on board.
+                        // If I roll 2 new dice and get a 10, the countTens() increases.
+                        // The UI button says "Roll X".
+                        if (count > 0) {
+                            this.performRoll(count);
                         } else {
-                            console.error('Formato risposta sessioni non valido:', sessions);
+                            // If user explicitly chooses "0" or "None", maybe finalize?
+                            // For now, let's just do nothing or finalize.
+                            // The user can click "Conferma" to finish.
+                        }
+                    },
+
+                    countTens() {
+                        // Count 10s in the Last Generation? Or ALL generations?
+                        // Typically explosions happen on the *newly* rolled 10s.
+                        // If I rolled 3 tens in gen 1, I explode 3.
+                        // If I get 1 ten in gen 2, I explode 1.
+                        // So I should only count 10s in the LAST generation?
+                        // "Quando hai una abilità al livello 2 Il dieci esplode"
+                        // Usually this means indefinite explosions.
+                        // The UI should probably offer to roll for 10s in the LAST generation.
+                        // Because previous generations were already handled.
+                        if (this.roller.generations.length === 0) return 0;
+                        const lastGen = this.roller.generations[this.roller.generations.length - 1];
+                        return lastGen.filter(d => d === 10).length;
+                    },
+
+                    finalizeRoll() {
+                        // Calculate totals
+                        let netSuccesses = 0;
+                        let failures = 0;
+                        const threshold = this.roller.level >= 4 ? 7 : 8;
+
+                        let allDice = [];
+                        this.roller.generations.forEach(gen => {
+                            gen.forEach(die => {
+                                allDice.push(die);
+                                if (die >= threshold) netSuccesses++;
+                                if (die === 1) failures++;
+                            });
+                        });
+
+                        // Failures cancel successes (usually? or mostly just narrative complications? In previous logic it was net)
+                        // Assuming net:
+                        netSuccesses = Math.max(0, netSuccesses - failures);
+
+                        this.diceLog.unshift({
+                            time: new Date().toLocaleTimeString(),
+                            generations: JSON.parse(JSON.stringify(this.roller.generations)),
+                            successes: netSuccesses,
+                            failures: failures,
+                            level: this.roller.level,
+                            source: 'Master'
+                        });
+
+                        // Reset Active State
+                        this.roller.active = false;
+                        this.roller.generations = [];
+                    },
+
+                    quickRoll(actor, skillName) {
+                        this.roller.level = 3;
+
+                        if (actor.type === 'pc') {
+                            // Inabion system: VIG for melee, DES for ranged, INT for technical
+                            const s = actor.stats || {};
+                            let pool = 2;
+                            switch (skillName) {
+                                case 'mischia': pool = (s.vig || 2); break;  // Vigore for melee
+                                case 'tiro': pool = (s.des || 2); break;     // Destrezza for ranged
+                                case 'tecnica': pool = (s.int || 2); break;  // Intuito for technical
+                                case 'magia': pool = (s.spi || 2); break;
+                                default: pool = 2;
+                            }
+                            this.roller.pool = Math.max(1, pool);
+                        } else {
+                            // Minion/Enemy logic (3 stats)
+                            const s = actor.stats || {};
+                            const fis = s.fis || 2;
+                            const men = s.men || 2;
+                            const soc = s.soc || 2;
+
+                            // Heuristic mapping
+                            if (skillName === 'mischia') this.roller.pool = fis;
+                            else if (skillName === 'tiro') this.roller.pool = Math.max(1, fis - 1); // slightly less
+                            else if (skillName === 'tecnica') this.roller.pool = men;
+                            else if (skillName === 'magia') this.roller.pool = men;
+                            else this.roller.pool = soc;
+                        }
+
+                        this.rollDice();
+                    },
+
+                    rollInitiative(actor) {
+                        const d10 = Math.floor(Math.random() * 10) + 1;
+                        let modifier = 0;
+
+                        if (actor.type === 'pc') {
+                            modifier = actor.stats.des || 0;
+                        } else {
+                            modifier = actor.stats.fis || 0;
+                        }
+
+                        actor.initiative = d10 + modifier;
+                    },
+
+                    sortActorsByInitiative() {
+                        this.actors.sort((a, b) => (b.initiative || 0) - (a.initiative || 0));
+                        this.activeActorIndex = 0; // Reset turn to top after sorting
+                    },
+
+                    // --- SESSION PERSISTENCE ---
+
+                    async saveSession() {
+                        const payload = {
+                            name: this.scene.name,
+                            system: 'powerfail',
+                            data: {
+                                scene: this.scene,
+                                actors: this.actors,
+                                diceLog: this.diceLog
+                            }
+                        };
+
+                        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        const headers = { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token };
+
+                        try {
+                            let response;
+                            if (!this.currentSessionId) {
+                                const name = prompt("Nome della nuova sessione:", this.scene.name);
+                                if (!name) return;
+                                this.scene.name = name;
+                                payload.name = name;
+
+                                response = await fetch('/dm/api/sessions', { method: 'POST', headers, body: JSON.stringify(payload) });
+                            } else {
+                                response = await fetch(`/dm/api/sessions/${this.currentSessionId}`, { method: 'PATCH', headers, body: JSON.stringify(payload) });
+                            }
+
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (data.id) this.currentSessionId = data.id; // update ID if new
+                                alert('Sessione salvata!');
+                                this.loadSessionsList(); // Refresh list
+                            } else {
+                                alert('Errore server nel salvataggio.');
+                            }
+                        } catch (e) {
+                            alert('Errore: ' + e);
+                        }
+                    },
+
+                    async loadSessionsList() {
+                        try {
+                            const response = await fetch('/dm/api/sessions');
+                            if (!response.ok) {
+                                console.warn('API Sessioni non raggiungibile o errore server.');
+                                return;
+                            }
+                            const sessions = await response.json();
+                            if (Array.isArray(sessions)) {
+                                this.availableSessions = sessions.filter(s => s.system === 'powerfail');
+                            } else {
+                                console.error('Formato risposta sessioni non valido:', sessions);
+                                this.availableSessions = [];
+                            }
+                        } catch (e) {
+                            console.error("Errore init sessioni:", e);
                             this.availableSessions = [];
                         }
-                    } catch (e) {
-                        console.error("Errore init sessioni:", e);
-                        this.availableSessions = [];
-                    }
-                },
+                    },
 
-                async loadSession(id) {
-                    try {
-                        const response = await fetch(`/dm/api/sessions/${id}`);
-                        const session = await response.json();
+                    async loadSession(id) {
+                        try {
+                            const response = await fetch(`/dm/api/sessions/${id}`);
+                            const session = await response.json();
 
-                        this.currentSessionId = session.id;
-                        this.scene = session.data.scene || this.scene;
-                        this.actors = session.data.actors || [];
-                        this.diceLog = session.data.diceLog || [];
+                            this.currentSessionId = session.id;
+                            this.scene = session.data.scene || this.scene;
+                            this.actors = session.data.actors || [];
+                            this.diceLog = session.data.diceLog || [];
 
-                        this.loadSessionModal = false;
-                        console.log("Loaded Session:", this.currentSessionId);
-                    } catch (e) {
-                        console.error("Load failed", e);
-                        alert("Errore caricamento sessione.");
+                            this.loadSessionModal = false;
+                            console.log("Loaded Session:", this.currentSessionId);
+                        } catch (e) {
+                            console.error("Load failed", e);
+                            alert("Errore caricamento sessione.");
+                        }
                     }
                 }
             }
-        }
-    </script>
+        </script>
 
-    <style>
-        .x-small {
-            font-size: 0.75rem;
-        }
+        <style>
+            .x-small {
+                font-size: 0.75rem;
+            }
 
-        .btn-xs {
-            padding: 0.1rem 0.3rem;
-            font-size: 0.7rem;
-        }
+            .btn-xs {
+                padding: 0.1rem 0.3rem;
+                font-size: 0.7rem;
+            }
 
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 6px;
+            }
 
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #666;
-            border-radius: 3px;
-        }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #666;
+                border-radius: 3px;
+            }
 
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #222;
-        }
-    </style>
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: #222;
+            }
+        </style>
 @endsection
