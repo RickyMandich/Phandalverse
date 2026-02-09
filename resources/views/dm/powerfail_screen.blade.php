@@ -109,12 +109,12 @@
                                                 <button
                                                     class="btn btn-sm p-0 d-flex justify-content-center align-items-center rounded-circle"
                                                     style="width: 28px; height: 28px;" :class="{
-                                                                                        'btn-success': isSuccess(die),
-                                                                                        'btn-danger': die === 1,
-                                                                                        'btn-secondary': !isSuccess(die) && die !== 1,
-                                                                                        'border border-warning border-2': die === 10
-                                                                                    }" @click="rerollDie(genIdx, dieIdx)"
-                                                    :disabled="!canReroll()"
+                                                                                                    'btn-success': isSuccess(die),
+                                                                                                    'btn-danger': die === 1,
+                                                                                                    'btn-secondary': !isSuccess(die) && die !== 1,
+                                                                                                    'border border-warning border-2': die === 10
+                                                                                                }"
+                                                    @click="rerollDie(genIdx, dieIdx)" :disabled="!canReroll()"
                                                     :title="canReroll() ? 'Clicca per ritirare (Livello 3+)' : ''">
                                                     <span class="fw-bold" x-text="die"></span>
                                                 </button>
@@ -163,16 +163,16 @@
 
                                     <!-- Log Generations -->
                                     <template x-for="(gen, genIdx) in log.generations" :key="genIdx">
-                                        <div class="d-flex gap-2 align-items-center mt-1">
+                                        <div class="d-flex gap-2 align-items-center mb-1 mt-1">
                                             <!-- <span class="text-muted x-small">W<span x-text="genIdx + 1"></span></span> -->
                                             <div class="d-flex flex-wrap gap-1">
                                                 <template x-for="die in gen">
                                                     <span class="badge" :class="{
-                                                                                            'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
-                                                                                            'bg-danger': die === 1, 
-                                                                                            'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
-                                                                                            'border border-warning': die === 10
-                                                                                        }" x-text="die"></span>
+                                                                                                        'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
+                                                                                                        'bg-danger': die === 1, 
+                                                                                                        'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
+                                                                                                        'border border-warning': die === 10
+                                                                                                    }" x-text="die"></span>
                                                 </template>
                                             </div>
                                         </div>
@@ -214,17 +214,17 @@
 
                         <template x-for="(actor, index) in actors" :key="actor.id">
                             <div class="card border-0 shadow-lg" style="width: 300px;" :class="{
-                                                                'bg-dark': actor.type === 'pc',
-                                                                'bg-danger bg-opacity-10': actor.type === 'enemy',
-                                                                'bg-secondary bg-opacity-10': actor.type === 'minion'
-                                                            }">
+                                                                            'bg-dark': actor.type === 'pc',
+                                                                            'bg-danger bg-opacity-10': actor.type === 'enemy',
+                                                                            'bg-secondary bg-opacity-10': actor.type === 'minion'
+                                                                        }">
 
                                 <!-- Header Attore -->
                                 <div class="card-header py-1 d-flex justify-content-between align-items-center" :class="{
-                                                                    'bg-info text-dark': actor.type === 'pc',
-                                                                    'bg-danger text-white': actor.type === 'enemy',
-                                                                    'bg-secondary text-white': actor.type === 'minion'
-                                                                }">
+                                                                                'bg-info text-dark': actor.type === 'pc',
+                                                                                'bg-danger text-white': actor.type === 'enemy',
+                                                                                'bg-secondary text-white': actor.type === 'minion'
+                                                                            }">
                                     <input type="text"
                                         class="form-control form-control-sm bg-transparent border-0 fw-bold p-0"
                                         :class="actor.type === 'pc' ? 'text-dark' : 'text-white'" x-model="actor.name">
@@ -330,8 +330,8 @@
         <!-- MODALS -->
 
         <!-- Load Session Modal -->
-        <div class="modal fade" id="loadSessionModal" tabindex="-1" style="display: block; background: rgba(0,0,0,0.8);"
-            x-show="loadSessionModal" x-transition.opacity>
+        <div class="modal fade" :class="{ 'show': loadSessionModal }" id="loadSessionModal" tabindex="-1"
+            style="display: block; background: rgba(0,0,0,0.8);" x-show="loadSessionModal" x-transition.opacity>
             <div class="modal-dialog">
                 <div class="modal-content bg-dark text-white border-secondary">
                     <div class="modal-header border-secondary">
@@ -360,8 +360,8 @@
         </div>
 
         <!-- Bestiary Modal -->
-        <div class="modal fade" id="bestiaryModal" tabindex="-1" style="display: block; background: rgba(0,0,0,0.8);"
-            x-show="bestiaryModal" x-transition.opacity>
+        <div class="modal fade" :class="{ 'show': bestiaryModal }" id="bestiaryModal" tabindex="-1"
+            style="display: block; background: rgba(0,0,0,0.8);" x-show="bestiaryModal" x-transition.opacity>
             <div class="modal-dialog modal-lg">
                 <div class="modal-content bg-dark text-white border-secondary">
                     <div class="modal-header border-secondary">
@@ -397,8 +397,9 @@
         </div>
 
         <!-- Help Modal -->
-        <div class="modal fade" id="helpModal" tabindex="-1" style="display: block; background: rgba(0,0,0,0.8);"
-            x-show="helpModal" x-transition.opacity @click.self="helpModal = false">
+        <div class="modal fade" :class="{ 'show': helpModal }" id="helpModal" tabindex="-1"
+            style="display: block; background: rgba(0,0,0,0.8);" x-show="helpModal" x-transition.opacity
+            @click.self="helpModal = false">
             <div class="modal-dialog">
                 <div class="modal-content bg-dark text-white border-info">
                     <div class="modal-header border-info">
@@ -692,9 +693,23 @@
                 },
 
                 async loadSessionsList() {
-                    const response = await fetch('/dm/api/sessions');
-                    const sessions = await response.json();
-                    this.availableSessions = sessions.filter(s => s.system === 'powerfail');
+                    try {
+                        const response = await fetch('/dm/api/sessions');
+                        if (!response.ok) {
+                            console.warn('API Sessioni non raggiungibile o errore server.');
+                            return;
+                        }
+                        const sessions = await response.json();
+                        if (Array.isArray(sessions)) {
+                            this.availableSessions = sessions.filter(s => s.system === 'powerfail');
+                        } else {
+                            console.error('Formato risposta sessioni non valido:', sessions);
+                            this.availableSessions = [];
+                        }
+                    } catch (e) {
+                        console.error("Errore init sessioni:", e);
+                        this.availableSessions = [];
+                    }
                 },
 
                 async loadSession(id) {
