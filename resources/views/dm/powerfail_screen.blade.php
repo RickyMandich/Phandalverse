@@ -18,7 +18,10 @@
             <div class="col-md-6 d-flex align-items-center">
                 <h4 class="m-0 me-3 text-warning"><i class="bi bi-shield-shaded"></i> <span x-text="scene.name"></span></h4>
                 <div x-show="currentSessionCode" class="badge bg-secondary font-monospace p-2">
-                    CODE: <span x-text="currentSessionCode"></span>
+                    CODE: <a :href="'/dm/player/' + currentSessionCode" target="_blank"
+                        class="text-info text-decoration-none" title="Apri Player View">
+                        <span x-text="currentSessionCode"></span> <i class="bi bi-box-arrow-up-right small"></i>
+                    </a>
                 </div>
                 <!-- SHARE BUTTON -->
                 <button class="btn btn-sm btn-outline-info ms-2 border-0" x-show="currentSessionCode"
