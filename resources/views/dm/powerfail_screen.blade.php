@@ -109,11 +109,11 @@
                                                 <button
                                                     class="btn btn-sm p-0 d-flex justify-content-center align-items-center rounded-circle"
                                                     style="width: 28px; height: 28px;" :class="{
-                                                                                                            'btn-success': isSuccess(die),
-                                                                                                            'btn-danger': die === 1,
-                                                                                                            'btn-secondary': !isSuccess(die) && die !== 1,
-                                                                                                            'border border-warning border-2': die === 10
-                                                                                                        }"
+                                                                                                                        'btn-success': isSuccess(die),
+                                                                                                                        'btn-danger': die === 1,
+                                                                                                                        'btn-secondary': !isSuccess(die) && die !== 1,
+                                                                                                                        'border border-warning border-2': die === 10
+                                                                                                                    }"
                                                     @click="rerollDie(genIdx, dieIdx)" :disabled="!canReroll()"
                                                     :title="canReroll() ? 'Clicca per ritirare (Livello 3+)' : ''">
                                                     <span class="fw-bold" x-text="die"></span>
@@ -168,11 +168,11 @@
                                             <div class="d-flex flex-wrap gap-1">
                                                 <template x-for="die in gen">
                                                     <span class="badge" :class="{
-                                                                                                                'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
-                                                                                                                'bg-danger': die === 1, 
-                                                                                                                'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
-                                                                                                                'border border-warning': die === 10
-                                                                                                            }"
+                                                                                                                            'bg-success': (log.level >= 4 ? die >= 7 : die >= 8), 
+                                                                                                                            'bg-danger': die === 1, 
+                                                                                                                            'bg-secondary': (log.level >= 4 ? die < 7 : die < 8) && die !== 1,
+                                                                                                                            'border border-warning': die === 10
+                                                                                                                        }"
                                                         x-text="die"></span>
                                                 </template>
                                             </div>
@@ -215,17 +215,17 @@
 
                         <template x-for="(actor, index) in actors" :key="actor.id">
                             <div class="card border-0 shadow-lg" style="width: 300px;" :class="{
-                                                                                    'bg-dark': actor.type === 'pc',
-                                                                                    'bg-danger bg-opacity-10': actor.type === 'enemy',
-                                                                                    'bg-secondary bg-opacity-10': actor.type === 'minion'
-                                                                                }">
+                                                                                                'bg-dark': actor.type === 'pc',
+                                                                                                'bg-danger bg-opacity-10': actor.type === 'enemy',
+                                                                                                'bg-secondary bg-opacity-10': actor.type === 'minion'
+                                                                                            }">
 
                                 <!-- Header Attore -->
                                 <div class="card-header py-1 d-flex justify-content-between align-items-center" :class="{
-                                                                                        'bg-info text-dark': actor.type === 'pc',
-                                                                                        'bg-danger text-white': actor.type === 'enemy',
-                                                                                        'bg-secondary text-white': actor.type === 'minion'
-                                                                                    }">
+                                                                                                    'bg-info text-dark': actor.type === 'pc',
+                                                                                                    'bg-danger text-white': actor.type === 'enemy',
+                                                                                                    'bg-secondary text-white': actor.type === 'minion'
+                                                                                                }">
                                     <input type="text"
                                         class="form-control form-control-sm bg-transparent border-0 fw-bold p-0"
                                         :class="actor.type === 'pc' ? 'text-dark' : 'text-white'" x-model="actor.name">
@@ -340,6 +340,13 @@
                         <button type="button" class="btn-close btn-close-white" @click="loadSessionModal = false"></button>
                     </div>
                     <div class="modal-body">
+                        <!-- New Session Option -->
+                        <button class="btn btn-success w-100 mb-2 py-2 fw-bold" @click="loadSessionModal = false; scene = { name: 'Nuova Scena', state: 'narrative', notes: '' }; actors = []; diceLog = []; currentSessionId = null;">
+                            <i class="bi bi-plus-circle"></i> Inizia Nuova Sessione
+                        </button>
+                        
+                        <div class="border-top border-secondary my-3"></div>
+
                         <button class="btn btn-sm btn-outline-light mb-3 w-100" @click="loadSessionsList()">🔄 Aggiorna
                             Lista</button>
                         <div class="list-group">
@@ -370,27 +377,107 @@
                         <button type="button" class="btn-close btn-close-white" @click="bestiaryModal = false"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="row g-3">
-                            <template x-for="monster in bestiary" :key="monster.name">
-                                <div class="col-md-6">
-                                    <div class="card bg-secondary bg-opacity-10 border-secondary h-100">
-                                        <div class="card-body d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 class="mb-0 fw-bold" x-text="monster.name"></h6>
-                                                <div class="small text-muted">
-                                                    HP: <span x-text="monster.hp"></span> |
-                                                    <span class="badge bg-dark border border-secondary"
-                                                        x-text="monster.type"></span>
-                                                </div>
+                        <!-- LIST VIEW -->
+                        <div x-show="bestiaryView === 'list'">
+                            <button class="btn btn-primary w-100 mb-3" @click="openMonsterForm()">
+                                <i class="bi bi-plus-circle"></i> Nuovo Mostro
+                            </button>
+
+                            <div class="row g-3">
+                                <template x-for="monster in bestiary" :key="monster.id">
+                                    <div class="col-md-6">
+                                        <div
+                                            class="card bg-secondary bg-opacity-10 border-secondary h-100 position-relative">
+
+                                            <!-- Edit/Delete Controls -->
+                                            <div class="position-absolute top-0 end-0 p-1">
+                                                <button class="btn btn-sm btn-link text-warning p-0 me-1"
+                                                    @click="openMonsterForm(monster)">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-link text-danger p-0"
+                                                    @click="deleteMonster(monster.id)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
                                             </div>
-                                            <button class="btn btn-sm btn-outline-success"
-                                                @click="addFromBestiary(monster)">
-                                                <i class="bi bi-plus-lg"></i> Aggiungi
-                                            </button>
+
+                                            <div class="card-body d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-0 fw-bold" x-text="monster.name"></h6>
+                                                    <div class="small text-muted">
+                                                        HP: <span x-text="monster.stats?.hp || 0"></span> |
+                                                        <span class="badge bg-dark border border-secondary"
+                                                            x-text="monster.stats?.type || 'enemy'"></span>
+                                                    </div>
+                                                </div>
+                                                <button class="btn btn-sm btn-outline-success"
+                                                    @click="addFromBestiary(monster)">
+                                                    <i class="bi bi-plus-lg"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
+                                </template>
+                                <div x-show="bestiary.length === 0" class="text-center text-muted col-12">
+                                    Nessun mostro in archivio.
                                 </div>
-                            </template>
+                            </div>
+                        </div>
+
+                        <!-- FORM VIEW -->
+                        <div x-show="bestiaryView === 'form'">
+                            <h6 class="mb-3 border-bottom border-secondary pb-2">
+                                <span x-text="editingMonsterId ? 'Modifica Mostro' : 'Nuovo Mostro'"></span>
+                            </h6>
+                            <div class="row g-2">
+                                <div class="col-8">
+                                    <label class="small text-muted">Nome</label>
+                                    <input type="text" class="form-control bg-dark text-white border-secondary"
+                                        x-model="monsterForm.name">
+                                </div>
+                                <div class="col-4">
+                                    <label class="small text-muted">Tipo</label>
+                                    <select class="form-select bg-dark text-white border-secondary"
+                                        x-model="monsterForm.type">
+                                        <option value="enemy">Nemico</option>
+                                        <option value="minion">Minion</option>
+                                    </select>
+                                </div>
+                                <div class="col-3">
+                                    <label class="small text-muted">HP</label>
+                                    <input type="number" class="form-control bg-dark text-white border-secondary"
+                                        x-model.number="monsterForm.hp">
+                                </div>
+                                <div class="col-3">
+                                    <label class="small text-muted">Max HP</label>
+                                    <input type="number" class="form-control bg-dark text-white border-secondary"
+                                        x-model.number="monsterForm.maxHp">
+                                </div>
+                                <div class="col-2">
+                                    <label class="small text-muted">FIS</label>
+                                    <input type="number" class="form-control bg-dark text-white border-secondary"
+                                        x-model.number="monsterForm.fis">
+                                </div>
+                                <div class="col-2">
+                                    <label class="small text-muted">MEN</label>
+                                    <input type="number" class="form-control bg-dark text-white border-secondary"
+                                        x-model.number="monsterForm.men">
+                                </div>
+                                <div class="col-2">
+                                    <label class="small text-muted">SOC</label>
+                                    <input type="number" class="form-control bg-dark text-white border-secondary"
+                                        x-model.number="monsterForm.soc">
+                                </div>
+                                <div class="col-12">
+                                    <label class="small text-muted">Note</label>
+                                    <textarea class="form-control bg-dark text-white border-secondary" rows="3"
+                                        x-model="monsterForm.notes"></textarea>
+                                </div>
+                            </div>
+                            <div class="mt-3 d-flex justify-content-end gap-2">
+                                <button class="btn btn-secondary" @click="bestiaryView = 'list'">Annulla</button>
+                                <button class="btn btn-success" @click="saveMonster()">Salva</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -453,17 +540,114 @@
                     rerollUsed: false
                 },
 
-                // Simple Hardcoded Bestiary
-                bestiary: [
-                    { name: 'Bandito', type: 'enemy', hp: 10, maxHp: 10, stats: { fis: 3, men: 2, soc: 1 }, notes: 'Armato di spada corta.' },
-                    { name: 'Goblin', type: 'minion', hp: 5, maxHp: 5, stats: { fis: 2, men: 1, soc: 1 }, notes: 'Attacca in gruppo.' },
-                    { name: 'Orco', type: 'enemy', hp: 20, maxHp: 20, stats: { fis: 5, men: 1, soc: 1 }, notes: 'Pelle dura (Riduzione Danni 1).' },
-                    { name: 'Guardia', type: 'enemy', hp: 12, maxHp: 12, stats: { fis: 3, men: 2, soc: 2 }, notes: 'Ligio al dovere.' },
-                    { name: 'Cultista', type: 'minion', hp: 6, maxHp: 6, stats: { fis: 1, men: 3, soc: 2 }, notes: 'Fanatico.' }
-                ],
+                // Bestiary State
+                bestiary: [],
+                bestiaryView: 'list', // 'list' or 'form'
+                editingMonsterId: null,
+                monsterForm: { name: '', hp: 10, maxHp: 10, type: 'enemy', fis: 2, men: 2, soc: 2, notes: '' },
 
                 init() {
                     this.loadSessionsList();
+                    this.loadBestiary();
+                    // Auto-open load session modal on start
+                    this.loadSessionModal = true;
+                },
+
+                // --- BESTIARY MANAGEMENT ---
+
+                async loadBestiary() {
+                    try {
+                        const response = await fetch('/dm/api/characters');
+                        if (!response.ok) return;
+                        const data = await response.json();
+                        // Filter for Powerfail system templates
+                        this.bestiary = data.filter(c => c.type === 'template' && c.stats?.system === 'powerfail');
+                    } catch (e) {
+                        console.error("Error loading bestiary", e);
+                    }
+                },
+
+                openMonsterForm(monster = null) {
+                    this.bestiaryView = 'form';
+                    if (monster) {
+                        this.editingMonsterId = monster.id;
+                        // Map stats back to form
+                        const s = monster.stats || {};
+                        this.monsterForm = {
+                            name: monster.name,
+                            hp: s.hp || 10,
+                            maxHp: s.maxHp || 10,
+                            type: s.type || 'enemy',
+                            fis: s.fis || 2,
+                            men: s.men || 2,
+                            soc: s.soc || 2,
+                            notes: s.notes || ''
+                        };
+                    } else {
+                        this.editingMonsterId = null;
+                        this.monsterForm = {
+                            name: '',
+                            hp: 10,
+                            maxHp: 10,
+                            type: 'enemy',
+                            fis: 2, men: 2, soc: 2,
+                            notes: ''
+                        };
+                    }
+                },
+
+                async saveMonster() {
+                    const payload = {
+                        name: this.monsterForm.name,
+                        type: 'template',
+                        stats: {
+                            system: 'powerfail',
+                            type: this.monsterForm.type,
+                            hp: this.monsterForm.hp,
+                            maxHp: this.monsterForm.maxHp,
+                            fis: this.monsterForm.fis,
+                            men: this.monsterForm.men,
+                            soc: this.monsterForm.soc,
+                            notes: this.monsterForm.notes
+                        }
+                    };
+
+                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    const headers = { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token };
+
+                    try {
+                        let url = '/dm/api/characters';
+                        let method = 'POST';
+
+                        if (this.editingMonsterId) {
+                            url += `/${this.editingMonsterId}`;
+                            method = 'PATCH';
+                        }
+
+                        const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
+                        if (res.ok) {
+                            await this.loadBestiary();
+                            this.bestiaryView = 'list';
+                        } else {
+                            alert("Errore salvataggio mostro");
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert("Errore di connessione");
+                    }
+                },
+
+                async deleteMonster(id) {
+                    if (!confirm("Eliminare definitivamente questo mostro?")) return;
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        const res = await fetch(`/dm/api/characters/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': token } });
+                        if (res.ok) {
+                            await this.loadBestiary();
+                        } else {
+                            alert("Errore eliminazione");
+                        }
+                    } catch (e) { console.error(e); }
                 },
 
                 addActor(type) {
@@ -481,15 +665,20 @@
                 },
 
                 addFromBestiary(monster) {
+                    const s = monster.stats || {};
                     this.actors.push({
                         id: Date.now(),
-                        type: monster.type,
+                        type: s.type === 'minion' ? 'minion' : 'enemy',
                         name: monster.name,
-                        hp: monster.hp,
-                        maxHp: monster.maxHp,
+                        hp: s.hp || 10,
+                        maxHp: s.maxHp || 10,
                         fatigue: 0,
-                        stats: JSON.parse(JSON.stringify(monster.stats)), // Deep copy
-                        notes: monster.notes || '',
+                        stats: {
+                            fis: s.fis || 2,
+                            men: s.men || 2,
+                            soc: s.soc || 2
+                        },
+                        notes: s.notes || '',
                         statusMessage: ''
                     });
                     this.bestiaryModal = false;

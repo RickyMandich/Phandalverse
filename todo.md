@@ -27,5 +27,5 @@
 # inabion
 ## dadi
 - [X] manca la possibilità di ritirare i singoli dadi
-- [ ] far vedere tutti i dadi divisi in "generazioni"
+- [X] far vedere tutti i dadi divisi in "generazioni"
 - [ ] aggiungere todo list dei problemi trovati da claudio
