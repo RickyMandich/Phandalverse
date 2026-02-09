@@ -179,6 +179,8 @@ class DmController extends Controller
             'system' => $validated['system'] ?? 'dnd5e',
         ]);
 
+        CustomLogger::screen("session-create", "New session created: {$session->name} (System: {$session->system}) by user " . Auth::id());
+
         return response()->json($session);
     }
 
