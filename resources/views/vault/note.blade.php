@@ -20,6 +20,11 @@
                             title="Scarica Markdown">
                             <i class="bi bi-download"></i> Scarica MD
                         </a>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="switchCheckMaster" value="on">
+                            <label class="form-check-label text-warning" for="switchCheckMaster">Mostra contenuto da
+                                Master</label>
+                        </div>
                     @endif
                 </div>
             </div>
