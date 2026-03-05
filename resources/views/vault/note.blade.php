@@ -40,7 +40,7 @@
 
 @section('script')
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.querySelector('#switchCheckMaster').addEventListener('click', function () {
             let masters = document.querySelectorAll('.master-block');
             masters.forEach(function (master) {
                 if (master.classList.contains('hide')) {
