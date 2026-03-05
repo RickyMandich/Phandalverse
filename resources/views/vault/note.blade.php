@@ -43,10 +43,10 @@
         document.querySelector('#switchCheckMaster').addEventListener('click', function () {
             let masters = document.querySelectorAll('.master-block');
             masters.forEach(function (master) {
-                if (master.classList.contains('hide')) {
-                    master.classList.remove('hide');
+                if (master.classList.contains('d-none')) {
+                    master.classList.remove('d-none');
                 } else {
-                    master.classList.add('hide');
+                    master.classList.add('d-none');
                 }
             });
         });
