@@ -252,8 +252,12 @@ a {
 }
 
 
-$form-switch-checked-bg: var(--bs-warning);
+$form-switch-color: var(--bs-warning);
+$input-focus-border-color: var(--bs-warning);
+$form-switch-focus-color: $input-focus-border-color;
+
+$component-active-color: var(--bs-warning);
 
 .custom-text-test {
-    color: var(--form-switch-checked-bg);
+    color: $form-switch-color;
 }
