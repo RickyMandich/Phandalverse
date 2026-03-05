@@ -41,7 +41,7 @@
 @section('script')
     <script>
         document.querySelector('#switchCheckMaster').addEventListener('click', function () {
-            let masters = document.querySelectorAll('vault-note .master-block ');
+            let masters = document.querySelectorAll('.vault-note .master-block');
             masters.forEach(function (master) {
                 if (master.classList.contains('d-none')) {
                     master.classList.remove('d-none');
