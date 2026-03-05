@@ -252,11 +252,11 @@ a {
 }
 
 
-$form-switch-color: var(--bs-warning);
-$input-focus-border-color: var(--bs-warning);
+$form-switch-color: $warning;
+$input-focus-border-color: $warning;
 $form-switch-focus-color: $input-focus-border-color;
 
-$component-active-color: var(--bs-warning);
+$component-active-color: $warning;
 
 .custom-text-test {
     color: $form-switch-color;
