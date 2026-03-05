@@ -1,9 +1,11 @@
-@use "bootstrap/scss/bootstrap" as * with ($form-check-input-checked-border-color: $warning,
-    $form-switch-color: $warning,
-    $input-focus-border-color: $warning,
-    $form-check-input-checked-bg-color: $warning,
-    $component-active-color: $warning,
-    $form-switch-focus-color: $input-focus-border-color);
+@use "bootstrap/scss/bootstrap" as *;
+
+$form-check-input-checked-border-color: $warning;
+$form-switch-color: $warning;
+$input-focus-border-color: $warning;
+$form-check-input-checked-bg-color: $warning;
+$component-active-color: $warning;
+$form-switch-focus-color: $input-focus-border-color;
 
 .wikilink {
     @extend .text-uppercase;
