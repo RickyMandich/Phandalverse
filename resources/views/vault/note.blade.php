@@ -22,7 +22,7 @@
                         </a>
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" role="switch" id="switchCheckMaster" checked>
-                            <label class="form-check-label custom-text-test" for="switchCheckMaster">Mostra contenuto da
+                            <label class="form-check-label text-warning" for="switchCheckMaster">Mostra contenuto da
                                 Master</label>
                         </div>
                     @endif
@@ -36,4 +36,19 @@
     @php
         \App\Services\CustomLogger::note($note, "-------------------fine view nota-------------------");
     @endphp
+@endsection
+
+@section('script')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let masters = document.querySelectorAll('.master-block');
+            masters.forEach(function (master) {
+                if (master.classList.contains('hide')) {
+                    master.classList.remove('hide');
+                } else {
+                    master.classList.add('hide');
+                }
+            });
+        });
+    </script>
 @endsection
