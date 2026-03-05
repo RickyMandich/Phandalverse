@@ -252,7 +252,7 @@ a {
 }
 
 
-$form-switch-checked-bg: $warning;
+$form-switch-checked-bg: var(--bs-warning);
 
 .custom-text-test {
     color: var(--form-switch-checked-bg);
