@@ -59,7 +59,7 @@
                         method="GET">
                         <div class="input-group">
                             <input class="form-control bg-dark text-white border-secondary" type="search" name="q"
-                                placeholder="Cerca nel Vault..." aria-label="Search" value="{{ request('q') }}">
+                                placeholder="Cerca nel Vault..." aria-label="Search" value="{{ is_string(request('q')) ? request('q') : '' }}">
                             <button class="btn btn-outline-warning" type="submit">
                                 <i class="bi-search"></i>
                             </button>
