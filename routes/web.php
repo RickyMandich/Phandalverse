@@ -88,6 +88,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
     // Gestione segnalazioni
     Route::get('/reports', [ReportController::class, 'index'])->name('admin.reports');
+    Route::get('/reports/image/{path}', [ReportController::class, 'showImage'])
+        ->where('path', '.*')
+        ->name('admin.reports.image');
     Route::get('/reports/{report}', [ReportController::class, 'show'])->name('admin.reports.show');
     Route::patch('/reports/{report}', [ReportController::class, 'update'])->name('admin.reports.update');
 

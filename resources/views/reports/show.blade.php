@@ -47,8 +47,8 @@
                         <div class="row g-2 mb-4">
                             @foreach($report->images as $imagePath)
                                 <div class="col-md-3">
-                                    <a href="{{ asset('storage/' . $imagePath) }}" target="_blank">
-                                        <img src="{{ asset('storage/' . $imagePath) }}" class="img-fluid rounded border"
+                                    <a href="{{ route('admin.reports.image', ['path' => $imagePath]) }}" target="_blank">
+                                        <img src="{{ route('admin.reports.image', ['path' => $imagePath]) }}" class="img-fluid rounded border"
                                             alt="Screenshot problema" style="height: 150px; width: 100%; object-fit: cover;">
                                     </a>
                                 </div>

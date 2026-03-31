@@ -173,5 +173,16 @@ class ReportController extends Controller
             ->route('admin.reports.show', $report)
             ->with('success', 'Segnalazione aggiornata.');
     }
+    /**
+     * Mostra l'immagine di una segnalazione aggirando il symlink storage di Laravel (utile su hosting condivisi)
+     */
+    public function showImage($path)
+    {
+        if (!Storage::disk('public')->exists($path)) {
+            abort(404);
+        }
+
+        return response()->file(Storage::disk('public')->path($path));
+    }
 }
 
