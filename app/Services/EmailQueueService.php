@@ -62,9 +62,14 @@ class EmailQueueService
             if (($now - $lastProcessorRun) > 30) {
                 \Cache::put('email_processor_last_run', $now, 60);
 
+                $url = route('job.processEmailQueue');
+                $token = env('JOB_TOKEN');
+                
+                \Log::info("Triggering Queue Processor", ['url' => $url, 'has_token' => !empty($token)]);
+
                 \App\Http\Controllers\JobController::fireAndForgetGet(
-                    route('job.processEmailQueue'),
-                    ['token' => env('JOB_TOKEN')]
+                    $url,
+                    ['token' => $token]
                 );
 
                 EmailLogService::logProcessor('Processore avviato automaticamente');

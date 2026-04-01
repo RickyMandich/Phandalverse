@@ -57,6 +57,12 @@ class JobController extends Controller
      */
     public function processEmailQueue(Request $request)
     {
+        \Log::info("JobController: Ricevuta richiesta per processEmailQueue", [
+            'has_token' => $request->has('token'),
+            'token_match' => ($request->input('token') === env('JOB_TOKEN')),
+            'ip' => $request->ip()
+        ]);
+
         // Verifica token per sicurezza
         if ($request->input('token') !== env('JOB_TOKEN')) {
             abort(403, 'Unauthorized');

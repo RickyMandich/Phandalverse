@@ -609,10 +609,16 @@ class AdminController extends Controller
                 'Test manuale mailer'
             );
 
-            return redirect()->back()->with('success', "Email di test accodata per {$email}. Il processore 'Fire and Forget' la invierà a breve. Controlla storage/logs/mail/ per i dettagli.");
+            return view('admin.test-mail', [
+                'success' => "Email di test accodata con successo per {$email}.",
+                'email' => $email
+            ]);
         } catch (\Exception $e) {
             Log::error('Errore test mail: ' . $e->getMessage());
-            return redirect()->back()->with('error', "Errore durante l'accodamento: " . $e->getMessage());
+            return view('admin.test-mail', [
+                'error' => "Errore durante l'accodamento: " . $e->getMessage(),
+                'email' => $email
+            ]);
         }
     }
 }
