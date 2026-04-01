@@ -32,6 +32,9 @@ class JobController extends Controller
                 curl_setopt($ch, CURLOPT_TIMEOUT, 2);
                 curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
                 
+                // USER AGENT REALE (Fondamentale su Altervista per evitare 403)
+                curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+                
                 // DISABILITA PROXY PER IL LOOPBACK (Fix per Altervista 403)
                 curl_setopt($ch, CURLOPT_PROXY, "");
                 curl_setopt($ch, CURLOPT_NOPROXY, "*");
@@ -73,6 +76,7 @@ class JobController extends Controller
         if ($fp) {
             $out = "GET " . $path . " HTTP/1.1\r\n";
             $out .= "Host: " . $parts['host'] . "\r\n";
+            $out .= "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36\r\n";
             $out .= "Connection: Close\r\n\r\n";
             fwrite($fp, $out);
             fclose($fp);
@@ -90,14 +94,21 @@ class JobController extends Controller
      */
     public function processEmailQueue(Request $request)
     {
+        $tokenRecv = $request->input('token');
+        $tokenEnv = env('JOB_TOKEN');
+        $match = ($tokenRecv === $tokenEnv);
+
         \Log::info("JobController: Ricevuta richiesta per processEmailQueue", [
             'has_token' => $request->has('token'),
-            'token_match' => ($request->input('token') === env('JOB_TOKEN')),
-            'ip' => $request->ip()
+            'token_match' => $match,
+            'token_expected_len' => strlen($tokenEnv ?? ''),
+            'token_received_len' => strlen($tokenRecv ?? ''),
+            'ip' => $request->ip(),
+            'ua' => $request->userAgent()
         ]);
 
         // Verifica token per sicurezza
-        if ($request->input('token') !== env('JOB_TOKEN')) {
+        if (!$match) {
             abort(403, 'Unauthorized');
         }
 
