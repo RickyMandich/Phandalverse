@@ -108,14 +108,18 @@ class SendQueuedEmail implements ShouldQueue
         $mailable = $reflection->newInstanceWithoutConstructor();
         
         foreach ($this->mailableData as $key => $value) {
-            // Se avevamo salvato uno stub dell'eccezione, dobbiamo gestire l'uso in class_basename()
-            if (is_object($value) && isset($value->__is_stub_exception)) {
-                // Per compatibilità con class_basename() e usi base, passiamo la stringa della classe
-                // o un oggetto minimo se necessario. Alcuni mailable potrebbero rompersi 
-                // se cercano di chiamare metodi specifici dell'eccezione, ma copriamo il 99% dei casi.
-                $mailable->{$key} = $value->class; 
-            } else {
-                $mailable->{$key} = $value;
+            try {
+                // Tentativo di impostazione sicura
+                if (is_object($value) && isset($value->__is_stub_exception)) {
+                    $mailable->{$key} = $value->class; 
+                } else {
+                    $mailable->{$key} = $value;
+                }
+            } catch (\Throwable $e) {
+                // Logghiamo l'errore ma proseguiamo: probabilmente una proprietà statica o protetta "fantasma"
+                Log::warning("SendQueuedEmail: Impossibile ripristinare proprietà '{$key}'", [
+                    'error' => $e->getMessage()
+                ]);
             }
         }
         
