@@ -589,5 +589,31 @@ class AdminController extends Controller
             ]);
         }
     }
+
+    /**
+     * Send a test email using the configured mailer and queue
+     */
+    public function testMail(Request $request)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $email = $request->input('email', Auth::user()->email);
+
+        try {
+            // Utilizzo il servizio di coda per testare l'intero flusso (rate limiting incluso)
+            \App\Services\EmailQueueService::queue(
+                new \App\Mail\ErrorNotificationEmail(new \Exception('Test invio email tramite Altervista Mailer')),
+                $email,
+                'Test manuale mailer'
+            );
+
+            return redirect()->back()->with('success', "Email di test accodata per {$email}. Il processore 'Fire and Forget' la invierà a breve. Controlla storage/logs/mail/ per i dettagli.");
+        } catch (\Exception $e) {
+            Log::error('Errore test mail: ' . $e->getMessage());
+            return redirect()->back()->with('error', "Errore durante l'accodamento: " . $e->getMessage());
+        }
+    }
 }
 

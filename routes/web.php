@@ -114,6 +114,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     // Database
     Route::get('/database', [AdminController::class, 'database'])->name('admin.database');
     Route::post('/database/query', [AdminController::class, 'executeQuery'])->name('admin.database.query');
+
+    // Test Mail
+    Route::get('/test-mail', [AdminController::class, 'testMail'])->name('admin.test-mail');
 });
 
 // ========== JOB ROUTES ==========
