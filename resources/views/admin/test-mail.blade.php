@@ -44,7 +44,7 @@
                             </div>
                         </div>
 
-                        <div class="p-3 bg-light rounded border mb-4">
+                        <div class="p-3 rounded border mb-4">
                             <h6 class="fw-bold mb-2">Dettagli della Coda:</h6>
                             <p class="small text-muted mb-0">
                                 La mail è stata inserita nella tabella <code>jobs</code> e il processore asincrono "Fire and
@@ -64,7 +64,7 @@
                             </a>
                         </div>
                     </div>
-                    <div class="card-footer bg-white text-center py-3">
+                    <div class="card-footer text-center py-3">
                         <small class="text-muted">
                             <i class="bi bi-info-circle"></i> Se la mail non arriva, controlla
                             <code>storage/logs/mail/send_...log</code>.

@@ -26,11 +26,14 @@ class JobController extends Controller
                 $ch = curl_init();
                 curl_setopt($ch, CURLOPT_URL, $fullUrl);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-                curl_setopt($ch, CURLOPT_MAXREDIRS, 2);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 2); // Timeout di 2 secondi
+                curl_setopt($ch, CURLOPT_TIMEOUT, 2);
                 curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
-                // Disabilitiamo verifica SSL per i trigger interni (spesso problematici su Altervista)
+                
+                // DISABILITA PROXY PER IL LOOPBACK (Fix per Altervista 403)
+                curl_setopt($ch, CURLOPT_PROXY, "");
+                curl_setopt($ch, CURLOPT_NOPROXY, "*");
+                
+                // Disabilitiamo verifica SSL per i trigger interni
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
                 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
                 
