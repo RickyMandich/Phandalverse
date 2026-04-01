@@ -96,8 +96,7 @@ class SendQueuedEmail implements ShouldQueue
                     EmailLogService::logError('telegram_forward', $e, ['to' => $this->to]);
                 }
 
-                // Esco: non invoco Mail::send() perché vogliamo solo leggere le mail su Telegram
-                return;
+                // NON uscire: proseguiamo con l'invio della vera email
             }
 
             // Default behavior: invia l'email via Mail

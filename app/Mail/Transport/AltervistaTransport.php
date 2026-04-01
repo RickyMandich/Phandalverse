@@ -53,8 +53,8 @@ class AltervistaTransport extends AbstractTransport
 
         $headersString = implode("\r\n", $headers);
 
-        // Invio tramite funzione nativa
-        $success = @mail($to, $subject, $body, $headersString);
+        // Invio tramite funzione nativa con parametro -f per Return-Path (importante su Altervista)
+        $success = @mail($to, $subject, $body, $headersString, "-f" . $fromAddress);
 
         if (!$success) {
             throw new \Exception("Errore nell'invio della mail tramite funzione mail() di PHP su Altervista.");
