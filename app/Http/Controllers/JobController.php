@@ -15,6 +15,9 @@ class JobController extends Controller
      */
     public static function fireAndForgetGet($url, $data = [])
     {
+        // Forza HTTP per il loopback interno (evita il blocco del tunnel SSL su Altervista)
+        $url = str_replace('https://', 'http://', $url);
+        
         $query = http_build_query($data);
         $fullUrl = $url . (str_contains($url, '?') ? '&' : '?') . $query;
 
