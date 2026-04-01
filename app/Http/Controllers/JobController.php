@@ -34,12 +34,21 @@ class JobController extends Controller
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
                 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
                 
-                curl_exec($ch);
+                $result = curl_exec($ch);
                 $info = curl_getinfo($ch);
+                $error = curl_error($ch);
                 curl_close($ch);
                 
-                \Log::info("Fire-and-Forget via cURL completato", ['http_code' => $info['http_code']]);
-                return true;
+                \Log::info("Fire-and-Forget via cURL completato", [
+                    'http_code' => $info['http_code'],
+                    'error' => $error ?: 'none'
+                ]);
+
+                if ($info['http_code'] >= 200 && $info['http_code'] < 400) {
+                    return true;
+                }
+                
+                \Log::warning("Fire-and-Forget via cURL non ha restituito un successo (Code: {$info['http_code']}), provo fallback...");
             } catch (\Exception $e) {
                 \Log::warning("Fire-and-Forget via cURL fallito: " . $e->getMessage());
             }
