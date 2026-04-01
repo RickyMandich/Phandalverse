@@ -59,6 +59,9 @@ class AltervistaTransport extends AbstractTransport
         if (!$success) {
             throw new \Exception("Errore nell'invio della mail tramite funzione mail() di PHP su Altervista.");
         }
+
+        // Log successo
+        \App\Services\EmailLogService::logSend("Email inviata con successo via mail() di PHP a: {$to}");
     }
 
     /**

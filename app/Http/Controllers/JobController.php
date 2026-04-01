@@ -22,6 +22,10 @@ class JobController extends Controller
             return false;
         }
 
+        $scheme = $parts['scheme'] ?? 'http';
+        $port = $parts['port'] ?? ($scheme === 'https' ? 443 : 80);
+        $host = ($scheme === 'https' ? 'ssl://' : '') . $parts['host'];
+
         $path = $parts['path'];
         if (isset($parts['query']) && $parts['query'] !== '') {
             $path .= '?' . $parts['query'] . '&' . $query;
@@ -30,9 +34,10 @@ class JobController extends Controller
         }
 
         // Usa fsockopen per una connessione asincrona
-        $fp = fsockopen($parts['host'], $parts['port'] ?? 80, $errno, $errstr, 30);
+        $fp = @fsockopen($host, $port, $errno, $errstr, 5);
 
         if (!$fp) {
+            Log::error("Email Queue Trigger Failed: Impossibile connettersi a {$host}:{$port} - Errore: {$errstr} ({$errno})");
             return false;
         }
 
@@ -41,7 +46,7 @@ class JobController extends Controller
         $out .= "Connection: Close\r\n\r\n";
 
         fwrite($fp, $out);
-        fclose($fp); // Chiude subito, senza aspettare risposta
+        fclose($fp);
 
         return true;
     }
