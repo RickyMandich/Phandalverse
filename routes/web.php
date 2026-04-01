@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
-Auth::routes();
+Auth::routes(['verify' => true]);
 
 Route::get('/', function () {
     return view('welcome');
@@ -29,7 +29,7 @@ Route::get('/api/vault/{note?}', [VaultController::class, 'rawShow'])
     ->where('note', '.*')
     ->name('vault.raw');
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard')->middleware(['auth', 'verified']);
 
 // ========== API PUBBLICA SESSIONI (Per visuale giocatori) ==========
 Route::get('/dm/api/public/sessions/{share_code}', [DmController::class, 'publicLoadSession']);
@@ -39,7 +39,7 @@ Route::get('/dm/player', [DmController::class, 'playerIndex'])->name('dm.player.
 Route::get('/dm/player/{share_code}', [DmController::class, 'playerView'])->name('dm.player');
 
 // ========== PROFILO UTENTE (autenticato) ==========
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [App\Http\Controllers\HomeController::class, 'updateProfile'])->name('profile.update');
     Route::patch('/profile/password', [App\Http\Controllers\HomeController::class, 'updatePassword'])->name('profile.password');
     Route::post('/profile/request-master', [App\Http\Controllers\HomeController::class, 'requestMasterUtils'])->name('profile.request_master');
@@ -50,7 +50,7 @@ Route::get('/report', [ReportController::class, 'create'])->name('report.create'
 Route::post('/report', [ReportController::class, 'store'])->name('report.store');
 
 // ========== DM SCREEN (solo master o master_utils) ==========
-Route::middleware(['auth', 'master_utils'])->prefix('dm')->group(function () {
+Route::middleware(['auth', 'verified', 'master_utils'])->prefix('dm')->group(function () {
     Route::get('/', [DmController::class, 'index'])->name('dm.screen');
     Route::get('/powerfail', [DmController::class, 'powerfailScreen'])->name('dm.powerfail');
     Route::get('/manage', [DmController::class, 'manage'])->name('dm.manage');
@@ -73,7 +73,7 @@ Route::middleware(['auth', 'master_utils'])->prefix('dm')->group(function () {
 });
 
 // ========== ADMIN ROUTES (solo amministratori) ==========
-Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->group(function () {
     // Visualizzazione log
     Route::get('/logs', [LogsController::class, 'index'])->name('admin.logs');
 
