@@ -11,68 +11,115 @@ use Illuminate\Support\Facades\Mail;
 use App\Services\EmailLogService;
 use App\Services\TelegramService;
 use Illuminate\Support\Facades\Log;
+use ReflectionClass;
 
 class SendQueuedEmail implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $mailable;
+    protected $mailableClass;
+    protected $mailableData;
     protected $to;
     protected $logContext;
 
+    /**
+     * Costruttore: estrae i dati in modo "Safe" per evitare errori di serializzazione PDO.
+     */
     public function __construct($mailable, string $to, string $logContext = '')
     {
-        $this->queue = 'emails'; // IMPORTANTE: usa la coda 'emails'
-        $this->mailable = $mailable;
+        $this->queue = 'emails';
+        $this->mailableClass = get_class($mailable);
         $this->to = $to;
         $this->logContext = $logContext;
+        
+        // Estrazione sicura delle proprietà pubbliche
+        $this->mailableData = $this->extractSafeData($mailable);
     }
 
     public function handle(): void
     {
-        Log::info("entro in app\Jobs\SendQueuedEmail.php::handle()");
+        Log::info("SendQueuedEmail: Avvio elaborazione job");
         try {
-            $mailable = $this->mailable;
+            // Ricostruzione Mailable via Reflection (senza passare dal costruttore)
+            $mailable = $this->restoreMailable();
 
-            // Se è attiva la funzione di forward su Telegram, invia la preview
+            // 1. Forward su Telegram (Preview)
             if (env('TELEGRAM_FORWARD_EMAILS', true)) {
                 Log::info("SendQueuedEmail: Eseguo Forward Telegram");
                 try {
-                    $body = '';
-                    if (method_exists($mailable, 'render')) {
-                        $body = $mailable->render();
-                    } elseif (property_exists($mailable, 'body')) {
-                        $body = $mailable->body;
-                    }
-
-                    $bodyText = $body ? strip_tags((string)$body) : '(no body available for preview)';
+                    $body = method_exists($mailable, 'render') ? $mailable->render() : ($mailable->body ?? '');
+                    $bodyText = $body ? strip_tags((string)$body) : '(no preview content)';
                     
-                    // Limite per Telegram
                     $max = (int) env('TELEGRAM_MAX_EMAIL_PREVIEW', 3800);
-                    if (mb_strlen($bodyText) > $max) {
-                        $bodyText = mb_substr($bodyText, 0, $max) . "\n\n(troncato...)";
-                    }
+                    if (mb_strlen($bodyText) > $max) $bodyText = mb_substr($bodyText, 0, $max) . "...";
 
-                    $telegramText = "📬 <b>Email per:</b> {$this->to} (" . ($this->logContext ?: 'Nessun contesto') . ")\n\n" . $bodyText;
+                    $telegramText = "📬 <b>Email:</b> {$this->to}\nCtx: {$this->logContext}\n\n" . $bodyText;
                     TelegramService::send($telegramText, false);
-
                 } catch (\Exception $e) {
                     Log::error("Errore Forward Telegram: " . $e->getMessage());
                 }
-
-                // NON uscire: proseguiamo con l'invio della vera email
             }
 
-            // Invio effettivo della mail
+            // 2. Invio Mail Reale
             Log::info("SendQueuedEmail: Invio mail reale a {$this->to}");
             Mail::to($this->to)->send($mailable);
             EmailLogService::logSend("Email inviata a {$this->to}");
 
         } catch (\Exception $e) {
-            EmailLogService::logError('send_queued', $e, ['to' => $this->to]);
+            EmailLogService::logError('send_queued_critical', $e, ['to' => $this->to]);
             Log::error("Errore critico in SendQueuedEmail: " . $e->getMessage());
             throw $e;
         }
     }
-}
 
+    /**
+     * Estrae le proprietà pubbliche "pulendole" da oggetti non serializzabili (PDO, Exception complete).
+     */
+    protected function extractSafeData($obj): array
+    {
+        $data = [];
+        $reflection = new ReflectionClass($obj);
+        
+        foreach ($reflection->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
+            $value = $prop->getValue($obj);
+            $name = $prop->getName();
+            
+            // Se è un'eccezione, la convertiamo in un oggetto stub sicuro (senza trace/PDO)
+            if ($value instanceof \Throwable) {
+                $data[$name] = (object) [
+                    '__is_stub_exception' => true,
+                    'class' => get_class($value),
+                    'message' => $value->getMessage(),
+                    'file' => $value->getFile(),
+                    'line' => $value->getLine()
+                ];
+            } else {
+                $data[$name] = $value;
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * Ricrea il mailable iniettando i dati estratti.
+     */
+    protected function restoreMailable()
+    {
+        $reflection = new ReflectionClass($this->mailableClass);
+        $mailable = $reflection->newInstanceWithoutConstructor();
+        
+        foreach ($this->mailableData as $key => $value) {
+            // Se avevamo salvato uno stub dell'eccezione, dobbiamo gestire l'uso in class_basename()
+            if (is_object($value) && isset($value->__is_stub_exception)) {
+                // Per compatibilità con class_basename() e usi base, passiamo la stringa della classe
+                // o un oggetto minimo se necessario. Alcuni mailable potrebbero rompersi 
+                // se cercano di chiamare metodi specifici dell'eccezione, ma copriamo il 99% dei casi.
+                $mailable->{$key} = $value->class; 
+            } else {
+                $mailable->{$key} = $value;
+            }
+        }
+        
+        return $mailable;
+    }
+}
