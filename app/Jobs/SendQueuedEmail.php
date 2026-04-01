@@ -72,15 +72,15 @@ class SendQueuedEmail implements ShouldQueue
         }
     }
 
-    /**
-     * Estrae le proprietà pubbliche "pulendole" da oggetti non serializzabili (PDO, Exception complete).
-     */
     protected function extractSafeData($obj): array
     {
         $data = [];
         $reflection = new ReflectionClass($obj);
         
         foreach ($reflection->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
+            // Saltiamo le proprietà statiche (es. viewDataCallback di Laravel) per evitare errori di accesso
+            if ($prop->isStatic()) continue;
+
             $value = $prop->getValue($obj);
             $name = $prop->getName();
             
