@@ -49,8 +49,10 @@ class EmailQueueService
     }
 
     /**
-     * Avvia il processore coda email via fire-and-forget
-     * Si attiva solo se non è già in esecuzione (throttle 30 secondi)
+     * Avvia il processore coda email via fire-and-forget (HTTP Loopback)
+     * NOTA: Su Altervista questo metodo spesso fallisce (403 Proxy).
+     * Il sistema ora si affida principalmente al ProcessEmailQueueMiddleware 
+     * che elabora i job al termine di ogni normale visita al sito.
      */
     protected static function triggerQueueProcessor()
     {

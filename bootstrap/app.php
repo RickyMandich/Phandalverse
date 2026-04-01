@@ -21,9 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'master_utils' => \App\Http\Middleware\MasterUtilsMiddleware::class,
         ]);
 
-        // Aggiungi middleware per tracciare statistiche su tutte le richieste web
+        // Aggiungi middleware per tracciare statistiche e processare la coda email
         $middleware->web(append: [
             \App\Http\Middleware\TrackStatistics::class,
+            \App\Http\Middleware\ProcessEmailQueueMiddleware::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [

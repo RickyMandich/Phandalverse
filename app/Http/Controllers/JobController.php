@@ -89,6 +89,87 @@ class JobController extends Controller
     }
 
     /**
+     * Elabora il prossimo job (o più) dalla coda email.
+     * Metodo statico per essere chiamato sia dal Middleware che dal Controller.
+     */
+    public static function processNextJob(int $limit = 1): int
+    {
+        // Rate limiting di sicurezza tra esecuzioni (evita sovrapposizioni troppe vicine)
+        $lastRun = \Cache::get('email_queue_last_run', 0);
+        $now = time();
+        
+        // Se l'ultima esecuzione è avvenuta meno di 1 secondo fa, saltiamo
+        if (($now - $lastRun) < 1) {
+            return 0;
+        }
+
+        $processedCount = 0;
+        try {
+            for ($i = 0; $i < $limit; $i++) {
+                $jobRecord = \DB::table('jobs')
+                    ->where('queue', 'emails')
+                    ->where(function ($q) {
+                        $q->whereNull('reserved_at')
+                          ->orWhere('reserved_at', '<=', time() - 300);
+                    })
+                    ->where('available_at', '<=', time())
+                    ->orderBy('available_at', 'asc')
+                    ->first();
+
+                if (!$jobRecord) break;
+
+                // Riserva il job
+                \DB::table('jobs')->where('id', $jobRecord->id)->update([
+                    'reserved_at' => time(),
+                    'attempts' => $jobRecord->attempts + 1
+                ]);
+
+                // Aggiorna cache last run prima dell'invio (per bloccare altre istanze parallele)
+                \Cache::put('email_queue_last_run', time(), 60);
+
+                try {
+                    $payload = json_decode($jobRecord->payload, true);
+                    $jobClass = $payload['displayName'] ?? null;
+
+                    if ($jobClass === 'App\\Jobs\\SendQueuedEmail') {
+                        $jobData = unserialize($payload['data']['command']);
+                        
+                        // Esegui l'invio (AltervistaTransport si occuperà del log finale)
+                        $jobData->handle(); 
+                        
+                        \DB::table('jobs')->where('id', $jobRecord->id)->delete();
+                        $processedCount++;
+                    } else {
+                        // Job non supportato o corrotto
+                        \DB::table('jobs')->where('id', $jobRecord->id)->delete();
+                    }
+                } catch (\Exception $e) {
+                    // Sposta in failed_jobs
+                    \DB::table('jobs')->where('id', $jobRecord->id)->delete();
+                    \DB::table('failed_jobs')->insert([
+                        'uuid' => (string) \Illuminate\Support\Str::uuid(),
+                        'connection' => 'database',
+                        'queue' => 'emails',
+                        'payload' => $jobRecord->payload,
+                        'exception' => (string) $e,
+                        'failed_at' => now()
+                    ]);
+                    EmailLogService::logError('Job Middleware Error', $e, ['job_id' => $jobRecord->id ?? 'unk']);
+                }
+
+                // Piccolo sleep tra i job se ne stiamo processando più di uno
+                if ($i < ($limit - 1)) {
+                    sleep(1);
+                }
+            }
+        } catch (\Exception $e) {
+             \Log::error("Errore critico processore parassita: " . $e->getMessage());
+        }
+
+        return $processedCount;
+    }
+
+    /**
      * Processa la coda email con rate limiting
      * Questo metodo viene chiamato via fire-and-forget
      */
@@ -112,98 +193,18 @@ class JobController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $logFile = EmailLogService::createLogFile('processor');
-        $startTime = time();
-        $maxExecutionTime = 240; // 4 minuti limite
-        $processedCount = 0;
-
         try {
-            // Elabora i job uno alla volta per evitare race conditions tra processi paralleli
-            while (true) {
-                // Controlla timeout globale del processore
-                if ((time() - $startTime) > $maxExecutionTime) {
-                    $remainingJobs = \DB::table('jobs')->where('queue', 'emails')->count();
-                    if ($remainingJobs > 0) {
-                        self::fireAndForgetGet(route('job.processEmailQueue'), [
-                            'token' => env('JOB_TOKEN')
-                        ]);
-                    }
-                    return;
-                }
-
-                // Cerca il prossimo job disponibile (non riservato o riservato da troppo tempo)
-                $jobRecord = \DB::table('jobs')
-                    ->where('queue', 'emails')
-                    ->where(function ($q) {
-                        $q->whereNull('reserved_at')
-                            ->orWhere('reserved_at', '<=', time() - 300); // Retry se bloccato da > 5 min
-                    })
-                    ->where('available_at', '<=', time())
-                    ->orderBy('available_at', 'asc')
-                    ->first();
-
-                if (!$jobRecord) {
-                    break; // Nessun job rimasto
-                }
-
-                // Riserva il job immediatamente
-                \DB::table('jobs')->where('id', $jobRecord->id)->update([
-                    'reserved_at' => time(),
-                    'attempts' => $jobRecord->attempts + 1
-                ]);
-
-                // Rate limiting: 1 secondo tra ogni email (per non saturare Telegram/Mail)
-                if ($processedCount > 0) {
-                    sleep(1);
-                }
-
-                try {
-                    $payload = json_decode($jobRecord->payload, true);
-                    $jobClass = $payload['displayName'] ?? null;
-
-                    if ($jobClass === 'App\\Jobs\\SendQueuedEmail') {
-                        $jobData = unserialize($payload['data']['command']);
-
-                        // Esegui l'invio email (o il forward su Telegram se configurato)
-                        $jobData->handle();
-
-                        // Rimuovi dalla coda dopo successo
-                        \DB::table('jobs')->where('id', $jobRecord->id)->delete();
-                        $processedCount++;
-                    } else {
-                        // Job ignoto, rimuovi per sicurezza o segna come fallito
-                        \DB::table('jobs')->where('id', $jobRecord->id)->delete();
-                    }
-
-                } catch (\Exception $e) {
-                    // Sposta in failed_jobs
-                    \DB::table('jobs')->where('id', $jobRecord->id)->delete();
-                    \DB::table('failed_jobs')->insert([
-                        'uuid' => (string) Str::uuid(),
-                        'connection' => 'database',
-                        'queue' => 'emails',
-                        'payload' => $jobRecord->payload,
-                        'exception' => (string) $e,
-                        'failed_at' => now()
-                    ]);
-                    EmailLogService::logError('Email Job Error', $e, ['job_id' => $jobRecord->id]);
-                }
-            }
-
-            EmailLogService::logProcessor("Processati {$processedCount} job in questa sessione.");
-
-
-            // Controlla se ci sono altri job
-            $remainingJobs = \DB::table('jobs')->where('queue', 'emails')->count();
-            if ($remainingJobs > 0) {
-                // Riavvia automaticamente
-                self::fireAndForgetGet(route('job.processEmailQueue'), [
-                    'token' => env('JOB_TOKEN')
-                ]);
-            }
-
+            // Usa il metodo statico condiviso per elaborare un blocco di job.
+            // Impostiamo un limite per la chiamata diretta.
+            $processedCount = self::processNextJob(30); 
+            
+            return response()->json([
+                'status' => 'success',
+                'processed' => $processedCount
+            ]);
         } catch (\Exception $e) {
-            EmailLogService::logError('Email Queue Processor', $e);
+            EmailLogService::logError('Email Queue Processor HTTP', $e);
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
 }
