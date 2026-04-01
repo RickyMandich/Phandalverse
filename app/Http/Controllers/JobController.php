@@ -16,39 +16,57 @@ class JobController extends Controller
     public static function fireAndForgetGet($url, $data = [])
     {
         $query = http_build_query($data);
-        $parts = parse_url($url);
+        $fullUrl = $url . (str_contains($url, '?') ? '&' : '?') . $query;
 
-        if (!isset($parts['host']) || !isset($parts['path'])) {
-            return false;
+        \Log::info("Attempting Fire-and-Forget", ['url' => $fullUrl]);
+
+        // --- Metodo 1: cURL (Più affidabile su PHP moderno) ---
+        if (function_exists('curl_init')) {
+            try {
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $fullUrl);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch, CURLOPT_MAXREDIRS, 2);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 2); // Timeout di 2 secondi
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+                // Disabilitiamo verifica SSL per i trigger interni (spesso problematici su Altervista)
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+                
+                curl_exec($ch);
+                $info = curl_getinfo($ch);
+                curl_close($ch);
+                
+                \Log::info("Fire-and-Forget via cURL completato", ['http_code' => $info['http_code']]);
+                return true;
+            } catch (\Exception $e) {
+                \Log::warning("Fire-and-Forget via cURL fallito: " . $e->getMessage());
+            }
         }
+
+        // --- Metodo 2: fsockopen (Fallback classico) ---
+        $parts = parse_url($url);
+        if (!isset($parts['host'])) return false;
 
         $scheme = $parts['scheme'] ?? 'http';
         $port = $parts['port'] ?? ($scheme === 'https' ? 443 : 80);
         $host = ($scheme === 'https' ? 'ssl://' : '') . $parts['host'];
+        $path = $parts['path'] . (isset($parts['query']) ? '?' . $parts['query'] : '') . (isset($parts['query']) ? '&' : '?') . $query;
 
-        $path = $parts['path'];
-        if (isset($parts['query']) && $parts['query'] !== '') {
-            $path .= '?' . $parts['query'] . '&' . $query;
-        } elseif ($query !== '') {
-            $path .= '?' . $query;
+        $fp = @fsockopen($host, $port, $errno, $errstr, 2);
+        if ($fp) {
+            $out = "GET " . $path . " HTTP/1.1\r\n";
+            $out .= "Host: " . $parts['host'] . "\r\n";
+            $out .= "Connection: Close\r\n\r\n";
+            fwrite($fp, $out);
+            fclose($fp);
+            \Log::info("Fire-and-Forget via fsockopen completato");
+            return true;
         }
 
-        // Usa fsockopen per una connessione asincrona
-        $fp = @fsockopen($host, $port, $errno, $errstr, 5);
-
-        if (!$fp) {
-            Log::error("Email Queue Trigger Failed: Impossibile connettersi a {$host}:{$port} - Errore: {$errstr} ({$errno})");
-            return false;
-        }
-
-        $out = "GET " . $path . " HTTP/1.1\r\n";
-        $out .= "Host: " . $parts['host'] . "\r\n";
-        $out .= "Connection: Close\r\n\r\n";
-
-        fwrite($fp, $out);
-        fclose($fp);
-
-        return true;
+        \Log::error("Fire-and-Forget TOTAL FAILURE: Impossibile connettersi a {$host}:{$port} - {$errstr} ({$errno})");
+        return false;
     }
 
     /**
