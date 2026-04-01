@@ -75,15 +75,14 @@ class SendQueuedEmail implements ShouldQueue
     protected function extractSafeData($obj): array
     {
         $data = [];
-        $reflection = new ReflectionClass($obj);
         
-        foreach ($reflection->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
-            // Saltiamo le proprietà statiche (es. viewDataCallback di Laravel) per evitare errori di accesso
-            if ($prop->isStatic()) continue;
+        // get_object_vars su un oggetto ritorna AUTOMATICAMENTE solo le proprietà PUBBLICHE e NON STATICHE.
+        // È il modo più sicuro per evitare di catturare viewDataCallback e simili.
+        $vars = get_object_vars($obj);
+        
+        Log::info("SendQueuedEmail: Estratti campi sicuri", ['fields' => array_keys($vars)]);
 
-            $value = $prop->getValue($obj);
-            $name = $prop->getName();
-            
+        foreach ($vars as $name => $value) {
             // Se è un'eccezione, la convertiamo in un oggetto stub sicuro (senza trace/PDO)
             if ($value instanceof \Throwable) {
                 $data[$name] = (object) [
