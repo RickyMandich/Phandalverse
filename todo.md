@@ -24,6 +24,7 @@
 - [X] aggiungere pulsante download MD per master nella view delle note
 - [X] sistemare l'avanzamento dei turni nello schermo del master (premendo prossimo turno vengono considerati anche i morti)
 - [X] aggiunta pulsante rimuovi morti dallo schermo master
+- [X] sistemare la visualizzazione delle immagini nelle segnalazioni
 # inabion
 ## dadi
 - [X] manca la possibilità di ritirare i singoli dadi

@@ -88,6 +88,7 @@ return [
             'retry_after' => 60,
         ],
 
+
         'roundrobin' => [
             'transport' => 'roundrobin',
             'mailers' => [
@@ -95,6 +96,10 @@ return [
                 'postmark',
             ],
             'retry_after' => 60,
+        ],
+
+        'altervista' => [
+            'transport' => 'altervista',
         ],
 
     ],

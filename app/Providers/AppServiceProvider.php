@@ -51,8 +51,14 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
+
         Auth::provider('custom', function ($app, array $config) {
             return new \App\Auth\CustomUserProvider($app['hash'], $config['model']);
+        });
+
+        // ========== CUSTOM MAIL TRANSPORT PER ALTERVISTA ==========
+        \Illuminate\Support\Facades\Mail::extend('altervista', function () {
+            return new \App\Mail\Transport\AltervistaTransport();
         });
     }
 
