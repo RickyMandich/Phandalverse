@@ -54,6 +54,7 @@
                             <th>ID</th>
                             <th>Nome</th>
                             <th>Email</th>
+                            <th>Verificato</th>
                             <th>Ruoli</th>
                             <th>mostra Embed link</th>
                             <th>collassa Embed</th>
@@ -86,6 +87,17 @@
                                                 <i class="bi bi-star-fill"></i> Richiesta Master
                                             </span>
                                         </div>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($user->email_verified_at)
+                                        <span class="text-success" style="font-size: 1.2rem;" title="Verificato il {{ $user->email_verified_at->format('d/m/Y H:i') }}">
+                                            <i class="bi bi-patch-check-fill"></i>
+                                        </span>
+                                    @else
+                                        <span class="text-danger" style="font-size: 1.2rem;" title="Non verificato">
+                                            <i class="bi bi-patch-exclamation-fill"></i>
+                                        </span>
                                     @endif
                                 </td>
                                 <td>

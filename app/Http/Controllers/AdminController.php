@@ -165,6 +165,7 @@ class AdminController extends Controller
             'master_utils' => $request->has('master_utils'),
             'showEmbedLink' => $request->has('showEmbedLink'),
             'collapseEmbed' => $request->has('collapseEmbed'),
+            'email_verified_at' => $request->has('verified') ? now() : null,
         ]);
 
         // Notifica su Telegram la creazione del nuovo utente
@@ -214,6 +215,15 @@ class AdminController extends Controller
             'showEmbedLink' => $request->has('showEmbedLink'),
             'collapseEmbed' => $request->has('collapseEmbed'),
         ]);
+
+        // Gestione verifica email
+        if ($request->has('verified') && !$user->email_verified_at) {
+            $user->email_verified_at = now();
+            $user->save();
+        } elseif (!$request->has('verified') && $user->email_verified_at) {
+            $user->email_verified_at = null;
+            $user->save();
+        }
 
         return redirect()->route('admin.users.edit', $user)->with('success', 'Dati utente aggiornati con successo');
     }

@@ -59,6 +59,17 @@
 
                         <div class="mb-3">
                             <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="verified" name="verified" value="1"
+                                       {{ old('verified') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="verified">
+                                    <span class="badge bg-success">Email Verificata</span>
+                                    <small class="text-muted d-block">Segna l'account come già verificato</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="admin" name="admin" value="1"
                                        {{ old('admin') ? 'checked' : '' }}>
                                 <label class="form-check-label" for="admin">
