@@ -14,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust proxies for HTTPS detection on hostings like Altervista
+        $middleware->trustProxies(at: '*');
+
         // Registra l'alias per il middleware admin
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
@@ -82,7 +85,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // ========== RENDERABLE: Debug differenziato per tipo utente ==========
         $exceptions->renderable(function (Throwable $e, $request) {
             // Se l'utente è admin, mostra debug completo
-            if (Auth::isAdmin()) {
+            if (Auth::admin()) {
                 config(['app.debug' => true]);
 
                 return response()->view('errors.admin-debug', [

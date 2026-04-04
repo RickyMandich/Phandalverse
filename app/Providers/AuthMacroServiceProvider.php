@@ -26,6 +26,10 @@ class AuthMacroServiceProvider extends ServiceProvider
             }
             return false;
         });
+
+        Auth::macro('isAdmin', function () {
+            return Auth::admin();
+        });
     }
 }
 
