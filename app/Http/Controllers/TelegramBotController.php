@@ -325,7 +325,8 @@ class TelegramBotController extends Controller
      */
     public function notifyUpdate(Request $request)
     {
-        if ($request->query('token') !== env('JOB_TOKEN')) {
+        $token = trim($request->query('token', ''), '"\'');
+        if ($token !== env('JOB_TOKEN')) {
             abort(403);
         }
 
