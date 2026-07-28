@@ -54,10 +54,10 @@
                             <th>ID</th>
                             <th>Nome</th>
                             <th>Email</th>
-                            <th>Verificato</th>
                             <th>Ruoli</th>
-                            <th>mostra Embed link</th>
-                            <th>collassa Embed</th>
+                            <th>Verificato</th>
+                            <th>Mostra Embed Link</th>
+                            <th>Collassa Embed</th>
                             <th>Registrato</th>
                             <th>Azioni</th>
                         </tr>
@@ -91,7 +91,8 @@
                                 </td>
                                 <td>
                                     @if($user->email_verified_at)
-                                        <span class="text-success" style="font-size: 1.2rem;" title="Verificato il {{ $user->email_verified_at->format('d/m/Y H:i') }}">
+                                        <span class="text-success" style="font-size: 1.2rem;"
+                                            title="Verificato il {{ $user->email_verified_at->format('d/m/Y H:i') }}">
                                             <i class="bi bi-patch-check-fill"></i>
                                         </span>
                                     @else
