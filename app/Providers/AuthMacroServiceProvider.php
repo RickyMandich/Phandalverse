@@ -22,13 +22,41 @@ class AuthMacroServiceProvider extends ServiceProvider
     {
         Auth::macro('admin', function () {
             if (Auth::check()) {
-                return Auth::user()->admin == 1;
+                return (bool) Auth::user()->isAdmin();
             }
             return false;
         });
 
         Auth::macro('isAdmin', function () {
             return Auth::admin();
+        });
+
+        Auth::macro('isMaster', function () {
+            if (Auth::check()) {
+                return (bool) Auth::user()->isMaster();
+            }
+            return false;
+        });
+
+        Auth::macro('isMasterUtils', function () {
+            if (Auth::check()) {
+                return (bool) Auth::user()->isMasterUtils();
+            }
+            return false;
+        });
+
+        Auth::macro('getMaster', function () {
+            if (Auth::check()) {
+                return (bool) Auth::user()->master;
+            }
+            return false;
+        });
+
+        Auth::macro('getName', function () {
+            if (Auth::check()) {
+                return Auth::user()->name;
+            }
+            return null;
         });
     }
 }
