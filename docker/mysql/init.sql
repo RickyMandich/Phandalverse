@@ -1,3 +1,3 @@
-CREATE USER IF NOT EXISTS 'phandalverse'@'172.21.0.10' IDENTIFIED BY '';
-GRANT ALL PRIVILEGES ON my_phandalverse.* TO 'phandalverse'@'172.21.0.10';
+CREATE USER IF NOT EXISTS 'phandalverse'@'172.22.0.10' IDENTIFIED BY '';
+GRANT ALL PRIVILEGES ON my_phandalverse.* TO 'phandalverse'@'172.22.0.10';
 FLUSH PRIVILEGES;

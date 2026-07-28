@@ -13,7 +13,7 @@ services:
       - DB_PASSWORD=
     networks:
       internal:
-        ipv4_address: 172.21.0.10
+        ipv4_address: 172.22.0.10
     depends_on:
       db:
         condition: service_healthy
@@ -61,7 +61,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.21.0.0/24
+        - subnet: 172.22.0.0/24
   proxy:
     external: true
 
