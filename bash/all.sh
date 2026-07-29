@@ -125,4 +125,3 @@ if [ -n "$COMMIT_MESSAGE" ]; then
 else
     "$SCRIPT_DIR/cmt.sh"
 fi
-"$SCRIPT_DIR/onlyFtpOfLastCmt.sh"
