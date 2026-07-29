@@ -407,7 +407,7 @@ class VaultController extends Controller
         $links = [];
         $nodeIndex = [];
 
-        // Prima passata: crea tutti i nodi
+        // Prima passata: crea tutti i nodi visibili all'utente corrente
         foreach ($files as $file) {
             if ($file->getExtension() !== 'md') {
                 continue;
@@ -426,6 +426,13 @@ class VaultController extends Controller
 
             $fullPath = $relativePath ? $relativePath . '/' . $name . '.md' : $name . '.md';
             $content = File::get($file->getPathname());
+            $isDm = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content) ? true : false;
+
+            if ($isDm && (!Auth::check() || !Auth::isMaster())) {
+                CustomLogger::graph("Nodo escluso dal grafo per permessi: $fullPath");
+                continue;
+            }
+
             $originalName = VaultHelper::getOriginalName($fullPath, 'system');
 
             // Estrai i tag
@@ -455,6 +462,11 @@ class VaultController extends Controller
 
             $name = $file->getFilenameWithoutExtension();
             $content = File::get($file->getPathname());
+            $isDm = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content) ? true : false;
+
+            if ($isDm && (!Auth::check() || !Auth::isMaster())) {
+                continue;
+            }
 
             // Trova tutti i wikilinks e gli embed (![[...]])
             preg_match_all('/!?\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]+)?\]\]/', $content, $matches);
