@@ -296,10 +296,12 @@ class VaultController extends Controller
 
                     // The view renderTreeIndexPartial recurses on $value['_dirs'].
                     // It expects the recursive content (files + subdirs) to be IN _dirs.
-                    $branch[$dirKey] = [
-                        '_label' => $dirData['original'] ?? ucfirst($dirKey),
-                        '_dirs' => $subResult['tree'] // Put the entire sub-tree (including _files) here
-                    ];
+                    if ($this->hasFilesOrDirs($subResult['tree'])) {
+                        $branch[$dirKey] = [
+                            '_label' => $dirData['original'] ?? ucfirst($dirKey),
+                            '_dirs' => $subResult['tree'] // Put the entire sub-tree (including _files) here
+                        ];
+                    }
 
                     $missing = array_merge($missing, $subResult['missing']);
                 } else {
@@ -368,6 +370,27 @@ class VaultController extends Controller
         }
 
         return ['tree' => $branch, 'missing' => $missing];
+    }
+
+    /**
+     * Verifica ricorsivamente se un nodo dell'albero del Vault contiene file visibili
+     * o sotto-cartelle non vuote.
+     */
+    private function hasFilesOrDirs(array $treeNode): bool
+    {
+        if (!empty($treeNode['_files'])) {
+            return true;
+        }
+
+        foreach ($treeNode as $key => $val) {
+            if ($key !== '_files' && is_array($val)) {
+                if (isset($val['_dirs']) && $this->hasFilesOrDirs($val['_dirs'])) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

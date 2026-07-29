@@ -65,6 +65,9 @@
                             // Prima le cartelle (folders first)
                             foreach ($items as $key => $value) {
                                 if ($key !== '_files' && $key !== '_dirs' && is_array($value)) {
+                                    if (function_exists('sidebarHasFilesOrDirs') && !sidebarHasFilesOrDirs($value['_dirs'] ?? [])) {
+                                        continue;
+                                    }
                                     $displayName = $value['_label'] ?? $key;
                                     $html .= '<li class="my-1">';
                                     // Toggle logic: toggle 'open' on span, toggle 'd-none' on next UL
