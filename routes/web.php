@@ -128,9 +128,9 @@ Route::get("/job/ProcessEmailQueue", [JobController::class, 'processEmailQueue']
 // ========== TELEGRAM BOT ROUTES ==========
 Route::post('/telegram/webhook', [App\Http\Controllers\TelegramBotController::class, 'webhook']);
 
-// Route per notificare manualmente i cambiamenti (chiamabile dallo script di upload)
-Route::get('/api/notify-update', [App\Http\Controllers\TelegramBotController::class, 'notifyUpdate'])
-    ->middleware('web');
+// // Route per notificare manualmente i cambiamenti (chiamabile dallo script di upload)
+// Route::get('/api/notify-update', [App\Http\Controllers\TelegramBotController::class, 'notifyUpdate'])
+//     ->middleware('web');
 
 Route::fallback(function () {
     return view('errors.404');
