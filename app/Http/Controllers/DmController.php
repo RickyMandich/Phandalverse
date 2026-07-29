@@ -189,7 +189,7 @@ class DmController extends Controller
             return response()->json(['error' => 'Validation failed', 'details' => $e->errors()], 422);
         } catch (\Exception $e) {
             CustomLogger::screen("session-create", "GENERAL ERROR: " . $e->getMessage());
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => $e->getMessage()], 503);
         }
     }
 

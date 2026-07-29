@@ -204,7 +204,7 @@ class JobController extends Controller
             ]);
         } catch (\Exception $e) {
             EmailLogService::logError('Email Queue Processor HTTP', $e);
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 503);
         }
     }
 }

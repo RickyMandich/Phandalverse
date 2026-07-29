@@ -29,7 +29,17 @@ class MarkdownPreprocessor
 
         self::$fileIndex = [];
         $vaultPath = base_path('Vault');
-        $files = File::allFiles($vaultPath);
+
+        if (!File::exists($vaultPath) || !File::isDirectory($vaultPath)) {
+            return self::$fileIndex;
+        }
+
+        try {
+            $files = File::allFiles($vaultPath);
+        } catch (\Throwable $e) {
+            Log::warning('Vault directory is not available for markdown index: ' . $e->getMessage());
+            return self::$fileIndex;
+        }
 
         foreach ($files as $file) {
             if ($file->getExtension() === 'md') {
