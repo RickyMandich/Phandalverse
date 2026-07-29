@@ -68,6 +68,23 @@
         <h5 class="text-warning mb-3 fw-bold"><i class="bi bi-book me-2"></i>Vault</h5>
         <div class="vault-tree font-monospace small">
             @php
+                if (!function_exists('sidebarHasFilesOrDirs')) {
+                    function sidebarHasFilesOrDirs(array $treeNode): bool
+                    {
+                        if (!empty($treeNode['_files'])) {
+                            return true;
+                        }
+                        foreach ($treeNode as $key => $val) {
+                            if ($key !== '_files' && $key !== '_dirs' && is_array($val)) {
+                                if (isset($val['_dirs']) && sidebarHasFilesOrDirs($val['_dirs'])) {
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    }
+                }
+
                 // Renderer that auto-expands folders matching the current path
                 function renderTreeIndexPartial($items, $deep, $currentPath, $note, $masterFile)
                 {
@@ -85,6 +102,10 @@
 
                     foreach ($items as $key => $value) {
                         if ($key !== '_files' && $key !== '_dirs' && is_array($value)) {
+                            if (!sidebarHasFilesOrDirs($value['_dirs'] ?? [])) {
+                                continue;
+                            }
+
                             // Check if this folder matches the current path segment (case-insensitive)
                             $folderMatchesPath = $isOnPath && strcasecmp($key, $pathSegment) === 0;
                             $openClass = $folderMatchesPath ? ' open' : '';
