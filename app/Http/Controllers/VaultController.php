@@ -661,7 +661,7 @@ class VaultController extends Controller
         CustomLogger::note($note, "cerco la nota: $fullSystemPath");
         if (!File::exists($fullSystemPath)) {
             CustomLogger::note($note, "Nota non trovata: $fullSystemPath", 'error');
-            return view('errors.504');
+            abort(404, 'Nota non trovata');
         }
 
         $content = File::get($fullSystemPath);
@@ -674,7 +674,7 @@ class VaultController extends Controller
         $masterFile = false;
         if (!Auth::isMaster() && preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
             CustomLogger::note($note, "Accesso negato: file DM per non-master");
-            abort(504, 'Nota non trovata');
+            abort(404, 'Nota non trovata');
         } else if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
             $masterFile = true;
         }

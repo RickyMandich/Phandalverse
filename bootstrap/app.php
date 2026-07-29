@@ -95,7 +95,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'line' => $e->getLine(),
                     'trace' => $e->getTraceAsString(),
                     'request' => $request,
-                ], 500);
+                ], 503);
             }
 
             // Per utenti normali, nascondi i dettagli
