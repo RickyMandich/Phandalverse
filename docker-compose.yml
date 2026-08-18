@@ -6,6 +6,7 @@ services:
     volumes:
       - ./storage:/var/www/html/storage
       - ./.env:/var/www/html/.env:ro
+      - ./Vault:/var/www/html/Vault:ro
     environment:
       - DB_HOST=db
       - DB_DATABASE=my_phandalverse
@@ -36,6 +37,7 @@ services:
       - "traefik.http.routers.phandalverse.entrypoints=websecure"
       - "traefik.http.routers.phandalverse.tls.certresolver=letsencrypt"
       - "traefik.http.services.phandalverse.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
 
   db:
     image: mariadb:11
