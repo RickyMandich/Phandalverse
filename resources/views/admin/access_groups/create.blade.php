@@ -37,11 +37,11 @@
                         <div class="mb-3">
                             <label for="slug" class="form-label">Slug (usato nei tag markdown) <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <span class="input-group-text bg-dark text-muted">#access:</span>
+                                <span class="input-group-text bg-dark text-muted">#access-</span>
                                 <input type="text" class="form-control @error('slug') is-invalid @enderror" 
-                                       id="slug" name="slug" value="{{ old('slug') }}" placeholder="es: artefici o cavalieri-della-rosa" required>
+                                       id="slug" name="slug" value="{{ old('slug') }}" placeholder="es: artefici o cavalieriDelDrago" required>
                             </div>
-                            <small class="form-text text-muted">Solo lettere minuscole, numeri e trattini (kebab-case). Nessuna virgola o pipe.</small>
+                            <small class="form-text text-muted">Formato camelCase (es: <code>cavalieriDelDrago</code>). Nessun trattino "-" o underscore "_".</small>
                         </div>
 
                         <div class="mb-3">
@@ -112,11 +112,11 @@
             nameInput.addEventListener('input', function () {
                 if (!slugInput.dataset.manual) {
                     slugInput.value = nameInput.value
-                        .toLowerCase()
                         .trim()
                         .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
-                        .replace(/[^a-z0-9]+/g, '-')
-                        .replace(/^-+|-+$/g, '');
+                        .replace(/[^a-zA-Z0-9\s_-]/g, '') // remove special chars
+                        .replace(/[-_\s]+(.)?/g, (_, c) => c ? c.toUpperCase() : '') // camelCase after space/dash
+                        .replace(/^[A-Z]/, c => c.toLowerCase()); // ensure lower camelCase
                 }
             });
             slugInput.addEventListener('input', function () {

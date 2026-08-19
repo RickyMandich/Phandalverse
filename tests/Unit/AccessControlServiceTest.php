@@ -64,8 +64,8 @@ class AccessControlServiceTest extends TestCase
         $otherUser = User::factory()->create(['master' => false]);
         $masterUser = User::factory()->create(['master' => true]);
 
-        $parentNote = "#access:artefici\n# Nota per Artefici";
-        $childNote = "#access:bibliotecari\n# Nota per Bibliotecari";
+        $parentNote = "#access-artefici\n# Nota per Artefici";
+        $childNote = "#access-bibliotecari\n# Nota per Bibliotecari";
 
         // Parent note: visible to parentUser, childUser (inherited), master; NOT to otherUser or guest
         $this->assertTrue(AccessControlService::noteIsVisibleTo($parentNote, $parentUser));
@@ -81,10 +81,10 @@ class AccessControlServiceTest extends TestCase
         $this->assertFalse(AccessControlService::noteIsVisibleTo($childNote, $otherUser));
     }
 
-    public function test_multiple_groups_with_pipe_or_logic(): void
+    public function test_multiple_groups_with_underscore_or_logic(): void
     {
-        $groupA = AccessGroup::create(['slug' => 'gilda-ladri', 'name' => 'Gilda Ladri', 'color' => '#111111']);
-        $groupB = AccessGroup::create(['slug' => 'gilda-maghi', 'name' => 'Gilda Maghi', 'color' => '#222222']);
+        $groupA = AccessGroup::create(['slug' => 'gildaLadri', 'name' => 'Gilda Ladri', 'color' => '#111111']);
+        $groupB = AccessGroup::create(['slug' => 'gildaMaghi', 'name' => 'Gilda Maghi', 'color' => '#222222']);
 
         $userA = User::factory()->create(['master' => false]);
         $userA->accessGroups()->attach($groupA);
@@ -94,7 +94,7 @@ class AccessControlServiceTest extends TestCase
 
         $userC = User::factory()->create(['master' => false]);
 
-        $note = "#access:gilda-ladri|gilda-maghi\nContenuto per ladri o maghi";
+        $note = "#access-gildaLadri_gildaMaghi\nContenuto per ladri o maghi";
 
         $this->assertTrue(AccessControlService::noteIsVisibleTo($note, $userA));
         $this->assertTrue(AccessControlService::noteIsVisibleTo($note, $userB));
@@ -103,21 +103,21 @@ class AccessControlServiceTest extends TestCase
 
     public function test_resolve_block_color_in_same_branch(): void
     {
-        $parent = AccessGroup::create(['slug' => 'g-padre', 'name' => 'Padre', 'color' => '#aaaaaa']);
-        $child = AccessGroup::create(['slug' => 'g-figlio', 'name' => 'Figlio', 'color' => '#bbbbbb', 'parent_id' => $parent->id]);
+        $parent = AccessGroup::create(['slug' => 'gPadre', 'name' => 'Padre', 'color' => '#aaaaaa']);
+        $child = AccessGroup::create(['slug' => 'gFiglio', 'name' => 'Figlio', 'color' => '#bbbbbb', 'parent_id' => $parent->id]);
 
         // When tagged with both parent and child in same branch, deepest child color is returned
-        $color = AccessControlService::resolveBlockColor(['g-padre', 'g-figlio']);
+        $color = AccessControlService::resolveBlockColor(['gPadre', 'gFiglio']);
         $this->assertEquals('#bbbbbb', $color);
     }
 
     public function test_resolve_block_color_in_unrelated_branches(): void
     {
-        $group1 = AccessGroup::create(['slug' => 'ramo-a', 'name' => 'Ramo A', 'color' => '#111111']);
-        $group2 = AccessGroup::create(['slug' => 'ramo-b', 'name' => 'Ramo B', 'color' => '#222222']);
+        $group1 = AccessGroup::create(['slug' => 'ramoA', 'name' => 'Ramo A', 'color' => '#111111']);
+        $group2 = AccessGroup::create(['slug' => 'ramoB', 'name' => 'Ramo B', 'color' => '#222222']);
 
         // When tagged with groups from unrelated branches, group with lower ID is deterministically chosen
-        $color = AccessControlService::resolveBlockColor(['ramo-a', 'ramo-b']);
+        $color = AccessControlService::resolveBlockColor(['ramoA', 'ramoB']);
         $this->assertEquals($group1->color, $color);
     }
 
@@ -144,7 +144,7 @@ class AccessControlServiceTest extends TestCase
 
         $userWithoutAccess = User::factory()->create(['master' => false]);
 
-        $markdown = "Testo pubblico\n#startAccess:segreto\nTesto Segreto\n#endAccess\nFine";
+        $markdown = "Testo pubblico\n#startAccess-segreto\nTesto Segreto\n#endAccess\nFine";
 
         $filteredNoAccess = AccessControlService::filterAccessBlocks($markdown, $userWithoutAccess);
         $this->assertStringNotContainsString('Testo Segreto', $filteredNoAccess);

@@ -153,7 +153,7 @@ class User extends Authenticatable implements MustVerifyEmail
             $slugs = array_merge($slugs, $group->ancestorSlugs());
         }
 
-        return $this->accessGroupSlugChainCache = array_unique($slugs);
+        return $this->accessGroupSlugChainCache = array_unique(array_map('strtolower', $slugs));
     }
 
     /**
@@ -166,6 +166,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return true;
         }
 
-        return count(array_intersect($requiredSlugs, $this->visibleAccessGroupSlugs())) > 0;
+        $requiredLower = array_map('strtolower', $requiredSlugs);
+        return count(array_intersect($requiredLower, $this->visibleAccessGroupSlugs())) > 0;
     }
 }

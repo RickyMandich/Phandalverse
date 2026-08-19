@@ -32,16 +32,16 @@ class AccessControlService
     }
 
     /**
-     * Estrae gli slug dei gruppi richiesti da un tag #access:gruppo1|gruppo2
+     * Estrae gli slug dei gruppi richiesti da un tag #access-gruppo1_gruppo2
      * (nota intera). Ritorna array vuoto se il tag non è presente.
      */
     public static function requiredGroupsFromNoteTag(string $content): array
     {
-        if (!preg_match('/(?<=^|\s)#access:([a-z0-9\-]+(?:\|[a-z0-9\-]+)*)(?=\s|$)/i', $content, $m)) {
+        if (!preg_match('/(?<=^|\s)#access-([a-z0-9]+(?:_[a-z0-9]+)*)(?=\s|$)/i', $content, $m)) {
             return [];
         }
 
-        return array_map('strtolower', explode('|', $m[1]));
+        return array_map('strtolower', explode('_', $m[1]));
     }
 
     /**
@@ -87,7 +87,7 @@ class AccessControlService
     }
 
     /**
-     * Rimuove i blocchi #startAccess...#endAccess a cui l'utente non ha accesso.
+     * Rimuove i blocchi #startAccess-...#endAccess a cui l'utente non ha accesso.
      * Per i blocchi a cui ha accesso, rimuove i soli marcatori mantenendo il contenuto interno.
      */
     public static function filterAccessBlocks(string $content, ?User $user = null): string
@@ -96,13 +96,13 @@ class AccessControlService
         $isMaster = $user && $user->isMaster();
 
         return preg_replace_callback(
-            '/#startAccess:([a-z0-9\-]+(?:\|[a-z0-9\-]+)*)\s*(.*?)\s*#endAccess/is',
+            '/#startAccess-([a-z0-9]+(?:_[a-z0-9]+)*)\s*(.*?)\s*#endAccess/is',
             function ($m) use ($user, $isMaster) {
                 if ($isMaster) {
                     return $m[2];
                 }
 
-                $requiredGroups = array_map('strtolower', explode('|', $m[1]));
+                $requiredGroups = array_map('strtolower', explode('_', $m[1]));
                 if ($user && $user->hasAccessToAnyGroup($requiredGroups)) {
                     return $m[2];
                 }
@@ -114,11 +114,11 @@ class AccessControlService
     }
 
     /**
-     * Rimuove il tag a livello nota #access:gruppo1|gruppo2 dal testo.
+     * Rimuove il tag a livello nota #access-gruppo1_gruppo2 dal testo.
      */
     public static function stripAccessTags(string $content): string
     {
-        return preg_replace('/(?<=^|\s)#access:[a-z0-9\-]+(?:\|[a-z0-9\-]+)*(?=\s|$)/i', '', $content);
+        return preg_replace('/(?<=^|\s)#access-[a-z0-9]+(?:_[a-z0-9]+)*(?=\s|$)/i', '', $content);
     }
 
     /**

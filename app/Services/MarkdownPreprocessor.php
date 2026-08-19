@@ -590,8 +590,8 @@ class MarkdownPreprocessor
 
         // 5. Estrai i blocchi access. Se l'utente non ha accesso, rimuovili. Altrimenti salvali con badge e colore.
         $accessBlocks = [];
-        $text = preg_replace_callback('/#startAccess:([a-z0-9\-]+(?:\|[a-z0-9\-]+)*)\s*(.*?)\s*#endAccess/is', function ($m) use (&$accessBlocks, $user, $isMaster) {
-            $requiredGroups = array_map('strtolower', explode('|', $m[1]));
+        $text = preg_replace_callback('/#startAccess-([a-z0-9]+(?:_[a-z0-9]+)*)\s*(.*?)\s*#endAccess/is', function ($m) use (&$accessBlocks, $user, $isMaster) {
+            $requiredGroups = array_map('strtolower', explode('_', $m[1]));
             $hasAccess = $isMaster || ($user && $user->hasAccessToAnyGroup($requiredGroups));
 
             if (!$hasAccess) {

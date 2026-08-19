@@ -125,13 +125,14 @@ Il servizio [`App\Services\MarkdownPreprocessor`](file:///c:/Users/RickyMandich/
 5. **Numeri Romani**:
    - Renderizza le sequenze `R|IX|` nel formato stilizzato per le ere/capitoli.
 
-### Permessi di Lettura e Gruppi di Accesso (`#access:`, `#dm`, `#startAccess`, `#startMaster`)
+### Permessi di Lettura e Gruppi di Accesso (`#access-`, `#dm`, `#startAccess-`, `#startMaster`)
 Il Vault gestisce un sistema granulare di visibilità parametrizzato su **Gruppi di Accesso** (`access_groups`):
-- **Note intere riservate (`#access:gruppo1|gruppo2` o `#dm`)**:
-  - Inserito all'inizio o nel corpo della nota.
+- **Note intere riservate (`#access-gruppo1_gruppo2` o `#dm`)**:
+  - Inserito all'inizio o nel corpo della nota. Più gruppi possono essere specificati separati da underscore `_` (logica OR).
+  - Gli slug dei gruppi sono in formato **camelCase** (es. `cavalieriDelDrago`, `artefici`) e non possono contenere trattini `-` o underscore `_`.
   - Se l'utente appartiene a uno dei gruppi indicati (o a un loro gruppo discendente) oppure è Master, la nota è visibile. Altrimenti il server restituisce `404 Not Found` (invisibilità totale, esclusa anche dall'albero, dal grafo e dalla ricerca).
   - Il tag `#dm` agisce come gruppo implicito riservato esclusivamente ai Master.
-- **Blocchi parziali riservati (`#startAccess:gruppo1|gruppo2 ... #endAccess` e `#startMaster ... #endMaster`)**:
+- **Blocchi parziali riservati (`#startAccess-gruppo1_gruppo2 ... #endAccess` e `#startMaster ... #endMaster`)**:
   - **Per chi ha accesso**: il contenuto interno viene renderizzato con un bordo colorato calcolato dalla gerarchia (`resolveBlockColor`) e con badge personalizzati per l'utente (`computeBadgeGroups`).
   - **Per chi non ha accesso**: il blocco viene interamente rimosso prima del rendering HTML.
 - **Ereditarietà Gerarchica dei Gruppi**:

@@ -38,11 +38,11 @@
                         <div class="mb-3">
                             <label for="slug" class="form-label">Slug (usato nei tag markdown) <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <span class="input-group-text bg-dark text-muted">#access:</span>
+                                <span class="input-group-text bg-dark text-muted">#access-</span>
                                 <input type="text" class="form-control @error('slug') is-invalid @enderror" 
                                        id="slug" name="slug" value="{{ old('slug', $group->slug) }}" required>
                             </div>
-                            <small class="form-text text-muted">Solo lettere minuscole, numeri e trattini (kebab-case). Nessuna virgola o pipe.</small>
+                            <small class="form-text text-muted">Formato camelCase (es: <code>cavalieriDelDrago</code>). Nessun trattino "-" o underscore "_".</small>
                         </div>
 
                         <div class="mb-3">

@@ -711,17 +711,15 @@ class AdminController extends Controller
                 'string',
                 'max:255',
                 'unique:access_groups,slug',
-                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                'regex:/^[a-z][a-zA-Z0-9]*$/',
             ],
             'description' => 'nullable|string',
             'color' => ['nullable', 'string', 'regex:/^#[a-fA-F0-9]{6}$/'],
             'parent_id' => 'nullable|exists:access_groups,id',
         ], [
-            'slug.regex' => 'Lo slug deve essere in formato kebab-case (es. mio-gruppo) e non può contenere virgole o pipe.',
+            'slug.regex' => 'Lo slug deve essere in formato camelCase (es. mioGruppo o cavalieriDelDrago) e non può contenere trattini o underscore.',
             'color.regex' => 'Il colore deve essere un codice esadecimale valido (es. #a83232).',
         ]);
-
-        $validated['slug'] = strtolower($validated['slug']);
 
         AccessGroup::create($validated);
         AccessControlService::clearCache();
@@ -765,7 +763,7 @@ class AdminController extends Controller
                 'string',
                 'max:255',
                 Rule::unique('access_groups')->ignore($group->id),
-                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                'regex:/^[a-z][a-zA-Z0-9]*$/',
             ],
             'description' => 'nullable|string',
             'color' => ['nullable', 'string', 'regex:/^#[a-fA-F0-9]{6}$/'],
@@ -775,12 +773,10 @@ class AdminController extends Controller
                 Rule::notIn($excludedIds),
             ],
         ], [
-            'slug.regex' => 'Lo slug deve essere in formato kebab-case (es. mio-gruppo) e non può contenere virgole o pipe.',
+            'slug.regex' => 'Lo slug deve essere in formato camelCase (es. mioGruppo o cavalieriDelDrago) e non può contenere trattini o underscore.',
             'color.regex' => 'Il colore deve essere un codice esadecimale valido (es. #a83232).',
             'parent_id.not_in' => 'Un gruppo non può avere come padre se stesso o uno dei suoi discendenti.',
         ]);
-
-        $validated['slug'] = strtolower($validated['slug']);
 
         $group->update($validated);
         AccessControlService::clearCache();

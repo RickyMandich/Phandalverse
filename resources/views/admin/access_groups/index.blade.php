@@ -31,8 +31,8 @@
         </div>
         <div class="card-body small text-muted">
             <ul class="mb-0">
-                <li><strong>Nota intera riservata:</strong> inserisci <code>#access:slug-gruppo</code> o <code>#access:gruppo1|gruppo2</code> in testa alla nota.</li>
-                <li><strong>Blocco riservato parziale:</strong> racchiudi il testo tra <code>#startAccess:slug-gruppo</code> e <code>#endAccess</code> (o con <code>|</code> per più gruppi in OR).</li>
+                <li><strong>Nota intera riservata:</strong> inserisci <code>#access-gruppo</code> o <code>#access-gruppo1_gruppo2</code> in testa alla nota.</li>
+                <li><strong>Blocco riservato parziale:</strong> racchiudi il testo tra <code>#startAccess-gruppo</code> (o <code>#startAccess-gruppo1_gruppo2</code> per più gruppi in OR) e <code>#endAccess</code>.</li>
                 <li><strong>Gerarchia:</strong> un utente appartenente a un gruppo <em>figlio</em> eredita automaticamente l'accesso ai contenuti del gruppo <em>padre</em>.</li>
                 <li><strong>Master:</strong> l'utente con ruolo Master vede sempre tutti i contenuti e le note.</li>
             </ul>
@@ -45,7 +45,7 @@
                 <thead>
                     <tr>
                         <th>Nome</th>
-                        <th>Slug Markdown</th>
+                        <th>Tag Markdown</th>
                         <th>Colore</th>
                         <th>Gruppo Padre</th>
                         <th>Membri</th>
@@ -60,7 +60,7 @@
                                 <strong>{{ $group->name }}</strong>
                             </td>
                             <td>
-                                <code>#access:{{ $group->slug }}</code>
+                                <code>#access-{{ $group->slug }}</code>
                             </td>
                             <td>
                                 @if($group->color)

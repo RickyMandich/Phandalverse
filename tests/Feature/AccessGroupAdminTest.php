@@ -20,35 +20,43 @@ class AccessGroupAdminTest extends TestCase
         $response->assertSee('403');
     }
 
-    public function test_admin_can_create_access_group(): void
+    public function test_admin_can_create_access_group_with_camel_case(): void
     {
         $admin = User::factory()->create(['admin' => true]);
 
         $response = $this->actingAs($admin)->post(route('admin.access_groups.store'), [
             'name' => 'Cavalieri del Drago',
-            'slug' => 'cavalieri-del-drago',
+            'slug' => 'cavalieriDelDrago',
             'color' => '#336699',
             'description' => 'Un ordine antico di cavalieri',
         ]);
 
         $response->assertRedirect(route('admin.access_groups'));
         $this->assertDatabaseHas('access_groups', [
-            'slug' => 'cavalieri-del-drago',
+            'slug' => 'cavalieriDelDrago',
             'name' => 'Cavalieri del Drago',
         ]);
     }
 
-    public function test_invalid_slug_is_rejected(): void
+    public function test_slug_with_dash_or_underscore_is_rejected(): void
     {
         $admin = User::factory()->create(['admin' => true]);
 
-        $response = $this->actingAs($admin)->post(route('admin.access_groups.store'), [
-            'name' => 'Test Invalido',
-            'slug' => 'invalid|slug,with,commas',
+        // Dash is rejected
+        $responseDash = $this->actingAs($admin)->post(route('admin.access_groups.store'), [
+            'name' => 'Test Trattino',
+            'slug' => 'slug-con-trattino',
             'color' => '#336699',
         ]);
+        $responseDash->assertSessionHasErrors('slug');
 
-        $response->assertSessionHasErrors('slug');
+        // Underscore is rejected
+        $responseUnderscore = $this->actingAs($admin)->post(route('admin.access_groups.store'), [
+            'name' => 'Test Underscore',
+            'slug' => 'slug_con_underscore',
+            'color' => '#336699',
+        ]);
+        $responseUnderscore->assertSessionHasErrors('slug');
     }
 
     public function test_admin_can_assign_groups_to_user(): void
@@ -57,7 +65,7 @@ class AccessGroupAdminTest extends TestCase
         $targetUser = User::factory()->create();
         $group = AccessGroup::create([
             'name' => 'Custodi della Fiamma',
-            'slug' => 'custodi-fiamma',
+            'slug' => 'custodiDellaFiamma',
             'color' => '#ff5500',
         ]);
 

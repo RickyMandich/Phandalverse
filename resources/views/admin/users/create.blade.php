@@ -142,7 +142,7 @@
                                                     <span class="badge me-2" style="background-color: {{ $group->color ?? '#6c757d' }}; color: #fff;">
                                                         {{ $group->name }}
                                                     </span>
-                                                    <small class="text-muted"><code>#access:{{ $group->slug }}</code></small>
+                                                    <small class="text-muted"><code>#access-{{ $group->slug }}</code></small>
                                                 </label>
                                                 @if($group->parent)
                                                     <small class="text-muted d-block mt-1 ps-4">
