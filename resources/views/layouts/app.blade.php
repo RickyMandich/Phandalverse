@@ -103,6 +103,9 @@
                                         <a class="dropdown-item" href="{{ route('admin.users') }}">
                                             <i class="bi bi-people"></i> Utenti
                                         </a>
+                                        <a class="dropdown-item" href="{{ route('admin.access_groups') }}">
+                                            <i class="bi bi-shield-lock"></i> Gruppi di Accesso
+                                        </a>
                                         <a class="dropdown-item" href="{{ route('admin.reports') }}">
                                             📢 Segnalazioni
                                         </a>

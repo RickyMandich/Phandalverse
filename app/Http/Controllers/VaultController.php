@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AccessControlService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use App\Services\MarkdownPreprocessor;
@@ -343,13 +344,14 @@ class VaultController extends Controller
 
                     // Check DM Status
                     $isDm = false;
+                    $content = '';
                     try {
                         $content = File::get($fullPath);
                         $isDm = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content) ? true : false;
                     } catch (\Throwable $e) {
                     }
 
-                    if (($isDm && !Auth::check()) || ($isDm && !Auth::isMaster())) {
+                    if (!AccessControlService::noteIsVisibleTo($content)) {
                         continue;
                     }
 
@@ -426,9 +428,8 @@ class VaultController extends Controller
 
             $fullPath = $relativePath ? $relativePath . '/' . $name . '.md' : $name . '.md';
             $content = File::get($file->getPathname());
-            $isDm = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content) ? true : false;
 
-            if ($isDm && (!Auth::check() || !Auth::isMaster())) {
+            if (!AccessControlService::noteIsVisibleTo($content)) {
                 CustomLogger::graph("Nodo escluso dal grafo per permessi: $fullPath");
                 continue;
             }
@@ -462,9 +463,8 @@ class VaultController extends Controller
 
             $name = $file->getFilenameWithoutExtension();
             $content = File::get($file->getPathname());
-            $isDm = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content) ? true : false;
 
-            if ($isDm && (!Auth::check() || !Auth::isMaster())) {
+            if (!AccessControlService::noteIsVisibleTo($content)) {
                 continue;
             }
 
@@ -548,8 +548,7 @@ class VaultController extends Controller
                 $results = array_filter($results, function ($result) {
                     $path = base_path('Vault/' . $result['path'] . '.md');
                     if (File::exists($path)) {
-                        $content = File::get($path);
-                        return !preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content);
+                        return AccessControlService::noteIsVisibleTo(File::get($path));
                     }
                     return true;
                 });
@@ -684,7 +683,7 @@ class VaultController extends Controller
         // Gestione blocchi master e DM
         // If file is DM-only and user is not master, act as if file doesn't exist
         $masterFile = false;
-        if (!Auth::isMaster() && preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
+        if (!AccessControlService::noteIsVisibleTo($content)) {
             CustomLogger::note($note, "Accesso negato: file DM per non-master");
             abort(404, 'Nota non trovata');
         } else if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
@@ -767,7 +766,7 @@ class VaultController extends Controller
         $content = File::get($fullSystemPath);
 
         // Gestione blocchi master e DM
-        if (!Auth::isMaster() && preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
+        if (!AccessControlService::noteIsVisibleTo($content)) {
             abort(403, 'Accesso negato');
         }
 

@@ -50,7 +50,7 @@ class MarkdownPreprocessor
                 if (!$isMaster) {
                     try {
                         $fileContent = File::get($file->getPathname());
-                        if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $fileContent)) {
+                        if (!AccessControlService::noteIsVisibleTo($fileContent)) {
                             $shouldSkip = true;
                         }
                     } catch (\Throwable $e) {
@@ -107,13 +107,18 @@ class MarkdownPreprocessor
             return $text;
         }
 
-        // Se il file è marcato come DM-only, nascondi l'intero file
-        if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $text)) {
+        // Nota non visibile (DM-only o gruppo mancante): nascondi tutto
+        if (!AccessControlService::noteIsVisibleTo($text)) {
             return '';
         }
 
         // Rimuove tutti i blocchi compresi tra #startMaster e #endMaster (globale)
-        return preg_replace('/#startMaster\s*(.*?)\s*#endMaster/is', '', $text);
+        $text = preg_replace('/#startMaster\s*(.*?)\s*#endMaster/is', '', $text);
+
+        // Rimuove i blocchi #startAccess:gruppo ... #endAccess per cui l'utente non ha accesso
+        $text = AccessControlService::filterAccessBlocks($text);
+
+        return $text;
     }
 
     /**
@@ -296,6 +301,11 @@ class MarkdownPreprocessor
         }
 
         $content = File::get($fullPath);
+
+        // Check note visibility for embeds
+        if (!AccessControlService::noteIsVisibleTo($content)) {
+            return '<div class="embed-note embed-restricted text-muted fst-italic"><i class="bi bi-lock"></i> Contenuto riservato</div>';
+        }
 
         // Rimuovi frontmatter YAML
         $content = preg_replace('/^---\s*\n.*?\n---\s*\n/s', '', $content);
@@ -552,18 +562,22 @@ class MarkdownPreprocessor
     public static function toHtml(string $text, string $note): string
     {
         $isMaster = Auth::check() && Auth::isMaster();
+        $user = Auth::user();
 
-        // 1. Se il file è marcato come DM-only e non siamo master, ritorna vuoto
-        if (!$isMaster && preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $text)) {
+        // 1. Se il file è marcato come DM-only o gruppi non accessibili e non siamo master, ritorna vuoto
+        if (!AccessControlService::noteIsVisibleTo($text, $user)) {
             return '';
         }
 
-        // 2. Se siamo master, puliamo eventuali tag #dm dal testo visualizzato
+        // 2. Puliamo il tag #access:gruppo a livello di nota dal testo visualizzato
+        $text = AccessControlService::stripAccessTags($text);
+
+        // 3. Se siamo master, puliamo eventuali tag #dm dal testo visualizzato
         if ($isMaster) {
             $text = self::stripDmMarker($text);
         }
 
-        // 3. Estrai i blocchi master. Se non siamo master, rimuovili direttamente.
+        // 4. Estrai i blocchi master. Se non siamo master, rimuovili direttamente.
         $masterBlocks = [];
         $text = preg_replace_callback('/#startMaster\s*(.*?)\s*#endMaster/is', function ($m) use (&$masterBlocks, $isMaster) {
             if (!$isMaster) {
@@ -574,9 +588,32 @@ class MarkdownPreprocessor
             return "<!--MASTER_BLOCK:{$idx}-->";
         }, $text);
 
+        // 5. Estrai i blocchi access. Se l'utente non ha accesso, rimuovili. Altrimenti salvali con badge e colore.
+        $accessBlocks = [];
+        $text = preg_replace_callback('/#startAccess:([a-z0-9\-]+(?:\|[a-z0-9\-]+)*)\s*(.*?)\s*#endAccess/is', function ($m) use (&$accessBlocks, $user, $isMaster) {
+            $requiredGroups = array_map('strtolower', explode('|', $m[1]));
+            $hasAccess = $isMaster || ($user && $user->hasAccessToAnyGroup($requiredGroups));
+
+            if (!$hasAccess) {
+                return '';
+            }
+
+            $idx = count($accessBlocks);
+            $badges = AccessControlService::computeBadgeGroups($user, $requiredGroups);
+            $color = AccessControlService::resolveBlockColor($requiredGroups);
+
+            $accessBlocks[$idx] = [
+                'content' => $m[2],
+                'badges' => $badges,
+                'color' => $color,
+            ];
+
+            return "<!--ACCESS_BLOCK:{$idx}-->";
+        }, $text);
+
         $embeds = [];
 
-        // Helper to run pre-processing on markdown content (used for both main text and master blocks)
+        // Helper to run pre-processing on markdown content (used for main text, master blocks, and access blocks)
         $processContent = function (string $t) use (&$embeds, $note) {
             $t = self::replaceEmbedsWithPlaceholders($t, $embeds);
             $t = self::convertTags($t);
@@ -585,7 +622,7 @@ class MarkdownPreprocessor
             return $t;
         };
 
-        // 2. Process the main text (which now has master block placeholders)
+        // 6. Process the main text (which now has master block and access block placeholders)
         $text = $processContent($text);
 
         $environment = new Environment([
@@ -600,26 +637,45 @@ class MarkdownPreprocessor
 
         $converter = new MarkdownConverter($environment);
 
-        // 3. Convert the main text
+        // 7. Convert the main text
         $html = $converter->convert($text)->getContent();
 
-        // 4. Convert each master block separately and insert the rendered HTML
+        // 8. Convert each master block separately and insert the rendered HTML
         foreach ($masterBlocks as $i => $innerMarkdown) {
-            // Process tags/embeds inside the block
             $innerMarkdown = $processContent($innerMarkdown);
-            // Convert to HTML
             $innerHtml = $converter->convert($innerMarkdown)->getContent();
             $wrapped = '<div class="master-block">' . $innerHtml . '</div>';
             $html = str_replace("<!--MASTER_BLOCK:{$i}-->", $wrapped, $html);
         }
 
-        // 5. Restore embeds (placeholders -> actual embed HTML)
+        // 9. Convert each access block separately and insert the rendered HTML with badges and color
+        foreach ($accessBlocks as $i => $blockData) {
+            $innerMarkdown = $processContent($blockData['content']);
+            $innerHtml = $converter->convert($innerMarkdown)->getContent();
+
+            $badgesHtml = '';
+            if (!empty($blockData['badges'])) {
+                $badgesHtml = '<div class="access-badges mb-2">';
+                foreach ($blockData['badges'] as $b) {
+                    $bColor = htmlspecialchars($b['color']);
+                    $bName = htmlspecialchars($b['name']);
+                    $badgesHtml .= "<span class=\"badge me-1\" style=\"background-color: {$bColor}; color: #fff;\">{$bName}</span>";
+                }
+                $badgesHtml .= '</div>';
+            }
+
+            $color = htmlspecialchars($blockData['color']);
+            $wrapped = "<div class=\"access-block\" style=\"--access-color: {$color}; border-left: 3px solid {$color}; padding: 0.5rem 1rem; margin: 1rem 0; background: rgba(255,255,255,0.03); border-radius: 4px;\">{$badgesHtml}{$innerHtml}</div>";
+            $html = str_replace("<!--ACCESS_BLOCK:{$i}-->", $wrapped, $html);
+        }
+
+        // 10. Restore embeds (placeholders -> actual embed HTML)
         $html = self::restoreEmbeds($html, $embeds, $note);
 
-        // 6. Process external links to add target="_blank"
+        // 11. Process external links to add target="_blank"
         $html = self::processExternalLinks($html);
 
-        // 7. Add stat-block class to blockquotes for D&D styling
+        // 12. Add stat-block class to blockquotes for D&D styling
         $html = str_replace('<blockquote>', '<blockquote class="stat-block">', $html);
 
         return $html;

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AccessGroup;
 use App\Models\SystemError;
 use App\Models\User;
+use App\Services\AccessControlService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -116,7 +118,7 @@ class AdminController extends Controller
      */
     public function users(Request $request)
     {
-        $query = User::query()->orderBy('created_at', 'desc');
+        $query = User::query()->with('accessGroups')->orderBy('created_at', 'desc');
 
         // Ricerca per nome o email
         if ($request->has('search') && $request->search) {
@@ -137,7 +139,13 @@ class AdminController extends Controller
      */
     public function createUser()
     {
-        return view('admin.users.create');
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $accessGroups = AccessGroup::with('parent')->orderBy('name')->get();
+
+        return view('admin.users.create', compact('accessGroups'));
     }
 
     /**
@@ -145,6 +153,10 @@ class AdminController extends Controller
      */
     public function storeUser(Request $request)
     {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
@@ -154,6 +166,8 @@ class AdminController extends Controller
             'master_utils' => 'boolean',
             'showEmbedLink' => 'boolean',
             'collapseEmbed' => 'boolean',
+            'access_groups' => 'nullable|array',
+            'access_groups.*' => 'exists:access_groups,id',
         ]);
 
         $newUser = User::create([
@@ -167,6 +181,10 @@ class AdminController extends Controller
             'collapseEmbed' => $request->has('collapseEmbed'),
             'email_verified_at' => $request->has('verified') ? now() : null,
         ]);
+
+        if ($request->has('access_groups')) {
+            $newUser->accessGroups()->sync($request->input('access_groups', []));
+        }
 
         // Notifica su Telegram la creazione del nuovo utente
         try {
@@ -188,7 +206,14 @@ class AdminController extends Controller
      */
     public function editUser(User $user)
     {
-        return view('admin.users.edit', compact('user'));
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $accessGroups = AccessGroup::with('parent')->orderBy('name')->get();
+        $userGroupIds = $user->accessGroups->pluck('id')->toArray();
+
+        return view('admin.users.edit', compact('user', 'accessGroups', 'userGroupIds'));
     }
 
     /**
@@ -196,6 +221,10 @@ class AdminController extends Controller
      */
     public function updateUser(Request $request, User $user)
     {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
         $validated = $request->validateWithBag('profile', [
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
@@ -204,6 +233,8 @@ class AdminController extends Controller
             'master_utils' => 'boolean',
             'showEmbedLink' => 'boolean',
             'collapseEmbed' => 'boolean',
+            'access_groups' => 'nullable|array',
+            'access_groups.*' => 'exists:access_groups,id',
         ]);
 
         $user->update([
@@ -215,6 +246,8 @@ class AdminController extends Controller
             'showEmbedLink' => $request->has('showEmbedLink'),
             'collapseEmbed' => $request->has('collapseEmbed'),
         ]);
+
+        $user->accessGroups()->sync($request->input('access_groups', []));
 
         // Gestione verifica email
         if ($request->has('verified') && !$user->email_verified_at) {
@@ -630,6 +663,157 @@ class AdminController extends Controller
                 'email' => $email
             ]);
         }
+    }
+
+    // ========== GESTIONE GRUPPI DI ACCESSO ==========
+
+    /**
+     * Display list of all access groups
+     */
+    public function accessGroups()
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $groups = AccessGroup::with(['parent', 'children'])->withCount('users')->orderBy('name')->get();
+
+        return view('admin.access_groups.index', compact('groups'));
+    }
+
+    /**
+     * Show form to create a new access group
+     */
+    public function createAccessGroup()
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $parents = AccessGroup::orderBy('name')->get();
+
+        return view('admin.access_groups.create', compact('parents'));
+    }
+
+    /**
+     * Store a new access group
+     */
+    public function storeAccessGroup(Request $request)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                'unique:access_groups,slug',
+                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+            ],
+            'description' => 'nullable|string',
+            'color' => ['nullable', 'string', 'regex:/^#[a-fA-F0-9]{6}$/'],
+            'parent_id' => 'nullable|exists:access_groups,id',
+        ], [
+            'slug.regex' => 'Lo slug deve essere in formato kebab-case (es. mio-gruppo) e non può contenere virgole o pipe.',
+            'color.regex' => 'Il colore deve essere un codice esadecimale valido (es. #a83232).',
+        ]);
+
+        $validated['slug'] = strtolower($validated['slug']);
+
+        AccessGroup::create($validated);
+        AccessControlService::clearCache();
+
+        return redirect()->route('admin.access_groups')->with('success', 'Gruppo di accesso creato con successo');
+    }
+
+    /**
+     * Show form to edit an access group
+     */
+    public function editAccessGroup(AccessGroup $group)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $descendantIds = $this->getDescendantIds($group);
+        $excludedIds = array_merge([$group->id], $descendantIds);
+
+        $parents = AccessGroup::whereNotIn('id', $excludedIds)->orderBy('name')->get();
+
+        return view('admin.access_groups.edit', compact('group', 'parents'));
+    }
+
+    /**
+     * Update an existing access group
+     */
+    public function updateAccessGroup(Request $request, AccessGroup $group)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $descendantIds = $this->getDescendantIds($group);
+        $excludedIds = array_merge([$group->id], $descendantIds);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('access_groups')->ignore($group->id),
+                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+            ],
+            'description' => 'nullable|string',
+            'color' => ['nullable', 'string', 'regex:/^#[a-fA-F0-9]{6}$/'],
+            'parent_id' => [
+                'nullable',
+                'exists:access_groups,id',
+                Rule::notIn($excludedIds),
+            ],
+        ], [
+            'slug.regex' => 'Lo slug deve essere in formato kebab-case (es. mio-gruppo) e non può contenere virgole o pipe.',
+            'color.regex' => 'Il colore deve essere un codice esadecimale valido (es. #a83232).',
+            'parent_id.not_in' => 'Un gruppo non può avere come padre se stesso o uno dei suoi discendenti.',
+        ]);
+
+        $validated['slug'] = strtolower($validated['slug']);
+
+        $group->update($validated);
+        AccessControlService::clearCache();
+
+        return redirect()->route('admin.access_groups')->with('success', 'Gruppo di accesso aggiornato con successo');
+    }
+
+    /**
+     * Delete an access group
+     */
+    public function deleteAccessGroup(AccessGroup $group)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $group->delete();
+        AccessControlService::clearCache();
+
+        return redirect()->route('admin.access_groups')->with('success', 'Gruppo di accesso eliminato con successo');
+    }
+
+    /**
+     * Risale ricorsivamente tutti gli ID dei gruppi discendenti
+     */
+    private function getDescendantIds(AccessGroup $group): array
+    {
+        $descendants = [];
+        foreach ($group->children as $child) {
+            $descendants[] = $child->id;
+            $descendants = array_merge($descendants, $this->getDescendantIds($child));
+        }
+        return $descendants;
     }
 }
 

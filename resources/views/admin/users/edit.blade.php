@@ -121,6 +121,46 @@
                             </div>
                         </div>
 
+                        <hr>
+                        <h6><i class="bi bi-shield-lock"></i> Gruppi di Accesso al Vault</h6>
+                        <p class="text-muted small">Seleziona i gruppi di appartenenza dell'utente per sbloccare le note e sezioni riservate.</p>
+
+                        @if(isset($accessGroups) && $accessGroups->count() > 0)
+                            <div class="row g-2 mb-3">
+                                @foreach($accessGroups as $group)
+                                    @php
+                                        $isChecked = is_array(old('access_groups'))
+                                            ? in_array($group->id, old('access_groups'))
+                                            : in_array($group->id, $userGroupIds ?? []);
+                                    @endphp
+                                    <div class="col-md-6">
+                                        <div class="card p-2 h-100 bg-dark border-secondary">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="access_groups[]" 
+                                                       value="{{ $group->id }}" 
+                                                       id="ag_{{ $group->id }}"
+                                                       {{ $isChecked ? 'checked' : '' }}>
+                                                <label class="form-check-label d-flex align-items-center" for="ag_{{ $group->id }}">
+                                                    <span class="badge me-2" style="background-color: {{ $group->color ?? '#6c757d' }}; color: #fff;">
+                                                        {{ $group->name }}
+                                                    </span>
+                                                    <small class="text-muted"><code>#access:{{ $group->slug }}</code></small>
+                                                </label>
+                                                @if($group->parent)
+                                                    <small class="text-muted d-block mt-1 ps-4">
+                                                        <i class="bi bi-arrow-return-right"></i> Figlio di: {{ $group->parent->name }}
+                                                    </small>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-muted fst-italic">Nessun gruppo di accesso creato. Puoi crearli dalla sezione Gruppi di Accesso.</p>
+                        @endif
+
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-lg"></i> Salva Dati
                         </button>

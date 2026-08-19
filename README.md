@@ -60,7 +60,8 @@ phandalverse/
 │   │   └── Middleware/
 │   ├── Jobs/                        # Job per invio mail in coda
 │   ├── Models/
-│   │   ├── User.php                 # Modello Utente con ruoli (Admin, Master, MasterUtils)
+│   │   ├── User.php                 # Modello Utente con ruoli (Admin, Master, MasterUtils) e gruppi di accesso
+│   │   ├── AccessGroup.php          # Gruppi di accesso gerarchici al Vault (slug, colore, parent_id)
 │   │   ├── DmSession.php            # Sessione di combattimento (dati JSON + share_code)
 │   │   ├── DmCharacter.php          # Template e PG/PNG salvati
 │   │   ├── SystemError.php          # Log errori di sistema per admin
@@ -68,7 +69,8 @@ phandalverse/
 │   │   ├── Statistic.php            # Statistiche visite e tempo di risposta
 │   │   └── TelegramSubscriber.php   # Iscritti alle notifiche telegram
 │   └── Services/
-│       ├── MarkdownPreprocessor.php # Engine di parsing Markdown (Wikilink, Embed, Statblock)
+│       ├── AccessControlService.php # Controllo accessi unificato note/blocchi e gerarchia gruppi
+│       ├── MarkdownPreprocessor.php # Engine di parsing Markdown (Wikilink, Embed, AccessBlock, Statblock)
 │       ├── TelegramService.php      # Client API Telegram (invio messaggi, broadcast, notifiche)
 │       ├── EmailQueueService.php    # Dispatcher coda email
 │       ├── EmailLogService.php      # Logger dedicato sistema mail
@@ -82,7 +84,7 @@ phandalverse/
 │   ├── js/                          # Javascript per DM Screen, Graph View, ecc.
 │   ├── sass/ & css/                 # Stili CSS personalizzati e Bootstrap
 │   └── views/
-│       ├── admin/                   # Dashboard amministrativa (utenti, errori, db, stats)
+│       ├── admin/                   # Dashboard amministrativa (utenti, gruppi di accesso, errori, db, stats)
 │       ├── dm/                      # Schermate DM Screen, Manage e Player View
 │       ├── vault/                   # Note, albero side-bar, grafo, ricerca, changelog
 │       └── layouts/                 # Master layout dell'applicazione
@@ -106,14 +108,15 @@ I file e le cartelle nel Vault reale su disco sono normalizzati (nomi minuscoli,
   - `getOriginalDirectoryName($dirPath)`: Restituisce il nome reale di una cartella.
   - `searchNotes($query)`: Esegue la ricerca ricorsiva all'interno di `map.json`.
 
-### Engine Markdown (`MarkdownPreprocessor`)
-Il servizio [`App\Services\MarkdownPreprocessor`](file:///c:/Users/RickyMandich/PROJECT/Phandalverse/phandalverse/app/Services/MarkdownPreprocessor.php) estende `League\CommonMark` e implementa la logica di conversione da Markdown ad HTML avanzato:
+### Engine Markdown (`MarkdownPreprocessor`) & Access Control (`AccessControlService`)
+Il servizio [`App\Services\MarkdownPreprocessor`](file:///c:/Users/RickyMandich/PROJECT/Phandalverse/phandalverse/app/Services/MarkdownPreprocessor.php) estende `League\CommonMark` e implementa la conversione da Markdown ad HTML avanzato, integrato con [`App\Services\AccessControlService`](file:///c:/Users/RickyMandich/PROJECT/Phandalverse/phandalverse/app/Services/AccessControlService.php):
 
 1. **Wikilink (`[[Nome Nota|Alias]]`)**:
    - Convertiti in tag `<a href="/vault/path-normalizzato" class="wikilink">Alias</a>`.
    - Se la nota target non esiste nell'indice o l'utente non ha i permessi per vederla, il wikilink viene renderizzato come semplice testo senza link.
 2. **Note Embed (`![[Nome Nota]]` o `![[Nome Nota#Sezione]]`)**:
    - Carica e renderizza ricorsivamente la nota o sezione specificata dentro un box pieghevole (`.embed-note`), gestendo la profondità massima (`$maxEmbedDepth = 3`) per evitare loop infiniti.
+   - **Verifica permessi ricorsiva**: ogni nota embeddata riesegue il check di visibilità in isolamento per sé stessa.
 3. **Image Embed (`![[immagine.png]]` o `![[cartella/immagine.jpg]]`)**:
    - Cerca l'immagine nel Vault e genera il tag `<img src="/vault/path-encodato" class="wikilink-image">`.
 4. **Obsidian Callouts & Stat Blocks**:
@@ -122,22 +125,28 @@ Il servizio [`App\Services\MarkdownPreprocessor`](file:///c:/Users/RickyMandich/
 5. **Numeri Romani**:
    - Renderizza le sequenze `R|IX|` nel formato stilizzato per le ere/capitoli.
 
-### Permessi di Lettura e Filtraggio Blocchi (`#dm`, `#startMaster`)
-Il Vault gestisce contenuti riservati ai Dungeon Master:
-- **Tag `#dm`**: Se una nota contiene il tag `#dm` al suo interno, **è totalmente invisibile ai non-master**. Se un utente normale prova ad accedervi, il sistema restituisce `404 Not Found` (invisibilità totale).
-- **Blocchi `#startMaster ... #endMaster`**:
-  - **Per utenti normali/guest**: Il testo compreso tra questi tag viene completamente eliminato prima della conversione HTML.
-  - **Per i Master**: Il testo viene conservato e racchiuso in un blocco evidenziato (`<div class="master-block">`).
+### Permessi di Lettura e Gruppi di Accesso (`#access:`, `#dm`, `#startAccess`, `#startMaster`)
+Il Vault gestisce un sistema granulare di visibilità parametrizzato su **Gruppi di Accesso** (`access_groups`):
+- **Note intere riservate (`#access:gruppo1|gruppo2` o `#dm`)**:
+  - Inserito all'inizio o nel corpo della nota.
+  - Se l'utente appartiene a uno dei gruppi indicati (o a un loro gruppo discendente) oppure è Master, la nota è visibile. Altrimenti il server restituisce `404 Not Found` (invisibilità totale, esclusa anche dall'albero, dal grafo e dalla ricerca).
+  - Il tag `#dm` agisce come gruppo implicito riservato esclusivamente ai Master.
+- **Blocchi parziali riservati (`#startAccess:gruppo1|gruppo2 ... #endAccess` e `#startMaster ... #endMaster`)**:
+  - **Per chi ha accesso**: il contenuto interno viene renderizzato con un bordo colorato calcolato dalla gerarchia (`resolveBlockColor`) e con badge personalizzati per l'utente (`computeBadgeGroups`).
+  - **Per chi non ha accesso**: il blocco viene interamente rimosso prima del rendering HTML.
+- **Ereditarietà Gerarchica dei Gruppi**:
+  - Chi appartiene a un gruppo *figlio* (es. `bibliotecari`) eredita l'accesso ai contenuti del gruppo *padre* (es. `artefici`). Il padre non vede i contenuti del figlio.
+  - Il Master bypassa ogni restrizione e vede sempre tutte le note e i blocchi con badge dedicati.
 
 ### Pannello ad Albero e Grafo Interattivo
-- **Vista ad Albero (`VaultController@buildFileTree`)**: Costruisce la navigazione laterale analizzando `map.json` e verificando la reale presenza dei file su disco. Se riscontra discrepanze o file mancanti, invia una notifica automatica di integrità via Telegram all'amministratore.
+- **Vista ad Albero (`VaultController@buildFileTree`)**: Costruisce la navigazione laterale analizzando `map.json` ed escludendo tutte le note non visibili per l'utente corrente tramite `AccessControlService::noteIsVisibleTo()`.
 - **Grafo Interattivo (`VaultController@buildGraphData` e `graph.blade.php`)**:
   - Analizza tutti i file `.md` visibili all'utente e ne estrae le connessioni (wikilink ed embed).
   - Legge la configurazione estetica direttamente da `Vault/.obsidian/graph-config.json` o `graph.json` (forze di repulsione, distanza link, gruppi colore per tag come `#universo`, `#città`, `#pg`, `#png`, `#saga`, `#evento`).
 
 ### Ricerca, API Raw e Embed Immagini
-- **`/vault/search?q=...`**: Ricerca veloce tra le note con reindirizzamento automatico se c'è un unico risultato.
-- **`/api/vault/{note}`**: Restituisce il file Markdown grezzo originale (con i blocchi Master filtrati in base all'utente) scaricabile come file `.md`.
+- **`/vault/search?q=...`**: Ricerca veloce tra le note con reindirizzamento automatico se c'è un unico risultato e filtraggio permessi.
+- **`/api/vault/{note}`**: Restituisce il file Markdown grezzo originale (con i blocchi riservati filtrati in base all'utente) scaricabile come file `.md`.
 - **Risoluzione Immagini (`/vault/...`)**: Il controller `VaultController` intercetta le richieste di file binari (PNG, JPG, WEBP, ecc.) presenti nel Vault e li serve direttamente con il corretto Content-Type.
 
 ---

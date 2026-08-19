@@ -1,0 +1,190 @@
+diff --git a/app/Http/Controllers/VaultController.php b/app/Http/Controllers/VaultController.php
+index 914a2f46..e6b83828 100644
+--- a/app/Http/Controllers/VaultController.php
++++ b/app/Http/Controllers/VaultController.php
+@@ -2,6 +2,7 @@
+ 
+ namespace App\Http\Controllers;
+ 
++use App\Services\AccessControlService;
+ use Illuminate\Http\Request;
+ use Illuminate\Support\Facades\File;
+ use App\Services\MarkdownPreprocessor;
+@@ -349,7 +350,7 @@ private function traverseMapAndBuildTree($mapNode, $currentPath, $note, $current
+                     } catch (\Throwable $e) {
+                     }
+ 
+-                    if (($isDm && !Auth::check()) || ($isDm && !Auth::isMaster())) {
++                    if (!AccessControlService::noteIsVisibleTo($content)) {
+                         continue;
+                     }
+ 
+@@ -428,7 +429,8 @@ private function buildGraphData(): array
+             $content = File::get($file->getPathname());
+             $isDm = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content) ? true : false;
+ 
+-            if ($isDm && (!Auth::check() || !Auth::isMaster())) {
++            // if ($isDm && (!Auth::check() || !Auth::isMaster())) {
++            if (!AccessControlService::noteIsVisibleTo($content)) {
+                 CustomLogger::graph("Nodo escluso dal grafo per permessi: $fullPath");
+                 continue;
+             }
+@@ -464,7 +466,8 @@ private function buildGraphData(): array
+             $content = File::get($file->getPathname());
+             $isDm = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content) ? true : false;
+ 
+-            if ($isDm && (!Auth::check() || !Auth::isMaster())) {
++            // if ($isDm && (!Auth::check() || !Auth::isMaster())) {
++            if (!AccessControlService::noteIsVisibleTo($content)) {
+                 continue;
+             }
+ 
+@@ -548,8 +551,7 @@ public function search(Request $request)
+                 $results = array_filter($results, function ($result) {
+                     $path = base_path('Vault/' . $result['path'] . '.md');
+                     if (File::exists($path)) {
+-                        $content = File::get($path);
+-                        return !preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content);
++                        return AccessControlService::noteIsVisibleTo(File::get($path));
+                     }
+                     return true;
+                 });
+@@ -684,7 +686,7 @@ public function show(Request $request, $note = null)
+         // Gestione blocchi master e DM
+         // If file is DM-only and user is not master, act as if file doesn't exist
+         $masterFile = false;
+-        if (!Auth::isMaster() && preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
++        if (!AccessControlService::noteIsVisibleTo($content)) {
+             CustomLogger::note($note, "Accesso negato: file DM per non-master");
+             abort(404, 'Nota non trovata');
+         } else if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
+@@ -767,7 +769,7 @@ public function rawShow(Request $request, $note = null)
+         $content = File::get($fullSystemPath);
+ 
+         // Gestione blocchi master e DM
+-        if (!Auth::isMaster() && preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
++        if (!AccessControlService::noteIsVisibleTo($content)) {
+             abort(403, 'Accesso negato');
+         }
+ 
+diff --git a/app/Models/User.php b/app/Models/User.php
+index 298c7349..5e5f75bc 100644
+--- a/app/Models/User.php
++++ b/app/Models/User.php
+@@ -2,14 +2,15 @@
+ 
+ namespace App\Models;
+ 
++use App\Mail\VerifyEmailMailable;
++use App\Services\EmailQueueService;
+ use Illuminate\Contracts\Auth\MustVerifyEmail;
+ use Illuminate\Database\Eloquent\Factories\HasFactory;
++use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+ use Illuminate\Foundation\Auth\User as Authenticatable;
+ use Illuminate\Notifications\Notifiable;
+ use Illuminate\Support\Facades\Hash;
+ use Illuminate\Support\Facades\URL;
+-use App\Mail\VerifyEmailMailable;
+-use App\Services\EmailQueueService;
+ 
+ class User extends Authenticatable implements MustVerifyEmail
+ {
+@@ -61,6 +62,8 @@ public function sendEmailVerificationNotification()
+         'remember_token',
+     ];
+ 
++    protected ?array $accessGroupSlugChainCache = null;
++
+     /**
+      * Get the attributes that should be cast.
+      *
+@@ -127,4 +130,42 @@ public static function getAdmins()
+     {
+         return static::where('admin', 1)->get();
+     }
++
++    public function accessGroups(): BelongsToMany
++    {
++        return $this->belongsToMany(AccessGroup::class);
++    }
++
++
++    /**
++     * Insieme di tutti gli slug di gruppo "visibili" per l'utente:
++     * i propri gruppi diretti + tutti i loro antenati.
++     * Cachato per-request per evitare N query durante il parsing di una nota.
++     */
++    public function visibleAccessGroupSlugs(): array
++    {
++        if ($this->accessGroupSlugChainCache !== null) {
++            return $this->accessGroupSlugChainCache;
++        }
++
++        $slugs = [];
++        foreach ($this->accessGroups as $group) {
++            $slugs = array_merge($slugs, $group->ancestorSlugs());
++        }
++
++        return $this->accessGroupSlugChainCache = array_unique($slugs);
++    }
++
++    /**
++     * Verifica se l'utente ha accesso ad almeno uno dei gruppi richiesti (logica OR).
++     * Master bypassa sempre, senza coinvolgere la gerarchia.
++     */
++    public function hasAccessToAnyGroup(array $requiredSlugs): bool
++    {
++        if ($this->master) {
++            return true;
++        }
++
++        return count(array_intersect($requiredSlugs, $this->visibleAccessGroupSlugs())) > 0;
++    }
+ }
+diff --git a/app/Services/MarkdownPreprocessor.php b/app/Services/MarkdownPreprocessor.php
+index 9191f96f..9420eace 100644
+--- a/app/Services/MarkdownPreprocessor.php
++++ b/app/Services/MarkdownPreprocessor.php
+@@ -50,7 +50,7 @@ public static function buildFileIndex(): array
+                 if (!$isMaster) {
+                     try {
+                         $fileContent = File::get($file->getPathname());
+-                        if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $fileContent)) {
++                        if (!AccessControlService::noteIsVisibleTo($fileContent)) {
+                             $shouldSkip = true;
+                         }
+                     } catch (\Throwable $e) {
+@@ -102,13 +102,17 @@ public static function findNotePath(string $noteName): string
+      */
+     public static function filterMasterBlocks(string $text): string
+     {
+-        // Se l'utente è master, non filtriamo nulla (i marker verranno gestiti dal renderer)
+-        if (Auth::check() && Auth::isMaster()) {
+-            return $text;
+-        }
++        // // Se l'utente è master, non filtriamo nulla (i marker verranno gestiti dal renderer)
++        // if (Auth::check() && Auth::isMaster()) {
++        //     return $text;
++        // }
++
++        // // Se il file è marcato come DM-only, nascondi l'intero file
++        // if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $text)) {
++        //     return '';
++        // }
+ 
+-        // Se il file è marcato come DM-only, nascondi l'intero file
+-        if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $text)) {
++        if (!AccessControlService::noteIsVisibleTo($text)) {
+             return '';
+         }
+ 
+@@ -554,7 +558,8 @@ public static function toHtml(string $text, string $note): string
+         $isMaster = Auth::check() && Auth::isMaster();
+ 
+         // 1. Se il file è marcato come DM-only e non siamo master, ritorna vuoto
+-        if (!$isMaster && preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $text)) {
++        // if (!$isMaster && preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $text)) {
++        if (!AccessControlService::noteIsVisibleTo($text)) {
+             return '';
+         }
+ 

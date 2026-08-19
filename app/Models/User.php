@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
+use App\Mail\VerifyEmailMailable;
+use App\Services\EmailQueueService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;
-use App\Mail\VerifyEmailMailable;
-use App\Services\EmailQueueService;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -60,6 +61,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'remember_token',
     ];
+
+    protected ?array $accessGroupSlugChainCache = null;
 
     /**
      * Get the attributes that should be cast.
@@ -126,5 +129,43 @@ class User extends Authenticatable implements MustVerifyEmail
     public static function getAdmins()
     {
         return static::where('admin', 1)->get();
+    }
+
+    public function accessGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(AccessGroup::class);
+    }
+
+
+    /**
+     * Insieme di tutti gli slug di gruppo "visibili" per l'utente:
+     * i propri gruppi diretti + tutti i loro antenati.
+     * Cachato per-request per evitare N query durante il parsing di una nota.
+     */
+    public function visibleAccessGroupSlugs(): array
+    {
+        if ($this->accessGroupSlugChainCache !== null) {
+            return $this->accessGroupSlugChainCache;
+        }
+
+        $slugs = [];
+        foreach ($this->accessGroups as $group) {
+            $slugs = array_merge($slugs, $group->ancestorSlugs());
+        }
+
+        return $this->accessGroupSlugChainCache = array_unique($slugs);
+    }
+
+    /**
+     * Verifica se l'utente ha accesso ad almeno uno dei gruppi richiesti (logica OR).
+     * Master bypassa sempre, senza coinvolgere la gerarchia.
+     */
+    public function hasAccessToAnyGroup(array $requiredSlugs): bool
+    {
+        if ($this->master) {
+            return true;
+        }
+
+        return count(array_intersect($requiredSlugs, $this->visibleAccessGroupSlugs())) > 0;
     }
 }

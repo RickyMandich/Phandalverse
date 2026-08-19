@@ -81,6 +81,16 @@
                                         <span class="badge bg-secondary">Utente</span>
                                     @endif
 
+                                    @if($user->accessGroups->isNotEmpty())
+                                        <div class="mt-1">
+                                            @foreach($user->accessGroups as $ag)
+                                                <span class="badge me-1" style="background-color: {{ $ag->color ?? '#6c757d' }}; font-size: 0.75rem;" title="Gruppo: {{ $ag->slug }}">
+                                                    {{ $ag->name }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+
                                     @if($user->master_request)
                                         <div class="mt-1">
                                             <span class="badge bg-primary animate-pulse">

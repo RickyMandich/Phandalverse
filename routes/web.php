@@ -105,6 +105,14 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->group(functio
     Route::post('/users/{user}/approve-master', [AdminController::class, 'approveMasterRequest'])->name('admin.users.approve_master');
     Route::post('/users/{user}/deny-master', [AdminController::class, 'denyMasterRequest'])->name('admin.users.deny_master');
 
+    // Gestione gruppi di accesso
+    Route::get('/access-groups', [AdminController::class, 'accessGroups'])->name('admin.access_groups');
+    Route::get('/access-groups/create', [AdminController::class, 'createAccessGroup'])->name('admin.access_groups.create');
+    Route::post('/access-groups', [AdminController::class, 'storeAccessGroup'])->name('admin.access_groups.store');
+    Route::get('/access-groups/{group}/edit', [AdminController::class, 'editAccessGroup'])->name('admin.access_groups.edit');
+    Route::patch('/access-groups/{group}', [AdminController::class, 'updateAccessGroup'])->name('admin.access_groups.update');
+    Route::delete('/access-groups/{group}', [AdminController::class, 'deleteAccessGroup'])->name('admin.access_groups.delete');
+
     // Statistiche
     Route::get('/statistics', [AdminController::class, 'statistics'])->name('admin.statistics');
     Route::get('/statistics/export/csv', [AdminController::class, 'exportStatisticsCSV'])->name('admin.statistics.export.csv');
