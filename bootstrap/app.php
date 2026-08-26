@@ -42,13 +42,20 @@ return Application::configure(basePath: dirname(__DIR__))
             $requestUrl = null;
             $requestMethod = null;
             $userAgent = null;
+            $userId = null;
 
             try {
                 $requestUrl = request()->fullUrl();
                 $requestMethod = request()->method();
                 $userAgent = request()->userAgent();
-            } catch (\Exception $reqEx) {
+            } catch (\Throwable $reqEx) {
                 // Ignora errori nel recupero della request
+            }
+
+            try {
+                $userId = Auth::id();
+            } catch (\Throwable $authEx) {
+                // Se Auth non è ancora inizializzato, userId resta null
             }
 
             // 1. SALVA ERRORE NEL DATABASE
@@ -62,11 +69,11 @@ return Application::configure(basePath: dirname(__DIR__))
                     'request_url' => $requestUrl,
                     'request_method' => $requestMethod,
                     'user_agent' => $userAgent,
-                    'user_id' => Auth::id(),
+                    'user_id' => $userId,
                     'status' => 'new',
                 ]);
-            } catch (\Exception $dbException) {
-                Log::error("Impossibile salvare errore nel database: " . $dbException->getMessage());
+            } catch (\Throwable $dbException) {
+                // Fallback silenzioso se DB non disponibile
             }
 
             // 2. NOTIFICA AGLI ADMIN: usa Telegram invece delle email (le email vengono spesso scritte solo nei log)
@@ -77,15 +84,22 @@ return Application::configure(basePath: dirname(__DIR__))
                     // Se Telegram non configurato, scrivi un warning nel log
                     Log::warning('Telegram non configurato: TELEGRAM_BOT_TOKEN mancante, notifica errore non inviata');
                 }
-            } catch (\Exception $telEx) {
-                Log::error("Impossibile inviare notifica Telegram: " . $telEx->getMessage());
+            } catch (\Throwable $telEx) {
+                // Ignora errore telegram
             }
         });
 
         // ========== RENDERABLE: Debug differenziato per tipo utente ==========
         $exceptions->renderable(function (Throwable $e, $request) {
+            $isAdmin = false;
+            try {
+                $isAdmin = Auth::check() && Auth::user()?->isAdmin();
+            } catch (\Throwable $authEx) {
+                $isAdmin = false;
+            }
+
             // Se l'utente è admin, mostra debug completo
-            if (Auth::check() && Auth::user()->isAdmin()) {
+            if ($isAdmin) {
                 config(['app.debug' => true]);
 
                 return response()->view('errors.admin-debug', [
