@@ -55,7 +55,7 @@ class AccessControlService
     /**
      * Punto unico di verità: la nota (nel suo complesso, tag a livello nota)
      * è visibile all'utente indicato? Usato ovunque al posto del vecchio
-     * check duplicato su #dm + Auth::isMaster().
+     * check duplicato su #dm + user->isMaster().
      *
      * @param User|null $user Se null, usa Auth::user() corrente.
      */

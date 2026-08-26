@@ -43,7 +43,7 @@ class MarkdownPreprocessor
 
         foreach ($files as $file) {
             if ($file->getExtension() === 'md') {
-                $isMaster = Auth::check() && Auth::isMaster();
+                $isMaster = Auth::check() && Auth::user()->isMaster();
                 $shouldSkip = false;
 
                 // If user is not master, skip files that are DM-only so they are not discoverable
@@ -103,7 +103,7 @@ class MarkdownPreprocessor
     public static function filterMasterBlocks(string $text): string
     {
         // Se l'utente è master, non filtriamo nulla (i marker verranno gestiti dal renderer)
-        if (Auth::check() && Auth::isMaster()) {
+        if (Auth::check() && Auth::user()->isMaster()) {
             return $text;
         }
 
@@ -561,7 +561,7 @@ class MarkdownPreprocessor
 
     public static function toHtml(string $text, string $note): string
     {
-        $isMaster = Auth::check() && Auth::isMaster();
+        $isMaster = Auth::check() && Auth::user()->isMaster();
         $user = Auth::user();
 
         // 1. Se il file è marcato come DM-only o gruppi non accessibili e non siamo master, ritorna vuoto

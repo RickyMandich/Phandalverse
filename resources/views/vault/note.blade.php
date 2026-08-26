@@ -15,7 +15,7 @@
                     @if ($masterFile)
                         <div class="master-block tag">Master</div>
                     @endif
-                    @if (Auth::check() && Auth::isMaster())
+                    @if (Auth::check() && Auth::user()->isMaster())
                         <a href="{{ route('vault.raw', ['note' => $note]) }}" class="btn btn-sm btn-outline-warning"
                             title="Scarica Markdown">
                             <i class="bi bi-download"></i> Scarica MD

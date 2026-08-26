@@ -544,7 +544,7 @@ class VaultController extends Controller
             $results = VaultHelper::searchNotes($query, $note);
 
             // Filter out DM-only files for non-masters
-            if (!Auth::check() || !Auth::isMaster()) {
+            if (!Auth::check() || !Auth::user()->isMaster()) {
                 $results = array_filter($results, function ($result) {
                     $path = base_path('Vault/' . $result['path'] . '.md');
                     if (File::exists($path)) {
@@ -636,7 +636,7 @@ class VaultController extends Controller
             $defaultView = SystemSetting::getVaultDefaultView();
             $requestedView = $request->query('view');
 
-            if (Auth::check() && Auth::isMaster() && $requestedView) {
+            if (Auth::check() && Auth::user()->isMaster() && $requestedView) {
                 $currentView = $requestedView;
             } else {
                 $currentView = $defaultView;
@@ -679,7 +679,8 @@ class VaultController extends Controller
         if (env('DEBUG_HTML', false))
             CustomLogger::note($note, "Contenuto ORIGINALE dal file: " . $content);
 
-        CustomLogger::note($note, "ora controllo se è il master: " . Auth::isMaster() . "(master=" . Auth::getMaster() . ") e l'utente è " . Auth::getName());
+        $currentUser = Auth::user();
+        CustomLogger::note($note, "ora controllo se è il master: " . ($currentUser?->isMaster() ? '1' : '0') . "(master=" . ($currentUser?->master ? '1' : '0') . ") e l'utente è " . ($currentUser?->name ?? 'Guest'));
         // Gestione blocchi master e DM
         // If file is DM-only and user is not master, act as if file doesn't exist
         $masterFile = false;
@@ -690,7 +691,7 @@ class VaultController extends Controller
             $masterFile = true;
         }
 
-        if (!Auth::isMaster()) {
+        if (!Auth::check() || !Auth::user()->isMaster()) {
             CustomLogger::note($note, "Filtro i blocchi master");
             $content = MarkdownPreprocessor::filterMasterBlocks($content);
         } else {
@@ -770,7 +771,7 @@ class VaultController extends Controller
             abort(403, 'Accesso negato');
         }
 
-        if (!Auth::isMaster()) {
+        if (!Auth::check() || !Auth::user()->isMaster()) {
             $content = MarkdownPreprocessor::filterMasterBlocks($content);
         } else {
             $content = MarkdownPreprocessor::stripDmMarker($content);

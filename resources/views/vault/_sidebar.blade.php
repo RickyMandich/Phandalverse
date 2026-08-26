@@ -200,7 +200,7 @@
         <h5 class="text-warning mb-3 fw-bold">📣 Legenda</h5>
         <div class="legenda bg-dark-subtle p-3 rounded small font-monospace">
             <ul class="list-unstyled m-0">
-                @if (Auth::isMaster())
+                @if (Auth::check() && Auth::user()->isMaster())
                     <li class="mb-1">
                         <span class="text-danger fw-bold">
                             #dm

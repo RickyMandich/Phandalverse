@@ -20,7 +20,7 @@ class AdminController extends Controller
      */
     private function checkAdmin()
     {
-        if (!Auth::isAdmin()) {
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
             return view('errors.403');
         }
         return null;

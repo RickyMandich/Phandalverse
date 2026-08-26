@@ -73,7 +73,7 @@
 
         <main class="flex-grow-1 p-3" style="min-width: 0;">
             <div class="vault-graph-page h-100 d-flex flex-column">
-                @if(Auth::check() && (Auth::isAdmin() || Auth::isMaster()))
+                @if(Auth::check() && (Auth::user()->isAdmin() || Auth::user()->isMaster()))
                     <div class="d-flex gap-2 mb-3 align-items-center">
                         <a href="{{ route('vault.show') }}?view=tree"
                             class="btn btn-sm {{ $currentView === 'tree' ? 'btn-primary' : 'btn-outline-secondary' }}">
@@ -83,7 +83,7 @@
                             class="btn btn-sm {{ $currentView === 'graph' ? 'btn-primary' : 'btn-outline-secondary' }}">
                             🕸️ Vista Grafo
                         </a>
-                        @if(Auth::isAdmin())
+                        @if(Auth::user()->isAdmin())
                             <form action="{{ route('admin.vault.setDefaultView') }}" method="POST" class="d-inline ms-2">
                                 @csrf
                                 <select name="view" class="form-select form-select-sm bg-dark text-white border-secondary"
