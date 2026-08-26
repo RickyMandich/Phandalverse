@@ -691,14 +691,10 @@ class VaultController extends Controller
             $masterFile = true;
         }
 
-        if (!Auth::check() || !Auth::user()->isMaster()) {
-            CustomLogger::note($note, "Filtro i blocchi master");
-            $content = MarkdownPreprocessor::filterMasterBlocks($content);
-        } else {
+        if (Auth::check() && Auth::user()->isMaster()) {
             CustomLogger::note($note, "Mostro i blocchi master");
-            // Non rimuoviamo qui i marker: il renderizer li gestirà correttamente.
-            // Rimuovi solo il marker #dm per i master (se presente)
-            $content = MarkdownPreprocessor::stripDmMarker($content);
+        } else {
+            CustomLogger::note($note, "Filtro i blocchi master");
         }
 
         if (env('DEBUG_HTML', false))

@@ -212,7 +212,7 @@ class AccessControlService
 
         // Per ogni gruppo diretto assegnato all'utente
         foreach ($user->accessGroups as $group) {
-            $chain = $group->ancestorSlugs();
+            $chain = array_map('strtolower', $group->ancestorSlugs());
             if (count(array_intersect($chain, $requiredSlugsLower)) > 0) {
                 if (!isset($seenSlugs[$group->slug])) {
                     $seenSlugs[$group->slug] = true;

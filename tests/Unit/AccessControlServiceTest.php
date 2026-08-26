@@ -153,4 +153,38 @@ class AccessControlServiceTest extends TestCase
         $filteredWithAccess = AccessControlService::filterAccessBlocks($markdown, $userWithAccess);
         $this->assertStringContainsString('Testo Segreto', $filteredWithAccess);
     }
+
+    public function test_to_html_renders_access_block_with_badge_for_authorized_user(): void
+    {
+        $group = AccessGroup::create(['slug' => 'bibliotecari', 'name' => 'Bibliotecari', 'color' => '#123456']);
+        $userWithAccess = User::factory()->create(['master' => false]);
+        $userWithAccess->accessGroups()->attach($group);
+
+        $this->actingAs($userWithAccess);
+
+        $markdown = "Testo pubblico\n\n#startAccess-bibliotecari\nContenuto per Bibliotecari\n#endAccess\n\nTesto finale";
+        $html = MarkdownPreprocessor::toHtml($markdown, 'test-note');
+
+        $this->assertStringContainsString('access-block', $html);
+        $this->assertStringContainsString('Bibliotecari', $html);
+        $this->assertStringContainsString('background-color: #123456', $html);
+        $this->assertStringContainsString('Contenuto per Bibliotecari', $html);
+    }
+
+    public function test_to_html_strips_access_block_for_unauthorized_user(): void
+    {
+        AccessGroup::create(['slug' => 'bibliotecari', 'name' => 'Bibliotecari', 'color' => '#123456']);
+        $userWithoutAccess = User::factory()->create(['master' => false]);
+
+        $this->actingAs($userWithoutAccess);
+
+        $markdown = "Testo pubblico\n\n#startAccess-bibliotecari\nContenuto per Bibliotecari\n#endAccess\n\nTesto finale";
+        $html = MarkdownPreprocessor::toHtml($markdown, 'test-note');
+
+        $this->assertStringNotContainsString('access-block', $html);
+        $this->assertStringNotContainsString('Bibliotecari', $html);
+        $this->assertStringNotContainsString('Contenuto per Bibliotecari', $html);
+        $this->assertStringContainsString('Testo pubblico', $html);
+        $this->assertStringContainsString('Testo finale', $html);
+    }
 }
