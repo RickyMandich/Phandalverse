@@ -11,9 +11,14 @@
         <section class="flex-grow-1 p-4" style="min-width: 0;">
             <div class="title-container">
                 <h1 class="display-5 mb-4 border-bottom pb-2 text-warning fw-bold">{{ $title }}</h1>
-                <div class="d-flex align-items-center gap-2 mb-4">
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-4">
                     @if ($masterFile)
-                        <div class="master-block tag">Master</div>
+                        <div class="master-block">Master</div>
+                    @endif
+                    @if (!empty($accessBadges))
+                        @foreach ($accessBadges as $badge)
+                            <span class="badge" style="background-color: {{ $badge['color'] ?: '#6c757d' }}; color: #fff; font-size: 0.9rem;">{{ $badge['name'] }}</span>
+                        @endforeach
                     @endif
                     @if (Auth::check() && Auth::user()->isMaster())
                         <a href="{{ route('vault.raw', ['note' => $note]) }}" class="btn btn-sm btn-outline-warning"
@@ -40,15 +45,18 @@
 
 @section('script')
     <script>
-        document.querySelector('#switchCheckMaster').addEventListener('click', function () {
-            let masters = document.querySelectorAll('.vault-note .master-block');
-            masters.forEach(function (master) {
-                if (master.classList.contains('d-none')) {
-                    master.classList.remove('d-none');
-                } else {
-                    master.classList.add('d-none');
-                }
+        const switchMaster = document.querySelector('#switchCheckMaster');
+        if (switchMaster) {
+            switchMaster.addEventListener('click', function () {
+                let masters = document.querySelectorAll('.vault-note .master-block');
+                masters.forEach(function (master) {
+                    if (master.classList.contains('d-none')) {
+                        master.classList.remove('d-none');
+                    } else {
+                        master.classList.add('d-none');
+                    }
+                });
             });
-        });
+        }
     </script>
 @endsection

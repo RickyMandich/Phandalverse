@@ -80,8 +80,25 @@
                             // Poi i file (files next)
                             $files = $items['_files'] ?? [];
                             foreach ($files as $file) {
-                                $html .= '<li class="my-1">';
-                                $html .= '<a href="/vault/' . $file['url'] . '" class="file text-info text-decoration-none link-underline link-underline-opacity-0 link-underline-opacity-100-hover">📄&nbsp;' . e($file['name']) . '</a>';
+                                $isDmFile = isset($file['dm']) && $file['dm'];
+                                $accessBadges = $file['access_badges'] ?? [];
+
+                                $tagsHtml = '';
+                                if ($isDmFile || !empty($accessBadges)) {
+                                    $tagsHtml .= '<span class="ms-2 d-inline-flex align-items-center gap-1">';
+                                    if ($isDmFile) {
+                                        $tagsHtml .= '<span class="master-block">Master</span>';
+                                    }
+                                    foreach ($accessBadges as $badge) {
+                                        $bColor = htmlspecialchars($badge['color'] ?: '#6c757d');
+                                        $bName = htmlspecialchars($badge['name']);
+                                        $tagsHtml .= '<span class="badge" style="background-color: ' . $bColor . '; color: #fff; font-size: 0.75em;">' . $bName . '</span>';
+                                    }
+                                    $tagsHtml .= '</span>';
+                                }
+
+                                $html .= '<li class="my-1 d-flex align-items-center">';
+                                $html .= '<a href="/vault/' . $file['url'] . '" class="file text-info text-decoration-none link-underline link-underline-opacity-0 link-underline-opacity-100-hover">📄&nbsp;' . e($file['name']) . '</a>' . $tagsHtml;
                                 $html .= '</li>';
                             }
 

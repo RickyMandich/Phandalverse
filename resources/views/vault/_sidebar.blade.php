@@ -182,8 +182,23 @@
 
                         $html .= '<li class="my-1">';
                         $isDmFile = isset($file['dm']) && $file['dm'];
-                        $masterTag = $isDmFile ? '<span class="master-block tag">Master</span>' : '';
-                        $html .= '<a href="/vault/' . $file['url'] . '" class="file text-decoration-none d-inline-block' . $activeClass . ' hover-underline">📄&nbsp;' . e($file['name']) . '</a>' . $masterTag;
+                        $accessBadges = $file['access_badges'] ?? [];
+
+                        $tagsHtml = '';
+                        if ($isDmFile || !empty($accessBadges)) {
+                            $tagsHtml .= '<span class="tag d-inline-flex align-items-center gap-1">';
+                            if ($isDmFile) {
+                                $tagsHtml .= '<span class="master-block">Master</span>';
+                            }
+                            foreach ($accessBadges as $badge) {
+                                $bColor = htmlspecialchars($badge['color'] ?: '#6c757d');
+                                $bName = htmlspecialchars($badge['name']);
+                                $tagsHtml .= '<span class="badge" style="background-color: ' . $bColor . '; color: #fff; font-size: 0.7em;">' . $bName . '</span>';
+                            }
+                            $tagsHtml .= '</span>';
+                        }
+
+                        $html .= '<a href="/vault/' . $file['url'] . '" class="file text-decoration-none d-inline-block' . $activeClass . ' hover-underline">📄&nbsp;' . e($file['name']) . '</a>' . $tagsHtml;
                         $html .= '</li>';
                         \App\Services\CustomLogger::note($note, "(working on $currentFileName)" . $file["name"] . "\t=>\tdm: " . ($isDmFile ? 'true' : 'false'));
                     }
@@ -207,6 +222,23 @@
                         </span> :
                         <span class="master-block">
                             esclusivo master
+                        </span>
+                    </li>
+                    <li class="mb-1">
+                        <span class="text-danger fw-bold">
+                            #access
+                        </span> :
+                        <span class="badge bg-secondary">
+                            gruppi di accesso
+                        </span>
+                    </li>
+                @elseif (Auth::check() && Auth::user()->accessGroups->isNotEmpty())
+                    <li class="mb-1">
+                        <span class="text-info fw-bold">
+                            #access
+                        </span> :
+                        <span class="badge bg-secondary">
+                            gruppi di accesso
                         </span>
                     </li>
                 @endif

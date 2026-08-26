@@ -236,11 +236,13 @@ a {
 }
 
 .file {
-    max-width: 70%;
+    max-width: 65%;
 }
 
-.master-block.tag {
-    max-width: 27%;
+.master-block.tag,
+.tag.d-inline-flex {
+    max-width: 33%;
+    justify-content: flex-end;
 }
 
 .toggle-indicator {

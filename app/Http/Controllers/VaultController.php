@@ -342,24 +342,32 @@ class VaultController extends Controller
                 if ($realFileName) {
                     $fullPath = base_path('Vault/' . ($currentRealPath ? $currentRealPath . '/' . $realFileName : $realFileName));
 
-                    // Check DM Status
+                    // Check DM Status & Access Groups
                     $isDm = false;
+                    $accessBadges = [];
                     $content = '';
                     try {
                         $content = File::get($fullPath);
-                        $isDm = preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content) ? true : false;
+                        $isDm = AccessControlService::isDmOnly($content);
                     } catch (\Throwable $e) {
                     }
 
-                    if (!AccessControlService::noteIsVisibleTo($content)) {
+                    $currentUser = Auth::user();
+                    if (!AccessControlService::noteIsVisibleTo($content, $currentUser)) {
                         continue;
+                    }
+
+                    $requiredGroups = AccessControlService::requiredGroupsFromNoteTag($content);
+                    if (!empty($requiredGroups)) {
+                        $accessBadges = AccessControlService::computeBadgeGroups($currentUser, $requiredGroups);
                     }
 
                     $branch['_files'][] = [
                         'name' => $originalName,
                         'path' => $relPathNoExt,
                         'url' => self::pathToCamelCase($relPathNoExt),
-                        'dm' => $isDm
+                        'dm' => $isDm,
+                        'access_badges' => $accessBadges,
                     ];
                 } else {
                     // Really missing
@@ -682,13 +690,21 @@ class VaultController extends Controller
         $currentUser = Auth::user();
         CustomLogger::note($note, "ora controllo se è il master: " . ($currentUser?->isMaster() ? '1' : '0') . "(master=" . ($currentUser?->master ? '1' : '0') . ") e l'utente è " . ($currentUser?->name ?? 'Guest'));
         // Gestione blocchi master e DM
-        // If file is DM-only and user is not master, act as if file doesn't exist
+        // If file is DM-only or restricted to groups and user has no access, act as if file doesn't exist
         $masterFile = false;
-        if (!AccessControlService::noteIsVisibleTo($content)) {
-            CustomLogger::note($note, "Accesso negato: file DM per non-master");
+        $accessBadges = [];
+        if (!AccessControlService::noteIsVisibleTo($content, $currentUser)) {
+            CustomLogger::note($note, "Accesso negato: file DM o gruppo riservato per non-autorizzati");
             abort(404, 'Nota non trovata');
-        } else if (preg_match('/(?<=^|\s)#dm(?=\s|$)/i', $content)) {
+        }
+
+        if (AccessControlService::isDmOnly($content)) {
             $masterFile = true;
+        }
+
+        $requiredGroups = AccessControlService::requiredGroupsFromNoteTag($content);
+        if (!empty($requiredGroups)) {
+            $accessBadges = AccessControlService::computeBadgeGroups($currentUser, $requiredGroups);
         }
 
         if (Auth::check() && Auth::user()->isMaster()) {
@@ -725,6 +741,7 @@ class VaultController extends Controller
             'path' => $pathSegments,
             'graphConfig' => $graphConfig,
             'masterFile' => $masterFile,
+            'accessBadges' => $accessBadges,
             'note' => $note,
         ]);
     }

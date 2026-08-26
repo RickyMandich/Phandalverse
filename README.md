@@ -132,6 +132,7 @@ Il Vault gestisce un sistema granulare di visibilità parametrizzato su **Gruppi
   - Gli slug dei gruppi sono in formato **camelCase** (es. `cavalieriDelDrago`, `artefici`) e non possono contenere trattini `-` o underscore `_`.
   - Se l'utente appartiene a uno dei gruppi indicati (o a un loro gruppo discendente) oppure è Master, la nota è visibile. Altrimenti il server restituisce `404 Not Found` (invisibilità totale, esclusa anche dall'albero, dal grafo e dalla ricerca).
   - Il tag `#dm` agisce come gruppo implicito riservato esclusivamente ai Master.
+  - **Badge di visibilità su Sideboard & Header Nota**: quando una nota è riservata, la **sideboard** (albero laterale dei file) e l'**header della nota** mostrano i badge colorati dei gruppi tramite cui l'utente ha accesso (o tutti i gruppi taggati per il Master), oltre al badge `Master` per le note `#dm`.
 - **Blocchi parziali riservati (`#startAccess-gruppo1_gruppo2 ... #endAccess` e `#startMaster ... #endMaster`)**:
   - **Per chi ha accesso**: il contenuto interno viene renderizzato con un bordo colorato calcolato dalla gerarchia (`resolveBlockColor`) e con badge personalizzati per l'utente (`computeBadgeGroups`).
   - **Per chi non ha accesso**: il blocco viene interamente rimosso prima del rendering HTML.
@@ -140,7 +141,7 @@ Il Vault gestisce un sistema granulare di visibilità parametrizzato su **Gruppi
   - Il Master bypassa ogni restrizione e vede sempre tutte le note e i blocchi con badge dedicati.
 
 ### Pannello ad Albero e Grafo Interattivo
-- **Vista ad Albero (`VaultController@buildFileTree`)**: Costruisce la navigazione laterale analizzando `map.json` ed escludendo tutte le note non visibili per l'utente corrente tramite `AccessControlService::noteIsVisibleTo()`.
+- **Vista ad Albero (`VaultController@buildFileTree`)**: Costruisce la navigazione laterale analizzando `map.json` ed escludendo tutte le note non visibili per l'utente corrente tramite `AccessControlService::noteIsVisibleTo()`. Include i metadati dei badge per ogni file (`access_badges`, `dm`).
 - **Grafo Interattivo (`VaultController@buildGraphData` e `graph.blade.php`)**:
   - Analizza tutti i file `.md` visibili all'utente e ne estrae le connessioni (wikilink ed embed).
   - Legge la configurazione estetica direttamente da `Vault/.obsidian/graph-config.json` o `graph.json` (forze di repulsione, distanza link, gruppi colore per tag come `#universo`, `#città`, `#pg`, `#png`, `#saga`, `#evento`).
