@@ -35,6 +35,14 @@ return new class extends Migration {
             $table->integer('order')->unique();
             $table->timestamps();
         });
+
+        DB::table('campaigns')->insert([
+            'folder_name' => 'newCampaign',
+            'display_name' => 'C\'erano una volta gli artefici', // o il nome vero se già deciso
+            'order' => 10,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     public function down(): void
