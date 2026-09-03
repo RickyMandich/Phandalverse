@@ -3,7 +3,7 @@
 @section('message')
     Questa Nota non esiste
     <div class="mt-4 text-center">
-        <a href="{{ route('vault.show') }}" class="btn btn-primary btn-lg">
+        <a href="{{ route('vault.index') }}" class="btn btn-primary btn-lg">
             <i class="bi bi-folder2-open"></i> {{ __('VaultWelcome') }}
         </a>
     </div>

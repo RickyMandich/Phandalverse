@@ -75,11 +75,11 @@
             <div class="vault-graph-page h-100 d-flex flex-column">
                 @if(Auth::check() && (Auth::user()->isAdmin() || Auth::user()->isMaster()))
                     <div class="d-flex gap-2 mb-3 align-items-center">
-                        <a href="{{ route('vault.show') }}?view=tree"
+                        <a href="{{ route('vault.show', ['campaign' => $campaign->folder_name]) }}?view=tree"
                             class="btn btn-sm {{ $currentView === 'tree' ? 'btn-primary' : 'btn-outline-secondary' }}">
                             📂 Vista Albero
                         </a>
-                        <a href="{{ route('vault.show') }}?view=graph"
+                        <a href="{{ route('vault.show', ['campaign' => $campaign->folder_name]) }}?view=graph"
                             class="btn btn-sm {{ $currentView === 'graph' ? 'btn-primary' : 'btn-outline-secondary' }}">
                             🕸️ Vista Grafo
                         </a>
