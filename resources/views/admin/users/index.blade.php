@@ -91,6 +91,22 @@
                                         </div>
                                     @endif
 
+                                    @if($user->isMaster() || $user->isAdmin())
+                                        <div class="mt-1">
+                                            <span class="badge bg-dark border border-warning text-warning" style="font-size: 0.7rem;">
+                                                <i class="bi bi-compass"></i> Tutte le campagne
+                                            </span>
+                                        </div>
+                                    @elseif($user->campaigns->isNotEmpty())
+                                        <div class="mt-1">
+                                            @foreach($user->campaigns as $uc)
+                                                <span class="badge bg-dark border border-secondary text-info me-1" style="font-size: 0.7rem;">
+                                                    <i class="bi bi-compass"></i> {{ $uc->display_name }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+
                                     @if($user->master_request)
                                         <div class="mt-1">
                                             <span class="badge bg-primary animate-pulse">

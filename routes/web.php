@@ -6,9 +6,11 @@ use App\Http\Controllers\LogsController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ChangelogController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\TelegramBotController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
 
 Auth::routes(['verify' => true]);
 
@@ -16,20 +18,23 @@ Route::get('/', function () {
     return view('welcome');
 })->name('index');
 
-Route::get('/vault/search', [VaultController::class, 'search'])->name('vault.search');
+// ========== VAULT ENTRYPOINT & MULTI-CAMPAIGN ROUTES ==========
+Route::get('/vault', [VaultController::class, 'index'])->name('vault.index');
 
-Route::get('/vault/changelog', [App\Http\Controllers\ChangelogController::class, 'index'])->name('vault.changelog.index');
-Route::get('/vault/changelog/{version}', [App\Http\Controllers\ChangelogController::class, 'show'])->name('vault.changelog.show');
+Route::prefix('vault/{campaign:folder_name}')->group(function () {
+    Route::get('/search', [VaultController::class, 'search'])->name('vault.search');
+    Route::get('/changelog', [ChangelogController::class, 'index'])->name('vault.changelog.index');
+    Route::get('/changelog/{version}', [ChangelogController::class, 'show'])->name('vault.changelog.show');
+    Route::get('/{note?}', [VaultController::class, 'show'])
+        ->where('note', '.*')
+        ->name('vault.show');
+});
 
-Route::get('/vault/{note?}', [VaultController::class, 'show'])
-    ->where('note', '.*')
-    ->name('vault.show');
-
-Route::get('/api/vault/{note?}', [VaultController::class, 'rawShow'])
+Route::get('/api/vault/{campaign:folder_name}/{note?}', [VaultController::class, 'rawShow'])
     ->where('note', '.*')
     ->name('vault.raw');
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard')->middleware(['auth', 'verified']);
+Route::get('/home', [HomeController::class, 'index'])->name('dashboard')->middleware(['auth', 'verified']);
 
 // ========== API PUBBLICA SESSIONI (Per visuale giocatori) ==========
 Route::get('/dm/api/public/sessions/{share_code}', [DmController::class, 'publicLoadSession']);
@@ -40,9 +45,9 @@ Route::get('/dm/player/{share_code}', [DmController::class, 'playerView'])->name
 
 // ========== PROFILO UTENTE (autenticato) ==========
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::patch('/profile', [App\Http\Controllers\HomeController::class, 'updateProfile'])->name('profile.update');
-    Route::patch('/profile/password', [App\Http\Controllers\HomeController::class, 'updatePassword'])->name('profile.password');
-    Route::post('/profile/request-master', [App\Http\Controllers\HomeController::class, 'requestMasterUtils'])->name('profile.request_master');
+    Route::patch('/profile', [HomeController::class, 'updateProfile'])->name('profile.update');
+    Route::patch('/profile/password', [HomeController::class, 'updatePassword'])->name('profile.password');
+    Route::post('/profile/request-master', [HomeController::class, 'requestMasterUtils'])->name('profile.request_master');
 });
 
 // ========== SEGNALAZIONI (pubbliche) ==========
@@ -94,6 +99,14 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->group(functio
     Route::get('/reports/{report}', [ReportController::class, 'show'])->name('admin.reports.show');
     Route::patch('/reports/{report}', [ReportController::class, 'update'])->name('admin.reports.update');
 
+    // Gestione campagne
+    Route::get('/campaigns', [AdminController::class, 'campaigns'])->name('admin.campaigns');
+    Route::get('/campaigns/create', [AdminController::class, 'createCampaign'])->name('admin.campaigns.create');
+    Route::post('/campaigns', [AdminController::class, 'storeCampaign'])->name('admin.campaigns.store');
+    Route::get('/campaigns/{campaign}/edit', [AdminController::class, 'editCampaign'])->name('admin.campaigns.edit');
+    Route::patch('/campaigns/{campaign}', [AdminController::class, 'updateCampaign'])->name('admin.campaigns.update');
+    Route::delete('/campaigns/{campaign}', [AdminController::class, 'deleteCampaign'])->name('admin.campaigns.delete');
+
     // Gestione utenti
     Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
     Route::get('/users/create', [AdminController::class, 'createUser'])->name('admin.users.create');
@@ -128,17 +141,12 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->group(functio
 });
 
 // ========== JOB ROUTES ==========
-
-// Route per il processore email (protetta da JOB_TOKEN)
 Route::get("/job/ProcessEmailQueue", [JobController::class, 'processEmailQueue'])
     ->name("job.processEmailQueue");
 
 // ========== TELEGRAM BOT ROUTES ==========
-Route::post('/telegram/webhook', [App\Http\Controllers\TelegramBotController::class, 'webhook']);
-
-// // Route per notificare manualmente i cambiamenti (chiamabile dallo script di upload)
-// Route::get('/api/notify-update', [App\Http\Controllers\TelegramBotController::class, 'notifyUpdate'])
-//     ->middleware('web');
+Route::post('/telegram/webhook', [TelegramBotController::class, 'webhook']);
+Route::get('/api/notify-update', [TelegramBotController::class, 'notifyUpdate'])->name('api.notify-update');
 
 Route::fallback(function () {
     return view('errors.404');

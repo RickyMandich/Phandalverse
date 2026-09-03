@@ -50,6 +50,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'master_request',
         'showEmbedLink',
         'collapseEmbed',
+        'default_campaign_id',
     ];
 
     /**
@@ -134,6 +135,77 @@ class User extends Authenticatable implements MustVerifyEmail
     public function accessGroups(): BelongsToMany
     {
         return $this->belongsToMany(AccessGroup::class);
+    }
+
+    public function campaigns(): BelongsToMany
+    {
+        return $this->belongsToMany(Campaign::class);
+    }
+
+    public function defaultCampaign()
+    {
+        return $this->belongsTo(Campaign::class, 'default_campaign_id');
+    }
+
+    /**
+     * Ritorna tutte le campagne a cui l'utente ha accesso, ordinate per `order` asc.
+     * Per il Master ritorna tutte le campagne registrate a sistema.
+     */
+    public function accessibleCampaigns()
+    {
+        if ($this->isMaster()) {
+            return Campaign::orderBy('order')->get();
+        }
+
+        return $this->campaigns()->orderBy('order')->get();
+    }
+
+    /**
+     * Verifica se l'utente ha accesso a una specifica campagna.
+     * Il Master ha sempre accesso a tutte le campagne.
+     */
+    public function hasAccessToCampaign(Campaign|string|int $campaign): bool
+    {
+        if ($this->isMaster()) {
+            return true;
+        }
+
+        if ($campaign instanceof Campaign) {
+            $campaignId = $campaign->id;
+        } elseif (is_numeric($campaign)) {
+            $campaignId = (int) $campaign;
+        } else {
+            $found = Campaign::where('folder_name', $campaign)->first();
+            if (!$found) {
+                return false;
+            }
+            $campaignId = $found->id;
+        }
+
+        return $this->campaigns()->where('campaigns.id', $campaignId)->exists();
+    }
+
+    /**
+     * Risolve la campagna iniziale da mostrare all'utente:
+     * 1. Se impostata la default_campaign_id ed è accessibile -> usa quella.
+     * 2. Altrimenti -> campagna con order più basso tra quelle accessibili.
+     * 3. Fallback -> prima campagna esistente nel sistema.
+     */
+    public function resolveInitialCampaign(): ?Campaign
+    {
+        if ($this->default_campaign_id) {
+            $default = Campaign::find($this->default_campaign_id);
+            if ($default && $this->hasAccessToCampaign($default)) {
+                return $default;
+            }
+        }
+
+        $firstAccessible = $this->accessibleCampaigns()->first();
+        if ($firstAccessible) {
+            return $firstAccessible;
+        }
+
+        return Campaign::orderBy('order')->first();
     }
 
 

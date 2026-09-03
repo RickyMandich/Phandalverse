@@ -6,7 +6,7 @@
 
 @section('content')
     <div class="d-flex gap-0 h-100 w-100">
-        @include('vault._sidebar', ['tree' => $tree, 'note' => $note])
+        @include('vault._sidebar', ['tree' => $tree, 'note' => $note, 'campaign' => $campaign, 'accessibleCampaigns' => $accessibleCampaigns])
 
         <main class="flex-grow-1 p-4" style="min-width: 0;">
             <div class="search-results-page">
@@ -25,7 +25,7 @@
 
                     <div class="list-group list-group-flush">
                         @foreach($results as $result)
-                            <a href="{{ route('vault.show', ['note' => $result['url']]) }}"
+                            <a href="{{ route('vault.show', ['campaign' => $campaign->folder_name, 'note' => $result['url']]) }}"
                                 class="list-group-item list-group-item-action bg-dark border-secondary text-white mb-2 rounded border">
                                 <div class="d-flex w-100 justify-content-between">
                                     <h5 class="mb-1 text-warning">

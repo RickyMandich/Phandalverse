@@ -26,7 +26,10 @@ class HomeController extends Controller
      */
     public function index()
     {
-        return view('auth.dashboard');
+        $user = Auth::user();
+        $accessibleCampaigns = $user ? $user->accessibleCampaigns() : collect();
+
+        return view('auth.dashboard', compact('accessibleCampaigns'));
     }
 
     /**
@@ -41,13 +44,21 @@ class HomeController extends Controller
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'showEmbedLink' => 'boolean',
             'collapseEmbed' => 'boolean',
+            'default_campaign_id' => 'nullable|exists:campaigns,id',
         ]);
+
+        if ($request->filled('default_campaign_id') && !$user->hasAccessToCampaign($request->default_campaign_id)) {
+            return redirect()->route('dashboard')->withErrors([
+                'default_campaign_id' => 'Non hai accesso alla campagna selezionata come predefinita.'
+            ], 'profile');
+        }
 
         $user->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'showEmbedLink' => $request->has('showEmbedLink'),
             'collapseEmbed' => $request->has('collapseEmbed'),
+            'default_campaign_id' => $validated['default_campaign_id'] ?? null,
         ]);
 
         return redirect()->route('dashboard')->with('success', 'Profilo aggiornato con successo');
@@ -65,7 +76,6 @@ class HomeController extends Controller
 
         $user = Auth::user();
 
-        // Verifica password attuale
         if (!Hash::check($validated['current_password'], $user->password)) {
             return redirect()->route('dashboard')
                 ->withErrors(['current_password' => 'La password attuale non è corretta'], 'password');
@@ -75,29 +85,17 @@ class HomeController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        // Notifica Telegram della modifica password (profilo utente)
         try {
             $hasToken = env('TELEGRAM_BOT_TOKEN') ? true : false;
             $hasChatId = env('TELEGRAM_ADMIN_CHAT_ID') ? true : false;
             $actor = Auth::user();
             $by = $actor ? ($actor->email ?? $actor->name) : 'sistema';
 
-            \Illuminate\Support\Facades\Log::info('Telegram notify attempt for profile password change', [
-                'has_token' => $hasToken,
-                'has_chat_id' => $hasChatId,
-                'target_user' => $user->email,
-                'actor' => $by,
-            ]);
-
             if ($hasToken && $hasChatId) {
                 \App\Services\TelegramService::notify(
                     'Password modificata (profilo)',
                     "Utente: {$user->email}\nModificata da: {$by}"
                 );
-
-                \Illuminate\Support\Facades\Log::info('Telegram notify invoked for profile password change', ['target_user' => $user->email]);
-            } else {
-                \Illuminate\Support\Facades\Log::warning('Telegram not configured for profile password change notification', ['has_token' => $hasToken, 'has_chat_id' => $hasChatId]);
             }
         } catch (\Exception $ex) {
             \Illuminate\Support\Facades\Log::error('Impossibile inviare notifica Telegram per password aggiornata (profilo): ' . $ex->getMessage());
@@ -105,6 +103,7 @@ class HomeController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'Password aggiornata con successo');
     }
+
     /**
      * Request access to master utilities.
      */
@@ -122,14 +121,12 @@ class HomeController extends Controller
 
         $user->update(['master_request' => true]);
 
-        // Invia notifica agli admin
         try {
             $admins = \App\Models\User::getAdmins();
             foreach ($admins as $admin) {
                 \App\Jobs\SendQueuedEmail::dispatch(new \App\Mail\MasterRequestNotification($user), $admin->email);
             }
 
-            // Notifica Telegram diretta (opzionale, ma coerente con il resto dell'app)
             if (env('TELEGRAM_BOT_TOKEN') && env('TELEGRAM_ADMIN_CHAT_ID')) {
                 \App\Services\TelegramService::notify(
                     'Richiesta Strumenti Master',

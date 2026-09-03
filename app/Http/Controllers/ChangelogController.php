@@ -2,23 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Campaign;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Auth;
 use App\Helpers\VaultHelper;
 use App\Http\Controllers\VaultController;
 
 class ChangelogController extends Controller
 {
-    /**
-     * Display a listing of all versions.
-     */
-    public function index(Request $request)
+    protected function getAccessibleCampaigns()
     {
-        $indexPath = base_path('Vault/.normalize/changelogs/index.json');
+        return Auth::check() ? Auth::user()->accessibleCampaigns() : Campaign::orderBy('order')->get();
+    }
 
-        // Try lowercase fallback if not found
+    /**
+     * Display a listing of all versions for a campaign.
+     */
+    public function index(Request $request, Campaign $campaign)
+    {
+        $folder = VaultHelper::resolveCampaignFolder($campaign);
+        $indexPath = $campaign->changelogsPath('index.json');
+
         if (!File::exists($indexPath)) {
-            $indexPath = base_path('vault/.normalize/changelogs/index.json');
+            $indexPath = base_path("Vault/{$folder}/.normalize/changelogs/index.json");
+        }
+        if (!File::exists($indexPath)) {
+            $indexPath = base_path('Vault/.normalize/changelogs/index.json');
         }
 
         if (!File::exists($indexPath)) {
@@ -35,28 +45,32 @@ class ChangelogController extends Controller
             }
         }
 
-        // We need the tree for the sidebar
         $vaultController = new VaultController();
-        $tree = $vaultController->buildFileTree();
+        $tree = $vaultController->buildFileTree(null, 'changelog', $campaign);
 
         return view('vault.changelog.index', [
             'versions' => $versions,
             'tree' => $tree,
-            'note' => 'changelog' // Used to highlight the sidebar if we add a link there later
+            'note' => 'changelog',
+            'campaign' => $campaign,
+            'accessibleCampaigns' => $this->getAccessibleCampaigns(),
         ]);
     }
 
     /**
-     * Display the specified version.
+     * Display the specified version for a campaign.
      */
-    public function show(Request $request, $version)
+    public function show(Request $request, Campaign $campaign, $version)
     {
-        // Sanitize input: allow only alphanumeric and underscore (v_1_2_3 format)
+        $folder = VaultHelper::resolveCampaignFolder($campaign);
         $versionFile = preg_replace('/[^a-zA-Z0-9_]/', '', $version);
-        $changelogPath = base_path("Vault/.normalize/changelogs/{$versionFile}.json");
+        $changelogPath = $campaign->changelogsPath("{$versionFile}.json");
 
         if (!File::exists($changelogPath)) {
-            $changelogPath = base_path("vault/.normalize/changelogs/{$versionFile}.json");
+            $changelogPath = base_path("Vault/{$folder}/.normalize/changelogs/{$versionFile}.json");
+        }
+        if (!File::exists($changelogPath)) {
+            $changelogPath = base_path("Vault/.normalize/changelogs/{$versionFile}.json");
         }
 
         if (!File::exists($changelogPath)) {
@@ -65,14 +79,15 @@ class ChangelogController extends Controller
 
         $changelog = json_decode(File::get($changelogPath), true);
 
-        // We need the tree for the sidebar
         $vaultController = new VaultController();
-        $tree = $vaultController->buildFileTree();
+        $tree = $vaultController->buildFileTree(null, 'changelog', $campaign);
 
         return view('vault.changelog.show', [
             'changelog' => $changelog,
             'tree' => $tree,
-            'note' => 'changelog'
+            'note' => 'changelog',
+            'campaign' => $campaign,
+            'accessibleCampaigns' => $this->getAccessibleCampaigns(),
         ]);
     }
 }

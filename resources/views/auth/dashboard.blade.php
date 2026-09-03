@@ -124,6 +124,21 @@
                                 </div>
                             </div>
 
+                            @if(isset($accessibleCampaigns) && $accessibleCampaigns->isNotEmpty())
+                                <div class="mb-3">
+                                    <label for="default_campaign_id" class="form-label">Campagna Predefinita</label>
+                                    <select class="form-select @error('default_campaign_id', 'profile') is-invalid @enderror" id="default_campaign_id" name="default_campaign_id">
+                                        <option value="">-- Nessuna (Usa ordine predefinito) --</option>
+                                        @foreach($accessibleCampaigns as $camp)
+                                            <option value="{{ $camp->id }}" {{ (string) old('default_campaign_id', Auth::user()->default_campaign_id) === (string) $camp->id ? 'selected' : '' }}>
+                                                {{ $camp->display_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="form-text">La campagna che verrà aperta automaticamente all'accesso a /vault.</div>
+                                </div>
+                            @endif
+
                             <div class="mb-3">
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="collapseEmbed" name="collapseEmbed"

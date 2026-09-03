@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Cronologia Versioni - Vault')
+@section('title', 'Cronologia Versioni - ' . $campaign->display_name)
 
 @section('content-class', 'container-fluid px-0')
 
@@ -111,20 +111,20 @@
 
 @section('content')
     <div class="d-flex gap-0 h-100 w-100 changelog-container">
-        @include('vault._sidebar', ['tree' => $tree, 'note' => $note])
+        @include('vault._sidebar', ['tree' => $tree, 'note' => $note, 'campaign' => $campaign, 'accessibleCampaigns' => $accessibleCampaigns])
 
         <section class="flex-grow-1 p-4 p-md-5" style="min-width: 0; overflow-y: auto;">
             <div class="container-narrow mx-auto" style="max-width: 900px;">
                 <header class="mb-5">
                     <h1 class="display-5 fw-bold mb-2">Cronologia Versioni</h1>
-                    <p class="text-secondary">Tracciamento automatico delle modifiche apportate al Vault.</p>
+                    <p class="text-secondary">Tracciamento automatico delle modifiche apportate al Vault ({{ $campaign->display_name }}).</p>
                 </header>
 
                 @if (empty($versions))
                     <div class="empty-state">
                         <i class="bi bi-clock-history"></i>
                         <h3>Nessuna versione trovata</h3>
-                        <p>Il sistema di changelog non ha ancora registrato alcuna versione.</p>
+                        <p>Il sistema di changelog non ha ancora registrato alcuna versione per questa campagna.</p>
                     </div>
                 @else
                     <div class="version-list">
@@ -142,7 +142,7 @@
                                     @php
                                         $versionParam = str_replace([' ', '.'], '_', $v['version']);
                                     @endphp
-                                    <a href="{{ route('vault.changelog.show', ['version' => $versionParam]) }}"
+                                    <a href="{{ route('vault.changelog.show', ['campaign' => $campaign->folder_name, 'version' => $versionParam]) }}"
                                         class="view-details-btn">
                                         Dettagli <i class="bi bi-arrow-right ms-1"></i>
                                     </a>

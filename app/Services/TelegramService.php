@@ -102,6 +102,17 @@ class TelegramService
     }
 
     /**
+     * Invia un messaggio agli iscritti di una specifica campagna
+     */
+    public static function broadcastCampaign(\App\Models\Campaign $campaign, string $message, bool $parseHtml = true, $replyMarkup = null): void
+    {
+        $subscribers = \App\Models\TelegramSubscriber::where('campaign_id', $campaign->id)->get();
+        foreach ($subscribers as $subscriber) {
+            self::sendToChat($subscriber->chat_id, $message, $parseHtml, $replyMarkup, $subscriber->thread_id);
+        }
+    }
+
+    /**
      * Invia notifica di errore sistema
      */
     public static function notifyError(\Throwable $exception, ?string $url = null): void

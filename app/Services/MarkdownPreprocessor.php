@@ -3,11 +3,11 @@
 namespace App\Services;
 
 use App\Helpers\VaultHelper;
+use App\Models\Campaign;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
-use League\CommonMark\Extension\Table\Table;
 use League\CommonMark\Extension\Table\TableExtension;
 use League\CommonMark\Extension\TaskList\TaskListExtension;
 use League\CommonMark\Extension\Strikethrough\StrikethroughExtension;
@@ -17,28 +17,38 @@ use App\Http\Controllers\VaultController;
 
 class MarkdownPreprocessor
 {
-    private static ?array $fileIndex = null;
+    private static array $fileIndices = [];
     private static int $embedDepth = 0;
     private static int $maxEmbedDepth = 3;
 
-    public static function buildFileIndex(): array
+    public static function buildFileIndex(Campaign|string|null $campaign = null): array
     {
-        if (self::$fileIndex !== null) {
-            return self::$fileIndex;
+        $folder = VaultHelper::resolveCampaignFolder($campaign);
+
+        if (isset(self::$fileIndices[$folder])) {
+            return self::$fileIndices[$folder];
         }
 
-        self::$fileIndex = [];
-        $vaultPath = base_path('Vault');
+        self::$fileIndices[$folder] = [];
 
+        // Verifica path nella sottocartella della campagna
+        $vaultPath = base_path('Vault/' . $folder);
+
+        // Fallback per retrocompatibilità se Vault/{folder} non esiste ma esiste Vault/
         if (!File::exists($vaultPath) || !File::isDirectory($vaultPath)) {
-            return self::$fileIndex;
+            $legacyPath = base_path('Vault');
+            if (File::exists($legacyPath) && File::isDirectory($legacyPath)) {
+                $vaultPath = $legacyPath;
+            } else {
+                return self::$fileIndices[$folder];
+            }
         }
 
         try {
             $files = File::allFiles($vaultPath);
         } catch (\Throwable $e) {
-            Log::warning('Vault directory is not available for markdown index: ' . $e->getMessage());
-            return self::$fileIndex;
+            Log::warning("Vault directory is not available for markdown index [$folder]: " . $e->getMessage());
+            return self::$fileIndices[$folder];
         }
 
         foreach ($files as $file) {
@@ -50,11 +60,10 @@ class MarkdownPreprocessor
                 if (!$isMaster) {
                     try {
                         $fileContent = File::get($file->getPathname());
-                        if (!AccessControlService::noteIsVisibleTo($fileContent)) {
+                        if (!AccessControlService::noteIsVisibleTo($fileContent, null, $campaign)) {
                             $shouldSkip = true;
                         }
                     } catch (\Throwable $e) {
-                        // If cannot read file, skip it
                         $shouldSkip = true;
                     }
                 }
@@ -68,20 +77,20 @@ class MarkdownPreprocessor
                 $fullPath = $relativePath ? $relativePath . '/' . $file->getFilenameWithoutExtension() : $file->getFilenameWithoutExtension();
 
                 // Index by name (lowercase)
-                if (!isset(self::$fileIndex[$name])) {
-                    self::$fileIndex[$name] = $fullPath;
+                if (!isset(self::$fileIndices[$folder][$name])) {
+                    self::$fileIndices[$folder][$name] = $fullPath;
                 }
                 // Index by full path (lowercase)
-                self::$fileIndex[strtolower($fullPath)] = $fullPath;
+                self::$fileIndices[$folder][strtolower($fullPath)] = $fullPath;
             }
         }
 
-        return self::$fileIndex;
+        return self::$fileIndices[$folder];
     }
 
-    public static function findNotePath(string $noteName): string
+    public static function findNotePath(string $noteName, Campaign|string|null $campaign = null): string
     {
-        $index = self::buildFileIndex();
+        $index = self::buildFileIndex($campaign);
         $cleanName = strtolower(trim(str_replace('\\', '/', $noteName)));
         $cleanName = rtrim($cleanName, '/');
 
@@ -100,7 +109,7 @@ class MarkdownPreprocessor
     /**
      * Rimuove i blocchi master (per utenti non master)
      */
-    public static function filterMasterBlocks(string $text): string
+    public static function filterMasterBlocks(string $text, Campaign|string|null $campaign = null): string
     {
         // Se l'utente è master, non filtriamo nulla (i marker verranno gestiti dal renderer)
         if (Auth::check() && Auth::user()->isMaster()) {
@@ -108,7 +117,7 @@ class MarkdownPreprocessor
         }
 
         // Nota non visibile (DM-only o gruppo mancante): nascondi tutto
-        if (!AccessControlService::noteIsVisibleTo($text)) {
+        if (!AccessControlService::noteIsVisibleTo($text, null, $campaign)) {
             return '';
         }
 
@@ -126,9 +135,6 @@ class MarkdownPreprocessor
      */
     public static function stripMasterMarkers(string $text): string
     {
-        // Replace master markers with HTML comments so the inner markdown
-        // is still processed by the markdown converter. We'll wrap the
-        // final converted HTML after conversion.
         $text = preg_replace('/#startMaster\s*/i', '<!--MASTER_START-->', $text);
         $text = preg_replace('/\s*#endMaster\s*/i', '<!--MASTER_END-->', $text);
         return $text;
@@ -136,12 +142,9 @@ class MarkdownPreprocessor
 
     /**
      * After markdown conversion, replace MASTER comment markers with a wrapper
-     * so the resulting HTML is highlighted for masters while still allowing
-     * markdown inside the section to be rendered normally.
      */
     public static function wrapMasterBlocksInHtml(string $html): string
     {
-        // Replace <!--MASTER_START--> ... <!--MASTER_END--> with a wrapper
         $pattern = '/<!--MASTER_START-->(.*?)<!--MASTER_END-->/is';
         return preg_replace_callback($pattern, function ($m) {
             $inner = $m[1];
@@ -154,11 +157,7 @@ class MarkdownPreprocessor
      */
     public static function stripDmMarker($text): string
     {
-        return preg_replace(
-            '/(?<=^|\s)#dm(?=\s|$)/i',
-            '',
-            $text
-        );
+        return preg_replace('/(?<=^|\s)#dm(?=\s|$)/i', '', $text);
     }
 
     public static function convertTags(string $text): string
@@ -173,13 +172,15 @@ class MarkdownPreprocessor
         );
     }
 
-    public static function convertWikilinks(string $text, string $note = ''): string
+    public static function convertWikilinks(string $text, string $note = '', Campaign|string|null $campaign = null): string
     {
+        $folder = VaultHelper::resolveCampaignFolder($campaign);
+
         return preg_replace_callback(
             '/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/',
-            function ($matches) use ($note) {
+            function ($matches) use ($note, $campaign, $folder) {
                 $nota = trim($matches[1]);
-                $index = self::buildFileIndex();
+                $index = self::buildFileIndex($campaign);
                 $cleanName = strtolower(trim(str_replace('\\', '/', $nota)));
                 $cleanName = rtrim($cleanName, '/');
 
@@ -191,23 +192,20 @@ class MarkdownPreprocessor
                 $found = isset($index[$cleanName]);
                 $path = $found ? $index[$cleanName] : $cleanName;
 
-                CustomLogger::note($note, "Wikilink resolution: '$nota' (clean: '$cleanName') -> found: " . ($found ? "YES ($path)" : "NO"), "debug-wikilink");
-
                 if (isset($matches[2]) && !empty(trim($matches[2]))) {
                     $label = trim($matches[2]);
                 } else {
-                    // Se non c'è alias, prova a prendere il nome originale dalla mappa
-                    $label = VaultHelper::getOriginalName($path . '.md', $note);
+                    // Se non c'è alias, prova a prendere il nome originale dalla mappa della campagna
+                    $label = VaultHelper::getOriginalName($path . '.md', $note, $campaign);
                 }
 
-                // Genera il link solo se la nota è nell'indice (quindi è pubblica o l'utente è master)
+                // Genera il link solo se la nota è nell'indice (quindi è pubblica o l'utente ha accesso)
                 if (!$found) {
-                    CustomLogger::note($note, "Wikilink '$nota' NOT FOUND in index. Returning plain text: $label", "debug-wikilink");
                     return htmlspecialchars($label);
                 }
 
                 $camelPath = VaultController::pathToCamelCase($path);
-                $url = '/vault/' . $camelPath;
+                $url = '/vault/' . $folder . '/' . $camelPath;
                 return '<a href="' . $url . '" class="wikilink">' . htmlspecialchars($label) . '</a>';
             },
             $text
@@ -216,7 +214,6 @@ class MarkdownPreprocessor
 
     /**
      * Estrae una sezione da un contenuto markdown
-     * $sectionPath e' tipo "## titolo### sottotitolo"
      */
     public static function extractSection(string $content, string $sectionPath): string
     {
@@ -224,7 +221,6 @@ class MarkdownPreprocessor
             return $content;
         }
 
-        // Parse section path: "##heading1###heading2" -> [['##', 'heading1'], ['###', 'heading2']]
         preg_match_all('/(#{1,6})([^#]+)/', $sectionPath, $matches, PREG_SET_ORDER);
 
         if (empty($matches)) {
@@ -236,10 +232,8 @@ class MarkdownPreprocessor
         $inSection = false;
         $targetLevel = 0;
         $currentMatch = 0;
-        $matchedLevels = [];
 
         foreach ($lines as $line) {
-            // Check if line is a heading
             if (preg_match('/^(#{1,6})\s+(.+)$/', $line, $headingMatch)) {
                 $level = strlen($headingMatch[1]);
                 $title = trim($headingMatch[2]);
@@ -249,7 +243,6 @@ class MarkdownPreprocessor
                     $wantedTitle = trim($matches[$currentMatch][2]);
 
                     if ($level === $wantedLevel && strcasecmp($title, $wantedTitle) === 0) {
-                        $matchedLevels[] = $level;
                         $currentMatch++;
 
                         if ($currentMatch === count($matches)) {
@@ -261,7 +254,6 @@ class MarkdownPreprocessor
                     }
                 }
 
-                // Se siamo in sezione e troviamo heading di livello <= target, usciamo
                 if ($inSection && $level <= $targetLevel) {
                     break;
                 }
@@ -278,39 +270,43 @@ class MarkdownPreprocessor
     /**
      * Carica e renderizza il contenuto di un embed
      */
-    public static function loadEmbedContent(string $embedRef, string $note, int $index, bool $debug = false): string
+    public static function loadEmbedContent(string $embedRef, string $note, int $index, Campaign|string|null $campaign = null, bool $debug = false): string
     {
-        // Previeni ricorsione infinita
+        $folder = VaultHelper::resolveCampaignFolder($campaign);
+
         if (self::$embedDepth >= self::$maxEmbedDepth) {
             return '<div class="embed-note embed-error"> Embed troppo annidato</div>';
         }
 
-        // Parse: "NoteName##section###subsection"
         $parts = preg_split('/(#{1,6})/', $embedRef, 2, PREG_SPLIT_DELIM_CAPTURE);
         $noteName = trim($parts[0]);
         $sectionPath = isset($parts[1]) ? $parts[1] . ($parts[2] ?? '') : '';
 
-        // Trova il file
-        $relativePath = self::findNotePath($noteName);
-        $fullPath = base_path('Vault/' . $relativePath . '.md');
+        $relativePath = self::findNotePath($noteName, $campaign);
+        $fullPath = base_path('Vault/' . $folder . '/' . $relativePath . '.md');
+
+        if (!File::exists($fullPath)) {
+            // Fallback legacy
+            $legacyFullPath = base_path('Vault/' . $relativePath . '.md');
+            if (File::exists($legacyFullPath)) {
+                $fullPath = $legacyFullPath;
+            }
+        }
 
         if (!File::exists($fullPath)) {
             $camelPath = VaultController::pathToCamelCase($relativePath . '.md');
-            $url = '/vault/' . $camelPath;
+            $url = '/vault/' . $folder . '/' . $camelPath;
             return '<div class="embed-note embed-missing"><a href="' . $url . '" class="wikilink"> ' . htmlspecialchars($noteName) . ' (non trovato)</a></div>';
         }
 
         $content = File::get($fullPath);
 
-        // Check note visibility for embeds
-        if (!AccessControlService::noteIsVisibleTo($content)) {
+        if (!AccessControlService::noteIsVisibleTo($content, null, $campaign)) {
             return '<div class="embed-note embed-restricted text-muted fst-italic"><i class="bi bi-lock"></i> Contenuto riservato</div>';
         }
 
-        // Rimuovi frontmatter YAML
         $content = preg_replace('/^---\s*\n.*?\n---\s*\n/s', '', $content);
 
-        // Estrai sezione se specificata
         if (!empty($sectionPath)) {
             $content = self::extractSection($content, $sectionPath);
         }
@@ -319,51 +315,32 @@ class MarkdownPreprocessor
             return '<div class="embed-note embed-empty"> Sezione vuota o non trovata</div>';
         }
 
-        // Renderizza il contenuto (con protezione ricorsione)
         self::$embedDepth++;
-        $html = self::toHtml($content, $note);
+        $html = self::toHtml($content, $note, $campaign);
         self::$embedDepth--;
 
         $camelPath = VaultController::pathToCamelCase($relativePath);
-        $url = '/vault/' . $camelPath;
+        $url = '/vault/' . $folder . '/' . $camelPath;
         $embedDepth = self::$embedDepth;
         $user = Auth::check() ? Auth::user() : null;
         $showEmbedLink = $user ? $user->showEmbedLink : false;
         $collapseEmbed = $user ? $user->collapseEmbed : false;
-        if ($debug)
-            CustomLogger::note($note, "inizio log titolo:\t$embedRef");
-        $title = VaultHelper::getOriginalName($embedRef, $note);
-        if ($debug)
-            CustomLogger::note($note, "dopo get original name:\t$title");
+
+        $title = VaultHelper::getOriginalName($embedRef, $note, $campaign);
         $title = explode('#', $title);
-        if ($debug)
-            CustomLogger::note($note, "dopo explode:\t" . print_r($title, true));
         $title = htmlspecialchars(end($title));
-        if ($debug)
-            CustomLogger::note($note, "dopo htmlspecialchars(end):\t$title");
 
-        // Header sempre visibile per permettere il collapse a tutti
         $showHeader = true;
-
-        // Lo stato iniziale dipende dalla preferenza collapseEmbed
-        // Se true -> parte chiuso. Se false -> parte aperto.
         $startCollapsed = $collapseEmbed;
 
-        // Gestione Link e Header
         if ($collapseEmbed) {
-            // Se modalità collapse attiva come default, ottimizziamo per il toggle facile:
-            // - Header NON ha link (per permettere click facile su titolo per toggle)
-            // - Il link passa nel contenuto (se abilitato)
             $headerWithLink = false;
             $contentWithLink = $showEmbedLink;
         } else {
-            // Modalità default (espansa)
             if ($showEmbedLink) {
-                // Se link attivo, resta nell'header (comportamento classico)
                 $headerWithLink = true;
                 $contentWithLink = false;
             } else {
-                // Nessun link, header serve solo per toggle
                 $headerWithLink = false;
                 $contentWithLink = false;
             }
@@ -373,13 +350,11 @@ class MarkdownPreprocessor
 
         if ($showHeader) {
             $ret .= "<div class='embed-header'>";
-            // Icona toggle
             $ret .= "<i class='bi-caret-right-square collapse-icon' data-bs-toggle='collapse' data-bs-target='#embed-$index-$embedDepth'></i>";
 
             if ($headerWithLink) {
                 $ret .= "<a href='$url' class='wikilink'> $title</a>";
             } else {
-                // Titolo come toggle (fallback icona)
                 $ret .= "<span style='cursor: pointer;' data-bs-toggle='collapse' data-bs-target='#embed-$index-$embedDepth' class='embed-title'> $title</span>";
             }
             $ret .= "</div>";
@@ -413,31 +388,29 @@ class MarkdownPreprocessor
         );
     }
 
-    public static function restoreEmbeds(string $html, array $embeds, string $note): string
+    public static function restoreEmbeds(string $html, array $embeds, string $note, Campaign|string|null $campaign = null): string
     {
+        $folder = VaultHelper::resolveCampaignFolder($campaign);
+
         foreach ($embeds as $index => $content) {
             $imageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'avif'];
 
-            // Prefer to resolve the embed target on disk inside Vault.
-            // This allows embeds to point to images placed anywhere in the Vault.
-            $vaultBase = base_path('Vault') . DIRECTORY_SEPARATOR;
+            $vaultBase = base_path('Vault/' . $folder) . DIRECTORY_SEPARATOR;
+
+            // Fallback se Vault/{folder} non esiste
+            if (!File::isDirectory($vaultBase)) {
+                $vaultBase = base_path('Vault') . DIRECTORY_SEPARATOR;
+            }
+
             $candidate = $vaultBase . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $content);
-
             $foundImagePath = null;
 
-            // Resolve images by searching the Vault. Support:
-            // - explicit relative paths like "Personaggi/NonGiocanti/perrin.png"
-            // - short names like "perrin.jpg" or "perrin" (search anywhere)
-            $foundImagePath = null;
-
-            // If the content contains a folder separator, try direct resolution first
             if (strpos($content, '/') !== false || strpos($content, '\\') !== false) {
                 $candidate = $vaultBase . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $content);
                 if (File::exists($candidate) && is_file($candidate)) {
                     $foundImagePath = str_replace($vaultBase, '', $candidate);
                     $foundImagePath = str_replace(DIRECTORY_SEPARATOR, '/', $foundImagePath);
                 } else {
-                    // try appending common extensions
                     foreach ($imageExt as $ext) {
                         $try = $candidate . '.' . $ext;
                         if (File::exists($try) && is_file($try)) {
@@ -448,68 +421,60 @@ class MarkdownPreprocessor
                     }
                 }
             } else {
-                // No path component: search the whole vault for matching filename
                 try {
-                    $all = File::allFiles(base_path('Vault'));
-                    $needleName = strtolower($content);
-                    $needleNoExt = strtolower(pathinfo($content, PATHINFO_FILENAME));
+                    if (File::isDirectory($vaultBase)) {
+                        $all = File::allFiles($vaultBase);
+                        $needleName = strtolower($content);
+                        $needleNoExt = strtolower(pathinfo($content, PATHINFO_FILENAME));
 
-                    $exactMatch = null;
-                    $fuzzyMatch = null;
+                        $exactMatch = null;
+                        $fuzzyMatch = null;
 
-                    foreach ($all as $f) {
-                        $extFound = strtolower($f->getExtension());
-                        if (!in_array($extFound, $imageExt)) {
-                            continue;
-                        }
+                        foreach ($all as $f) {
+                            $extFound = strtolower($f->getExtension());
+                            if (!in_array($extFound, $imageExt)) {
+                                continue;
+                            }
 
-                        $filenameLower = strtolower($f->getFilename());
+                            $filenameLower = strtolower($f->getFilename());
 
-                        // 1. Priorità: Corrispondenza ESATTA del nome file (es. Kokytos.png)
-                        if ($filenameLower === $needleName) {
-                            $exactMatch = $f->getPathname();
-                            break; // Trovato quello esatto, usciamo subito
-                        }
+                            if ($filenameLower === $needleName) {
+                                $exactMatch = $f->getPathname();
+                                break;
+                            }
 
-                        // 2. Secondaria: Corrispondenza del solo nome (es. Kokytos)
-                        // Memorizziamo il primo che troviamo come fallback
-                        if ($fuzzyMatch === null && $needleNoExt !== '') {
-                            if (strtolower($f->getBasename('.' . $f->getExtension())) === $needleNoExt) {
-                                $fuzzyMatch = $f->getPathname();
+                            if ($fuzzyMatch === null && $needleNoExt !== '') {
+                                if (strtolower($f->getBasename('.' . $f->getExtension())) === $needleNoExt) {
+                                    $fuzzyMatch = $f->getPathname();
+                                }
                             }
                         }
-                    }
 
-                    $finalPath = $exactMatch ?? $fuzzyMatch;
+                        $finalPath = $exactMatch ?? $fuzzyMatch;
 
-                    if ($finalPath) {
-                        $foundImagePath = str_replace($vaultBase, '', $finalPath);
-                        $foundImagePath = str_replace(DIRECTORY_SEPARATOR, '/', $foundImagePath);
+                        if ($finalPath) {
+                            $foundImagePath = str_replace($vaultBase, '', $finalPath);
+                            $foundImagePath = str_replace(DIRECTORY_SEPARATOR, '/', $foundImagePath);
+                        }
                     }
                 } catch (\Throwable $e) {
-                    // ignore search errors and fall back
                 }
             }
 
             if ($foundImagePath !== null) {
-                // Encode each path segment separately (do not encode slashes)
                 $segments = explode('/', $foundImagePath);
                 $enc = implode('/', array_map('rawurlencode', $segments));
-                $url = '/vault/' . $enc;
+                $url = '/vault/' . $folder . '/' . $enc;
                 $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($foundImagePath) . '" class="wikilink-image" style="max-width: 100%; height: auto;">';
             } else {
-                // Check if it has an explicit image extension
                 $ext = strtolower(pathinfo($content, PATHINFO_EXTENSION));
                 if (in_array($ext, $imageExt)) {
-                    // Has image extension but not found → render as broken image
-                    Log::warning('Embed image not found in Vault: ' . $content);
                     $segments = explode('/', $content);
                     $enc = implode('/', array_map('rawurlencode', $segments));
-                    $url = '/vault/' . $enc;
+                    $url = '/vault/' . $folder . '/' . $enc;
                     $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image" style="max-width: 100%; height: auto;">';
                 } else {
-                    // No extension or non-image extension → try as note embed
-                    $replacement = self::loadEmbedContent($content, $note, $index);
+                    $replacement = self::loadEmbedContent($content, $note, $index, $campaign);
                 }
             }
 
@@ -520,14 +485,11 @@ class MarkdownPreprocessor
 
     public static function convertRomanNumbers(string $text, string $note): string
     {
-        if (env('DEBUG_HTML', false))
-            CustomLogger::note($note, "text:\n$text", "debug");
-        $text = preg_replace(
+        return preg_replace(
             '/R\|([MDCLXVI]+)\|/',
             "<span class='roman-number'>$1</span>",
             $text
         );
-        return $text;
     }
 
     public static function processExternalLinks(string $html): string
@@ -541,43 +503,40 @@ class MarkdownPreprocessor
                 $tag = $matches[0];
                 $url = $matches[2];
 
-                // Check if it already has target="_blank"
                 if (stripos($tag, 'target=') !== false) {
                     return $tag;
                 }
 
-                // If it's the same host as the app, don't add target="_blank"
                 $urlHost = parse_url($url, PHP_URL_HOST);
                 if ($appHost && $urlHost === $appHost) {
                     return $tag;
                 }
 
-                // Add target="_blank" and rel="noopener noreferrer"
                 return preg_replace('/<a\s+/i', '<a target="_blank" rel="noopener noreferrer" ', $tag, 1);
             },
             $html
         );
     }
 
-    public static function toHtml(string $text, string $note): string
+    public static function toHtml(string $text, string $note, Campaign|string|null $campaign = null): string
     {
         $isMaster = Auth::check() && Auth::user()->isMaster();
         $user = Auth::user();
 
-        // 1. Se il file è marcato come DM-only o gruppi non accessibili e non siamo master, ritorna vuoto
-        if (!AccessControlService::noteIsVisibleTo($text, $user)) {
+        // 1. Verifica visibilità nota
+        if (!AccessControlService::noteIsVisibleTo($text, $user, $campaign)) {
             return '';
         }
 
-        // 2. Puliamo il tag #access:gruppo a livello di nota dal testo visualizzato
+        // 2. Puliamo il tag #access:... dal testo visualizzato
         $text = AccessControlService::stripAccessTags($text);
 
-        // 3. Se siamo master, puliamo eventuali tag #dm dal testo visualizzato
+        // 3. Puliamo eventuale #dm
         if ($isMaster) {
             $text = self::stripDmMarker($text);
         }
 
-        // 4. Estrai i blocchi master. Se non siamo master, rimuovili direttamente.
+        // 4. Estrai i blocchi master
         $masterBlocks = [];
         $text = preg_replace_callback('/#startMaster\s*(.*?)\s*#endMaster/is', function ($m) use (&$masterBlocks, $isMaster) {
             if (!$isMaster) {
@@ -588,9 +547,11 @@ class MarkdownPreprocessor
             return "<!--MASTER_BLOCK:{$idx}-->";
         }, $text);
 
-        // 5. Estrai i blocchi access. Se l'utente non ha accesso, rimuovili. Altrimenti salvali con badge e colore.
+        // 5. Estrai i blocchi access
         $accessBlocks = [];
-        $text = preg_replace_callback('/#startAccess-([a-z0-9]+(?:_[a-z0-9]+)*)\s*(.*?)\s*#endAccess/is', function ($m) use (&$accessBlocks, $user, $isMaster) {
+        $campaignId = ($campaign instanceof Campaign) ? $campaign->id : null;
+
+        $text = preg_replace_callback('/#startAccess-([a-z0-9]+(?:_[a-z0-9]+)*)\s*(.*?)\s*#endAccess/is', function ($m) use (&$accessBlocks, $user, $isMaster, $campaignId) {
             $requiredGroups = array_map('strtolower', explode('_', $m[1]));
             $hasAccess = $isMaster || ($user && $user->hasAccessToAnyGroup($requiredGroups));
 
@@ -599,8 +560,8 @@ class MarkdownPreprocessor
             }
 
             $idx = count($accessBlocks);
-            $badges = AccessControlService::computeBadgeGroups($user, $requiredGroups);
-            $color = AccessControlService::resolveBlockColor($requiredGroups);
+            $badges = AccessControlService::computeBadgeGroups($user, $requiredGroups, $campaignId);
+            $color = AccessControlService::resolveBlockColor($requiredGroups, $campaignId);
 
             $accessBlocks[$idx] = [
                 'content' => $m[2],
@@ -613,16 +574,14 @@ class MarkdownPreprocessor
 
         $embeds = [];
 
-        // Helper to run pre-processing on markdown content (used for main text, master blocks, and access blocks)
-        $processContent = function (string $t) use (&$embeds, $note) {
+        $processContent = function (string $t) use (&$embeds, $note, $campaign) {
             $t = self::replaceEmbedsWithPlaceholders($t, $embeds);
             $t = self::convertTags($t);
-            $t = self::convertWikilinks($t, $note);
+            $t = self::convertWikilinks($t, $note, $campaign);
             $t = self::convertRomanNumbers($t, $note);
             return $t;
         };
 
-        // 6. Process the main text (which now has master block and access block placeholders)
         $text = $processContent($text);
 
         $environment = new Environment([
@@ -637,10 +596,8 @@ class MarkdownPreprocessor
 
         $converter = new MarkdownConverter($environment);
 
-        // 7. Convert the main text
         $html = $converter->convert($text)->getContent();
 
-        // 8. Convert each master block separately and insert the rendered HTML
         foreach ($masterBlocks as $i => $innerMarkdown) {
             $innerMarkdown = $processContent($innerMarkdown);
             $innerHtml = $converter->convert($innerMarkdown)->getContent();
@@ -648,7 +605,6 @@ class MarkdownPreprocessor
             $html = str_replace("<!--MASTER_BLOCK:{$i}-->", $wrapped, $html);
         }
 
-        // 9. Convert each access block separately and insert the rendered HTML with badges and color
         foreach ($accessBlocks as $i => $blockData) {
             $innerMarkdown = $processContent($blockData['content']);
             $innerHtml = $converter->convert($innerMarkdown)->getContent();
@@ -669,13 +625,8 @@ class MarkdownPreprocessor
             $html = str_replace("<!--ACCESS_BLOCK:{$i}-->", $wrapped, $html);
         }
 
-        // 10. Restore embeds (placeholders -> actual embed HTML)
-        $html = self::restoreEmbeds($html, $embeds, $note);
-
-        // 11. Process external links to add target="_blank"
+        $html = self::restoreEmbeds($html, $embeds, $note, $campaign);
         $html = self::processExternalLinks($html);
-
-        // 12. Add stat-block class to blockquotes for D&D styling
         $html = str_replace('<blockquote>', '<blockquote class="stat-block">', $html);
 
         return $html;

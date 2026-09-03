@@ -9,7 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AccessGroup extends Model
 {
-    protected $fillable = ['slug', 'name', 'description', 'color', 'parent_id'];
+    protected $fillable = ['campaign_id', 'slug', 'name', 'description', 'color', 'parent_id'];
+
+    public function campaign(): BelongsTo
+    {
+        return $this->belongsTo(Campaign::class);
+    }
 
     public function parent(): BelongsTo
     {

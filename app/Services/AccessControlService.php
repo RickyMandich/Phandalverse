@@ -3,32 +3,57 @@
 namespace App\Services;
 
 use App\Models\AccessGroup;
+use App\Models\Campaign;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class AccessControlService
 {
-    private static ?Collection $groupsCache = null;
+    private static array $groupsCache = [];
 
     /**
-     * Cache dei gruppi caricati per la request corrente.
+     * Cache dei gruppi caricati per la request corrente (opzionalmente filtrati per campaignId).
      */
-    public static function getAllGroups(): Collection
+    public static function getAllGroups(?int $campaignId = null): Collection
     {
-        if (self::$groupsCache === null) {
+        $cacheKey = $campaignId !== null ? "campaign_{$campaignId}" : 'all';
+
+        if (!isset(self::$groupsCache[$cacheKey])) {
             try {
-                self::$groupsCache = AccessGroup::with('parent')->get();
+                $query = AccessGroup::with('parent');
+                if ($campaignId !== null) {
+                    $query->where('campaign_id', $campaignId);
+                }
+                self::$groupsCache[$cacheKey] = $query->get();
             } catch (\Throwable $e) {
-                self::$groupsCache = new Collection();
+                self::$groupsCache[$cacheKey] = new Collection();
             }
         }
-        return self::$groupsCache;
+        return self::$groupsCache[$cacheKey];
     }
 
     public static function clearCache(): void
     {
-        self::$groupsCache = null;
+        self::$groupsCache = [];
+    }
+
+    /**
+     * Verifica se un utente ha accesso alla campagna.
+     * Master ha sempre accesso.
+     * Guest (null) ha accesso solo per note pubbliche (gestito in noteIsVisibleTo).
+     */
+    public static function userHasCampaignAccess(?User $user, Campaign|string|int $campaign): bool
+    {
+        if ($user && $user->isMaster()) {
+            return true;
+        }
+
+        if (!$user) {
+            return true; // Guest può consultare i contenuti pubblici della campagna
+        }
+
+        return $user->hasAccessToCampaign($campaign);
     }
 
     /**
@@ -54,18 +79,25 @@ class AccessControlService
 
     /**
      * Punto unico di verità: la nota (nel suo complesso, tag a livello nota)
-     * è visibile all'utente indicato? Usato ovunque al posto del vecchio
-     * check duplicato su #dm + user->isMaster().
+     * è visibile all'utente indicato? Verifica appartenenza alla campagna, #dm e gruppi di accesso.
      *
      * @param User|null $user Se null, usa Auth::user() corrente.
+     * @param Campaign|string|null $campaign Se specificata, controlla anche l'accesso alla campagna per utenti loggati.
      */
-    public static function noteIsVisibleTo(string $content, ?User $user = null): bool
+    public static function noteIsVisibleTo(string $content, ?User $user = null, Campaign|string|null $campaign = null): bool
     {
         $user = $user ?? Auth::user();
 
         // Master vede sempre tutto, bypass immediato
         if ($user && $user->isMaster()) {
             return true;
+        }
+
+        // Controllo accesso alla campagna per utenti loggati
+        if ($campaign !== null && $user !== null) {
+            if (!$user->hasAccessToCampaign($campaign)) {
+                return false;
+            }
         }
 
         // #dm resta gestito come "gruppo implicito master": nessun altro può vederlo
@@ -75,7 +107,7 @@ class AccessControlService
 
         $requiredGroups = self::requiredGroupsFromNoteTag($content);
         if (empty($requiredGroups)) {
-            // Nessun tag di gruppo: la nota è pubblica (comportamento invariato di oggi)
+            // Nessun tag di gruppo: la nota è pubblica
             return true;
         }
 
@@ -126,13 +158,13 @@ class AccessControlService
      * - Se tutti appartengono allo stesso ramo gerarchico: colore del gruppo più specifico (max depth).
      * - Se da rami non imparentati: colore del gruppo con ID più basso tra quelli a max depth.
      */
-    public static function resolveBlockColor(array $taggedSlugs): string
+    public static function resolveBlockColor(array $taggedSlugs, ?int $campaignId = null): string
     {
         if (empty($taggedSlugs)) {
             return '#6c757d';
         }
 
-        $allGroups = self::getAllGroups();
+        $allGroups = self::getAllGroups($campaignId);
         $taggedSlugsLower = array_map('strtolower', $taggedSlugs);
         $groups = $allGroups->filter(fn($g) => in_array(strtolower($g->slug), $taggedSlugsLower, true));
 
@@ -185,14 +217,14 @@ class AccessControlService
      * Mostra il/i gruppo/i propri dell'utente più specifico/i tramite cui ha ottenuto l'accesso.
      * Per il Master mostra i gruppi taggati sul blocco.
      */
-    public static function computeBadgeGroups(?User $user, array $requiredSlugs): array
+    public static function computeBadgeGroups(?User $user, array $requiredSlugs, ?int $campaignId = null): array
     {
         $user = $user ?? Auth::user();
         if (!$user) {
             return [];
         }
 
-        $allGroups = self::getAllGroups();
+        $allGroups = self::getAllGroups($campaignId);
         $requiredSlugsLower = array_map('strtolower', $requiredSlugs);
 
         // Se Master, mostra i badge corrispondenti ai gruppi taggati

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Campaign;
 use Illuminate\Http\Request;
 use App\Services\TelegramService;
 use App\Models\TelegramSubscriber;
@@ -40,13 +41,10 @@ class TelegramBotController extends Controller
             } else {
                 $displayName = $chat['title'] ?? 'Gruppo';
                 if ($threadId) {
-                    // Proviamo a recuperare il nome del topic se il messaggio è una risposta al messaggio di creazione
                     $topicName = $message['reply_to_message']['forum_topic_created']['name'] ?? null;
-
                     if ($topicName) {
                         $displayName .= " / " . $topicName;
                     } else {
-                        // Fallback: se non troviamo il nome, usiamo l'ID del topic
                         $displayName .= " / Topic " . $threadId;
                     }
                 }
@@ -56,16 +54,12 @@ class TelegramBotController extends Controller
 
             // Gestione Comandi
             if (str_starts_with($text, '/')) {
-                // Separiamo comando e parametri
                 $parts = explode(' ', $text, 2);
                 $fullCommand = strtolower($parts[0]);
                 $params = trim($parts[1] ?? '');
-
-                // Rimuoviamo il tag del bot se presente (es. /search@phandalverseBot -> /search)
                 $command = explode('@', $fullCommand)[0];
 
                 if ($command === '/start') {
-                    // Gestione deep linking nel parametro
                     if (!empty($params) && str_starts_with($params, 'view_')) {
                         $slug = str_replace('view_', '', $params);
                         $slug = str_replace(['___', '__'], '/', $slug);
@@ -86,13 +80,8 @@ class TelegramBotController extends Controller
             return response('OK');
 
         } catch (\Throwable $e) {
-            // In caso di errore (es. DB non pronto), logghiamo e notifichiamo l'admin una volta.
-            // Ritorniamo comunque OK a Telegram per evitare che continui a riprovare all'infinito (retry).
             \App\Services\CustomLogger::telegram("Errore nel Webhook Telegram: " . $e->getMessage(), 'error');
-
-            // Notifica manuale per evitare che si perda il primo errore
             TelegramService::notifyError($e, $request->fullUrl());
-
             return response('OK');
         }
     }
@@ -107,8 +96,47 @@ class TelegramBotController extends Controller
         $data = $callbackQuery['data'];
 
         if (str_starts_with($data, 'view:')) {
-            $slug = str_replace('view:', '', $data);
-            $this->handleView($chatId, $slug, $threadId);
+            $payload = str_replace('view:', '', $data);
+            $parts = explode('|', $payload, 2);
+            $campaignFolder = count($parts) === 2 ? $parts[0] : null;
+            $slug = count($parts) === 2 ? $parts[1] : $parts[0];
+            $this->handleView($chatId, $slug, $threadId, $campaignFolder);
+        } elseif (str_starts_with($data, 'sub:camp_')) {
+            $campaignId = (int) str_replace('sub:camp_', '', $data);
+            $campaign = Campaign::find($campaignId);
+            if ($campaign) {
+                $subscriber = TelegramSubscriber::where('chat_id', $chatId)
+                    ->where('thread_id', $threadId)
+                    ->where('campaign_id', $campaign->id)
+                    ->first();
+
+                if ($subscriber) {
+                    TelegramService::sendToChat($chatId, "Questa chat/topic è già iscritta alle notifiche di <b>{$campaign->display_name}</b>! ✅", 'HTML', null, $threadId);
+                } else {
+                    TelegramSubscriber::create([
+                        'campaign_id' => $campaign->id,
+                        'chat_id' => $chatId,
+                        'thread_id' => $threadId,
+                        'username' => $callbackQuery['from']['username'] ?? ($callbackQuery['from']['first_name'] ?? 'User')
+                    ]);
+                    TelegramService::sendToChat($chatId, "Iscrizione completata per <b>{$campaign->display_name}</b>! 🔔 Riceverai una notifica ad ogni aggiornamento.", 'HTML', null, $threadId);
+                }
+            }
+        } elseif (str_starts_with($data, 'unsub:camp_')) {
+            $campaignId = (int) str_replace('unsub:camp_', '', $data);
+            $campaign = Campaign::find($campaignId);
+            TelegramSubscriber::where('chat_id', $chatId)
+                ->where('thread_id', $threadId)
+                ->where('campaign_id', $campaignId)
+                ->delete();
+
+            $name = $campaign ? $campaign->display_name : "Campagna #{$campaignId}";
+            TelegramService::sendToChat($chatId, "Notifiche disattivate per <b>{$name}</b>. 📴", 'HTML', null, $threadId);
+        } elseif ($data === 'unsub:all') {
+            TelegramSubscriber::where('chat_id', $chatId)
+                ->where('thread_id', $threadId)
+                ->delete();
+            TelegramService::sendToChat($chatId, "Tutte le notifiche sono state disattivate per questo topic. 📴", 'HTML', null, $threadId);
         }
 
         TelegramService::answerCallbackQuery($callbackQuery['id']);
@@ -119,7 +147,7 @@ class TelegramBotController extends Controller
     {
         $message = "Ciao $username! Benvenuto nel bot di Phandalverse. 🌌\n\n";
         $message .= "Comandi disponibili:\n";
-        $message .= "🚀 /subscribe - Attiva le notifiche per i cambiamenti nel server\n";
+        $message .= "🚀 /subscribe - Attiva le notifiche per una o più campagne\n";
         $message .= "📴 /unsubscribe - Disattiva le notifiche\n";
         $message .= "🔍 /search <nome> - Cerca una nota nel vault\n\n";
         $message .= "Puoi anche semplicemente scrivere il nome di una nota per cercarla.";
@@ -129,35 +157,94 @@ class TelegramBotController extends Controller
 
     protected function handleSubscribe($chatId, $username, $threadId = null)
     {
-        // Cerchiamo se l'iscrizione esiste già per la combinazione Chat e Topic
-        $subscriber = TelegramSubscriber::where('chat_id', $chatId)
-            ->where('thread_id', $threadId)
-            ->first();
+        $campaigns = Campaign::orderBy('order')->get();
 
-        if ($subscriber) {
-            TelegramService::sendToChat($chatId, "Questa chat/topic è già iscritta alle notifiche! ✅", 'HTML', null, $threadId);
-        } else {
-            TelegramSubscriber::create([
-                'chat_id' => $chatId,
-                'thread_id' => $threadId,
-                'username' => $username
-            ]);
-            TelegramService::sendToChat($chatId, "Iscrizione completata per questo topic! Riceverete una notifica ogni volta che ci saranno aggiornamenti sul server. 🔔", 'HTML', null, $threadId);
+        if ($campaigns->isEmpty()) {
+            TelegramService::sendToChat($chatId, "Nessuna campagna attiva disponibile per l'iscrizione al momento.", 'HTML', null, $threadId);
+            return;
         }
+
+        if ($campaigns->count() === 1) {
+            $campaign = $campaigns->first();
+            $subscriber = TelegramSubscriber::where('chat_id', $chatId)
+                ->where('thread_id', $threadId)
+                ->where('campaign_id', $campaign->id)
+                ->first();
+
+            if ($subscriber) {
+                TelegramService::sendToChat($chatId, "Questa chat/topic è già iscritta alle notifiche di <b>{$campaign->display_name}</b>! ✅", 'HTML', null, $threadId);
+            } else {
+                TelegramSubscriber::create([
+                    'campaign_id' => $campaign->id,
+                    'chat_id' => $chatId,
+                    'thread_id' => $threadId,
+                    'username' => $username
+                ]);
+                TelegramService::sendToChat($chatId, "Iscrizione completata per <b>{$campaign->display_name}</b>! 🔔", 'HTML', null, $threadId);
+            }
+            return;
+        }
+
+        // Più campagne: mostra bottoni inline per scegliere
+        $keyboard = [];
+        foreach ($campaigns as $camp) {
+            $isSubbed = TelegramSubscriber::where('chat_id', $chatId)
+                ->where('thread_id', $threadId)
+                ->where('campaign_id', $camp->id)
+                ->exists();
+
+            $statusIcon = $isSubbed ? "✅ " : "➕ ";
+            $keyboard[] = [
+                [
+                    'text' => $statusIcon . $camp->display_name,
+                    'callback_data' => "sub:camp_{$camp->id}"
+                ]
+            ];
+        }
+
+        $replyMarkup = ['inline_keyboard' => $keyboard];
+        TelegramService::sendToChat($chatId, "Scegli a quale campagna desideri iscriverti per ricevere gli aggiornamenti:", 'HTML', $replyMarkup, $threadId);
     }
 
     protected function handleUnsubscribe($chatId, $threadId = null)
     {
-        $subscriber = TelegramSubscriber::where('chat_id', $chatId)
+        $subs = TelegramSubscriber::where('chat_id', $chatId)
             ->where('thread_id', $threadId)
-            ->first();
+            ->with('campaign')
+            ->get();
 
-        if ($subscriber) {
-            $subscriber->delete();
-            TelegramService::sendToChat($chatId, "Notifiche disattivate per questo topic. 📴", 'HTML', null, $threadId);
-        } else {
+        if ($subs->isEmpty()) {
             TelegramService::sendToChat($chatId, "Non ci sono iscrizioni attive per questo topic.", 'HTML', null, $threadId);
+            return;
         }
+
+        if ($subs->count() === 1) {
+            $sub = $subs->first();
+            $name = $sub->campaign ? $sub->campaign->display_name : 'Campagna';
+            $sub->delete();
+            TelegramService::sendToChat($chatId, "Notifiche disattivate per <b>{$name}</b>. 📴", 'HTML', null, $threadId);
+            return;
+        }
+
+        $keyboard = [];
+        foreach ($subs as $sub) {
+            $name = $sub->campaign ? $sub->campaign->display_name : "Campagna #{$sub->campaign_id}";
+            $keyboard[] = [
+                [
+                    'text' => "📴 Disiscriviti da " . $name,
+                    'callback_data' => "unsub:camp_{$sub->campaign_id}"
+                ]
+            ];
+        }
+        $keyboard[] = [
+            [
+                'text' => "🚫 Disiscriviti da TUTTE",
+                'callback_data' => "unsub:all"
+            ]
+        ];
+
+        $replyMarkup = ['inline_keyboard' => $keyboard];
+        TelegramService::sendToChat($chatId, "Scegli da quale campagna vuoi disattivare le notifiche:", 'HTML', $replyMarkup, $threadId);
     }
 
     protected function handleSearch($chatId, $query, $threadId = null)
@@ -167,33 +254,45 @@ class TelegramBotController extends Controller
             return;
         }
 
-        $results = VaultHelper::searchNotes($query, "telegram_search");
+        $campaigns = Campaign::orderBy('order')->get();
+        if ($campaigns->isEmpty()) {
+            $campaigns = [null];
+        }
 
-        if (empty($results)) {
+        $allResults = [];
+        foreach ($campaigns as $camp) {
+            $results = VaultHelper::searchNotes($query, "telegram_search", $camp);
+            foreach ($results as $r) {
+                $r['campaign'] = $camp;
+                $allResults[] = $r;
+            }
+        }
+
+        if (empty($allResults)) {
             TelegramService::sendToChat($chatId, "Nessun risultato trovato per: " . $query, 'HTML', null, $threadId);
             return;
         }
 
         TelegramService::sendToChat($chatId, "🔍 Risultati della ricerca per '<b>$query</b>':", 'HTML', null, $threadId);
 
-        // Limitiamo a 3 risultati per non intasare la chat con messaggi multipli
-        $limitedResults = array_slice($results, 0, 3);
+        $limitedResults = array_slice($allResults, 0, 4);
 
         foreach ($limitedResults as $result) {
-            $slug = str_replace('.md', '', VaultController::pathToCamelCase($result['path']));
+            $camp = $result['campaign'];
+            $folder = $camp ? $camp->folder_name : 'newCampaign';
+            $campName = $camp ? $camp->display_name : 'Vault';
 
-            // Codifichiamo lo slug per l'URL (per gestire spazi e caratteri speciali)
+            $slug = str_replace('.md', '', VaultController::pathToCamelCase($result['path']));
             $encodedSlug = implode('/', array_map('rawurlencode', explode('/', $slug)));
 
-            // Usiamo l'Host corrente della richiesta se APP_URL è localhost
             $baseUrl = config('app.url');
             if ($baseUrl === 'http://localhost' || str_contains($baseUrl, 'localhost')) {
                 $baseUrl = request()->getSchemeAndHttpHost();
             }
 
-            $url = rtrim($baseUrl, '/') . "/vault/" . $encodedSlug;
+            $url = rtrim($baseUrl, '/') . "/vault/" . $folder . "/" . $encodedSlug;
 
-            $message = "📑 <b>" . htmlspecialchars($result['original']) . "</b>\n";
+            $message = "📑 <b>" . htmlspecialchars($result['original']) . "</b> (<i>" . htmlspecialchars($campName) . "</i>)\n";
             $message .= "<code>/view $slug</code>";
 
             $isGroup = str_starts_with((string) $chatId, '-');
@@ -210,7 +309,7 @@ class TelegramBotController extends Controller
                         ],
                         [
                             'text' => '📖 Leggi qui',
-                            'callback_data' => 'view:' . $slug
+                            'callback_data' => 'view:' . $folder . '|' . $slug
                         ]
                     ]
                 ]
@@ -219,68 +318,69 @@ class TelegramBotController extends Controller
             TelegramService::sendToChat($chatId, $message, 'HTML', $replyMarkup, $threadId);
         }
 
-        if (count($results) > 3) {
-            TelegramService::sendToChat($chatId, "...e altri " . (count($results) - 3) . " risultati.", 'HTML', null, $threadId);
+        if (count($allResults) > 4) {
+            TelegramService::sendToChat($chatId, "...e altri " . (count($allResults) - 4) . " risultati.", 'HTML', null, $threadId);
         }
     }
 
-    protected function handleView($chatId, $slug, $threadId = null)
+    protected function handleView($chatId, $slug, $threadId = null, ?string $campaignFolder = null)
     {
         if (empty($slug)) {
-            TelegramService::sendToChat($chatId, "Specifica la nota da leggere. Esempio: /view personaggi/giocanti/than-warlock-tiefling-30", 'HTML', null, $threadId);
+            TelegramService::sendToChat($chatId, "Specifica la nota da leggere. Esempio: /view personaggi/giocanti/than", 'HTML', null, $threadId);
             return;
         }
 
-        $path = \App\Services\MarkdownPreprocessor::findNotePath($slug);
-        $fullPath = base_path("Vault/" . $path . ".md");
+        $campaign = $campaignFolder ? Campaign::where('folder_name', $campaignFolder)->first() : Campaign::orderBy('order')->first();
+        $folder = VaultHelper::resolveCampaignFolder($campaign);
 
-        if (!\Illuminate\Support\Facades\File::exists($fullPath)) {
+        $path = \App\Services\MarkdownPreprocessor::findNotePath($slug, $campaign);
+        $fullPath = base_path("Vault/{$folder}/" . $path . ".md");
+        if (!File::exists($fullPath)) {
+            $fullPath = base_path("Vault/" . $path . ".md");
+        }
+
+        if (!File::exists($fullPath)) {
             TelegramService::sendToChat($chatId, "Nota non trovata: $slug", 'HTML', null, $threadId);
             return;
         }
 
-        $content = \Illuminate\Support\Facades\File::get($fullPath);
+        $content = File::get($fullPath);
 
-        // 1. Pulizia Blocchi DM e Frontmatter
-        $content = \App\Services\MarkdownPreprocessor::filterMasterBlocks($content);
+        // Pulizia Blocchi DM e Frontmatter
+        $content = \App\Services\MarkdownPreprocessor::filterMasterBlocks($content, $campaign);
         $content = \App\Services\MarkdownPreprocessor::stripDmMarker($content);
         $content = preg_replace('/^---\s*\n.*?\n---\s*\n/s', '', $content);
 
-        // 2. RIMOZIONE DRASTICA TABELLE (Sia HTML che Markdown)
-        // Rimuove tag <table>...</table>
+        // Rimozione tabelle
         $content = preg_replace('/<table[^>]*>.*?<\/table>/is', "\n<i>[Tabella rimossa - visualizzala sul sito]</i>\n", $content);
-        // Rimuove tabelle Markdown classiche
         $content = preg_replace('/(\n|^)\|.+\|\r?\n\|[-:| ]+\|\r?\n(\|.+\|(\r?\n|$))+/m', "\n<i>[Tabella rimossa - visualizzala sul sito]</i>\n", $content);
 
-        // 3. ESCAPE HTML GLOBALE
+        // Escape HTML globale
         $content = htmlspecialchars($content, ENT_QUOTES, 'UTF-8');
 
-        // 4. ELABORAZIONE WIKILINK ED EMBED
         // Embed ![[NomeNota]]
-        $content = preg_replace_callback('/!\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/', function ($m) {
+        $content = preg_replace_callback('/!\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/', function ($m) use ($campaign) {
             $alias = !empty($m[2]) ? html_entity_decode($m[2]) : null;
             $fileName = trim($m[1]);
-            // Se finisce con estensione immagine, cerchiamo il nome pulito
             $hasExt = preg_match('/\.(png|jpg|jpeg|gif|webp|svg|avif)$/i', $fileName);
             $lookupPath = $hasExt ? $fileName : $fileName . ".md";
-            $noteName = $alias ?: VaultHelper::getOriginalName($lookupPath, "telegram_view");
+            $noteName = $alias ?: VaultHelper::getOriginalName($lookupPath, "telegram_view", $campaign);
             return "\n📎 <b>" . htmlspecialchars($noteName) . "</b> (Embed)\n";
         }, $content);
 
         // Wikilink [[NomeNota]]
-        $content = preg_replace_callback('/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/', function ($m) {
+        $content = preg_replace_callback('/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/', function ($m) use ($campaign) {
             $alias = !empty($m[2]) ? html_entity_decode($m[2]) : null;
-            $noteName = $alias ?: VaultHelper::getOriginalName(trim($m[1]) . ".md", "telegram_view");
+            $noteName = $alias ?: VaultHelper::getOriginalName(trim($m[1]) . ".md", "telegram_view", $campaign);
             return "<b>" . htmlspecialchars($noteName) . "</b>";
         }, $content);
 
-        // 5. FORMATTAZIONE MARKDOWN SU TESTO ESCAPATO
+        // Formattazione
         $content = preg_replace('/\*\*(.+?)\*\*/', '<b>$1</b>', $content);
         $content = preg_replace('/\*(.+?)\*/', '<i>$1</i>', $content);
         $content = preg_replace('/^#+\s+(.+)$/m', "\n<b>$1</b>", $content);
         $content = preg_replace('/^\s*[\-\*]\s+(.+)$/m', "• $1", $content);
 
-        // 6. LIMITAZIONE LUNGHEZZA
         $maxLen = 3800;
         $suffix = "";
         if (strlen($content) > $maxLen) {
@@ -288,15 +388,14 @@ class TelegramBotController extends Controller
             $suffix = "\n\n... (contenuto troncato, leggi sul sito)";
         }
 
-        $title = VaultHelper::getOriginalName($path . ".md", "telegram_view");
+        $title = VaultHelper::getOriginalName($path . ".md", "telegram_view", $campaign);
 
-        // Prepariamo l'URL per il pulsante
         $encodedSlug = implode('/', array_map('rawurlencode', explode('/', $slug)));
         $baseUrl = config('app.url');
         if ($baseUrl === 'http://localhost' || str_contains($baseUrl, 'localhost')) {
             $baseUrl = request()->getSchemeAndHttpHost();
         }
-        $url = rtrim($baseUrl, '/') . "/vault/" . $encodedSlug;
+        $url = rtrim($baseUrl, '/') . "/vault/" . $folder . "/" . $encodedSlug;
 
         $message = "📖 <b>" . htmlspecialchars($title) . "</b>\n\n";
         $message .= trim($content) . $suffix;
@@ -321,7 +420,7 @@ class TelegramBotController extends Controller
     }
 
     /**
-     * Invia la notifica di aggiornamento a tutti gli iscritti.
+     * Invia la notifica di aggiornamento agli iscritti della specifica campagna.
      */
     public function notifyUpdate(Request $request)
     {
@@ -330,13 +429,31 @@ class TelegramBotController extends Controller
             abort(403);
         }
 
-        // Recuperiamo l'ultima versione dal file index.json del Vault
-        $indexPath = base_path('Vault/.normalize/changelogs/index.json');
-        if (!File::exists($indexPath)) {
-            $indexPath = base_path('vault/.normalize/changelogs/index.json');
+        $campaignFolder = $request->query('campaign');
+        $campaign = null;
+        if ($campaignFolder) {
+            $campaign = Campaign::where('folder_name', $campaignFolder)->first();
+        }
+        if (!$campaign) {
+            $campaign = Campaign::orderBy('order')->first();
         }
 
-        $version = env('APP_VERSION', '3.1.7'); // Fallback
+        if (!$campaign) {
+            return response()->json(['error' => 'Nessuna campagna trovata'], 404);
+        }
+
+        $folder = $campaign->folder_name;
+
+        // Recuperiamo l'ultima versione dal file index.json del Vault della campagna
+        $indexPath = $campaign->changelogsPath('index.json');
+        if (!File::exists($indexPath)) {
+            $indexPath = base_path("Vault/{$folder}/.normalize/changelogs/index.json");
+        }
+        if (!File::exists($indexPath)) {
+            $indexPath = base_path('Vault/.normalize/changelogs/index.json');
+        }
+
+        $version = env('APP_VERSION', '1.0.0');
 
         if (File::exists($indexPath)) {
             $content = File::get($indexPath);
@@ -347,25 +464,20 @@ class TelegramBotController extends Controller
         }
 
         $versionSlug = str_replace([' ', '.'], '_', strtolower(trim($version)));
-        // Codifichiamo per sicurezza (anche se gli underscore sono ok)
         $encodedVersionSlug = rawurlencode($versionSlug);
 
-        // --- LOGICA URL SICURA PER MINI APP ---
         $baseUrl = config('app.url');
         if ($baseUrl === 'http://localhost' || str_contains($baseUrl, 'localhost') || !str_starts_with($baseUrl, 'https')) {
             $baseUrl = $request->getSchemeAndHttpHost();
-            // Forza HTTPS se siamo in produzione (necessario per Mini App Telegram)
             if (!str_contains($baseUrl, 'localhost')) {
                 $baseUrl = str_replace('http://', 'https://', $baseUrl);
             }
         }
-        $url = rtrim($baseUrl, '/') . "/vault/changelog/" . $encodedVersionSlug;
+        $url = rtrim($baseUrl, '/') . "/vault/" . $folder . "/changelog/" . $encodedVersionSlug;
 
-        $message = "🚀 <b>Nuovo aggiornamento disponibile!</b>\n";
-        $message .= "Il Vault è stato aggiornato alla versione: <b>$version</b>\n\n";
-        $message .= "Clicca il pulsante sotto per leggere le novità direttamente qui!";
-
-        $isGroup = true; // Nel broadcast verso gruppi, forziamo il link normale per compatibilità
+        $message = "🚀 <b>Nuovo aggiornamento per {$campaign->display_name}!</b>\n";
+        $message .= "Il Vault è stato aggiornato alla versione: <b>{$version}</b>\n\n";
+        $message .= "Clicca il pulsante sotto per leggere le novità!";
 
         $replyMarkup = [
             'inline_keyboard' => [
@@ -378,12 +490,11 @@ class TelegramBotController extends Controller
             ]
         ];
 
-        // Se vogliamo mantenere la Mini App per chi riceve la notifica in privato, 
-        // dovremmo ciclare e distinguere, ma per ora il link standard è la scelta più sicura per il broadcast massivo.
-        TelegramService::broadcast($message, true, $replyMarkup);
+        TelegramService::broadcastCampaign($campaign, $message, true, $replyMarkup);
 
         return response()->json([
             'status' => 'success',
+            'campaign' => $campaign->folder_name,
             'version' => $version,
             'notified' => true
         ]);

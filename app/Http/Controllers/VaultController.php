@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Campaign;
 use App\Services\AccessControlService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -9,12 +10,32 @@ use App\Services\MarkdownPreprocessor;
 use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use App\Services\CustomLogger;
 use App\Helpers\VaultHelper;
 
 class VaultController extends Controller
 {
+    /**
+     * Entrypoint `/vault`: reindirizza alla campagna iniziale dell'utente
+     * (priorità: default_campaign_id -> order più basso accessibile).
+     */
+    public function index(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user) {
+            $campaign = $user->resolveInitialCampaign();
+        } else {
+            $campaign = Campaign::orderBy('order')->first();
+        }
+
+        if (!$campaign) {
+            abort(404, 'Nessuna campagna configurata nel sistema.');
+        }
+
+        return redirect()->route('vault.show', ['campaign' => $campaign->folder_name]);
+    }
+
     /**
      * Prepara il path per l'URL.
      * Dato che i file sono già normalizzati, restituiamo il path così com'è.
@@ -25,12 +46,18 @@ class VaultController extends Controller
     }
 
     /**
-     * Carica la configurazione estetica del grafo da `Vault/.obsidian/graph-config.json`
+     * Carica la configurazione estetica del grafo da `Vault/{folder}/.obsidian/graph-config.json`
      * Se il file non esiste o è invalido, ritorna una configurazione di default.
      */
-    private function loadGraphConfig(): array
+    private function loadGraphConfig(?Campaign $campaign = null): array
     {
-        $obsidianDir = base_path('Vault/.obsidian');
+        $folder = VaultHelper::resolveCampaignFolder($campaign);
+        $obsidianDir = base_path('Vault/' . $folder . '/.obsidian');
+
+        if (!File::exists($obsidianDir)) {
+            $obsidianDir = base_path('Vault/.obsidian');
+        }
+
         $configPath = $obsidianDir . DIRECTORY_SEPARATOR . 'graph-config.json';
         $graphJsonPath = $obsidianDir . DIRECTORY_SEPARATOR . 'graph.json';
 
@@ -100,7 +127,7 @@ class VaultController extends Controller
                     return [
                         'colors' => $colors,
                         'legend' => $legend,
-                        'colorGroups' => $groups, // Send full groups to frontend
+                        'colorGroups' => $groups,
                         'repelStrength' => $data['repelStrength'] ?? 20,
                         'linkStrength' => $data['linkStrength'] ?? 1,
                         'linkDistance' => $data['linkDistance'] ?? 30,
@@ -151,11 +178,9 @@ class VaultController extends Controller
 
     /**
      * Converte il parametro dell'URL nel path reale.
-     * Dato che l'URL usa già il path normalizzato, puliamo solo l'estensione se presente.
      */
     public static function camelCaseToPath(string $camelPath): ?string
     {
-        // Rimuovi estensione .md se presente per uniformità
         if (str_ends_with(strtolower($camelPath), '.md')) {
             $camelPath = substr($camelPath, 0, -3);
         }
@@ -165,16 +190,14 @@ class VaultController extends Controller
 
     /**
      * Costruisce l'albero dei file del vault partendo dalla mappa (map.json)
-     * e verificando l'esistenza dei file su disco.
-     * 
-     * @param string|null $basePath Path relativo della cartella da cui partire
+     * e verificando l'esistenza dei file su disco per la specifica campagna.
      */
-    public function buildFileTree(?string $basePath = null, $note = ''): array
+    public function buildFileTree(?string $basePath = null, $note = '', ?Campaign $campaign = null): array
     {
-        $map = VaultHelper::getMap($note);
+        $folder = VaultHelper::resolveCampaignFolder($campaign);
+        $map = VaultHelper::getMap($note, $campaign);
         $tree = [];
 
-        // Navigate to the start node in the map corresponding to $basePath
         $startNode = $map;
         $basePathParts = ($basePath && $basePath !== '') ? explode('/', str_replace('\\', '/', $basePath)) : [];
         $validStart = true;
@@ -183,9 +206,11 @@ class VaultController extends Controller
         foreach ($basePathParts as $part) {
             $lowerPart = strtolower($part);
             if (isset($startNode['directories'][$lowerPart])) {
-                // If we are navigating to a subdirectory, we need to find its real name on disk
-                // to correctly initialize the recursive scanner later.
-                $scanPath = base_path('Vault/' . ($currentRealPath ?: ''));
+                $scanPath = base_path('Vault/' . $folder . '/' . ($currentRealPath ?: ''));
+                if (!File::isDirectory($scanPath)) {
+                    $scanPath = base_path('Vault/' . ($currentRealPath ?: ''));
+                }
+
                 $realFolder = null;
                 if (File::isDirectory($scanPath)) {
                     $items = scandir($scanPath);
@@ -201,7 +226,6 @@ class VaultController extends Controller
                     $startNode = $startNode['directories'][$lowerPart];
                     $currentRealPath = $currentRealPath ? $currentRealPath . '/' . $realFolder : $realFolder;
                 } else {
-                    // Even if it matches the map, if it's missing on disk, we can't reliably start from here
                     $validStart = false;
                     break;
                 }
@@ -215,24 +239,20 @@ class VaultController extends Controller
             return [];
         }
 
-        // Traverse map and build tree
-        // Pass $currentRealPath so the scanner knows where to start looking for files on disk
-        $result = $this->traverseMapAndBuildTree($startNode, $basePath ?? '', $note, $currentRealPath);
+        $result = $this->traverseMapAndBuildTree($startNode, $basePath ?? '', $note, $currentRealPath, $campaign);
         $tree = $result['tree'];
         $missingFiles = $result['missing'];
 
-        // Handle missing files notification
         if (!empty($missingFiles)) {
             $currentHash = md5(json_encode($missingFiles));
-            $cacheKey = 'vault_missing_files_hash';
+            $cacheKey = "vault_missing_files_hash_{$folder}";
             $lastHash = \Illuminate\Support\Facades\Cache::get($cacheKey);
 
             if ($currentHash !== $lastHash) {
                 $isPartial = ($basePath !== null && $basePath !== '');
-                $msg = "⚠️ <b>Vault Integrity Warning" . ($isPartial ? " (Partial Scan)" : "") . "</b>\n\n";
+                $msg = "⚠️ <b>Vault Integrity Warning [{$folder}]" . ($isPartial ? " (Partial Scan)" : "") . "</b>\n\n";
                 $msg .= "Found " . count($missingFiles) . " files/directories defined in map.json but missing on disk:\n\n";
 
-                // Limit the list length
                 $limit = 20;
                 foreach (array_slice($missingFiles, 0, $limit) as $file) {
                     $msg .= "- " . htmlspecialchars($file) . "\n";
@@ -242,27 +262,26 @@ class VaultController extends Controller
                 }
 
                 \App\Services\TelegramService::send($msg);
-
-                // Cache the hash indefinitely (or for a long time)
-                // The alert will only trigger again if the LIST of missing files changes.
-                \Illuminate\Support\Facades\Cache::put($cacheKey, $currentHash, 86400); // 1 day
+                \Illuminate\Support\Facades\Cache::put($cacheKey, $currentHash, 86400);
             }
         } elseif ($basePath === null || $basePath === '') {
-            // clear cache if fixed so next error triggers immediately (only for full scans)
-            \Illuminate\Support\Facades\Cache::forget('vault_missing_files_hash');
+            \Illuminate\Support\Facades\Cache::forget("vault_missing_files_hash_{$folder}");
         }
 
         return $tree;
     }
 
-    private function traverseMapAndBuildTree($mapNode, $currentPath, $note, $currentRealPath = ''): array
+    private function traverseMapAndBuildTree($mapNode, $currentPath, $note, $currentRealPath = '', ?Campaign $campaign = null): array
     {
-        // resulting structure for this level
+        $folder = VaultHelper::resolveCampaignFolder($campaign);
         $branch = ['_files' => []];
         $missing = [];
 
-        // Scan current real directory to handle case-insensitive matching on Linux
-        $fullDirPath = base_path('Vault/' . $currentRealPath);
+        $fullDirPath = base_path('Vault/' . $folder . '/' . $currentRealPath);
+        if (!File::isDirectory($fullDirPath)) {
+            $fullDirPath = base_path('Vault/' . $currentRealPath);
+        }
+
         $realDirectoryContents = [];
         $realFileContents = [];
 
@@ -284,29 +303,23 @@ class VaultController extends Controller
         // 1. Process Directories
         if (isset($mapNode['directories'])) {
             foreach ($mapNode['directories'] as $dirKey => $dirData) {
-                // Determine real directory name
                 $dirKeyLower = strtolower($dirKey);
                 $realDirName = $realDirectoryContents[$dirKeyLower] ?? null;
-
                 $dirPathDisplay = $currentPath ? $currentPath . '/' . $dirKey : $dirKey;
 
                 if ($realDirName) {
                     $nextRealPath = $currentRealPath ? $currentRealPath . '/' . $realDirName : $realDirName;
+                    $subResult = $this->traverseMapAndBuildTree($dirData, $dirPathDisplay, $note, $nextRealPath, $campaign);
 
-                    $subResult = $this->traverseMapAndBuildTree($dirData, $dirPathDisplay, $note, $nextRealPath);
-
-                    // The view renderTreeIndexPartial recurses on $value['_dirs'].
-                    // It expects the recursive content (files + subdirs) to be IN _dirs.
                     if ($this->hasFilesOrDirs($subResult['tree'])) {
                         $branch[$dirKey] = [
                             '_label' => $dirData['original'] ?? ucfirst($dirKey),
-                            '_dirs' => $subResult['tree'] // Put the entire sub-tree (including _files) here
+                            '_dirs' => $subResult['tree']
                         ];
                     }
 
                     $missing = array_merge($missing, $subResult['missing']);
                 } else {
-                    // Directory missing on disk
                     $missing[] = $dirPathDisplay . " (Directory)";
                 }
             }
@@ -315,51 +328,46 @@ class VaultController extends Controller
         // 2. Process Files
         if (isset($mapNode['files'])) {
             foreach ($mapNode['files'] as $fileName => $originalName) {
-                // fileName in map usually has extension, e.g. "foo.md".
-                // But sometimes keys in map might be messy.
-                // We check if we can find a matching file in the scan.
-
                 $fileNameLower = strtolower($fileName);
                 $cleanNameLower = $fileNameLower;
                 if (str_ends_with($fileNameLower, '.md')) {
                     $cleanNameLower = substr($fileNameLower, 0, -3);
                 }
 
-                // Try to find exact match first (normalized key)
                 $realFileName = $realFileContents[$fileNameLower] ?? null;
-
-                // If not found, try adding/removing .md
                 if (!$realFileName) {
                     if (isset($realFileContents[$cleanNameLower . '.md'])) {
                         $realFileName = $realFileContents[$cleanNameLower . '.md'];
                     }
                 }
 
-                // Calculate display paths
                 $relPathNoExt = $currentPath ? $currentPath . '/' . $cleanNameLower : $cleanNameLower;
                 $checkPathForLog = $relPathNoExt . '.md';
 
                 if ($realFileName) {
-                    $fullPath = base_path('Vault/' . ($currentRealPath ? $currentRealPath . '/' . $realFileName : $realFileName));
+                    $targetPath = base_path('Vault/' . $folder . '/' . ($currentRealPath ? $currentRealPath . '/' . $realFileName : $realFileName));
+                    if (!File::exists($targetPath)) {
+                        $targetPath = base_path('Vault/' . ($currentRealPath ? $currentRealPath . '/' . $realFileName : $realFileName));
+                    }
 
-                    // Check DM Status & Access Groups
                     $isDm = false;
                     $accessBadges = [];
                     $content = '';
                     try {
-                        $content = File::get($fullPath);
+                        $content = File::get($targetPath);
                         $isDm = AccessControlService::isDmOnly($content);
                     } catch (\Throwable $e) {
                     }
 
                     $currentUser = Auth::user();
-                    if (!AccessControlService::noteIsVisibleTo($content, $currentUser)) {
+                    if (!AccessControlService::noteIsVisibleTo($content, $currentUser, $campaign)) {
                         continue;
                     }
 
+                    $campaignId = ($campaign instanceof Campaign) ? $campaign->id : null;
                     $requiredGroups = AccessControlService::requiredGroupsFromNoteTag($content);
                     if (!empty($requiredGroups)) {
-                        $accessBadges = AccessControlService::computeBadgeGroups($currentUser, $requiredGroups);
+                        $accessBadges = AccessControlService::computeBadgeGroups($currentUser, $requiredGroups, $campaignId);
                     }
 
                     $branch['_files'][] = [
@@ -370,7 +378,6 @@ class VaultController extends Controller
                         'access_badges' => $accessBadges,
                     ];
                 } else {
-                    // Really missing
                     if (count($missing) < 5) {
                         CustomLogger::note($note, "VaultTree Missing: '$checkPathForLog' (Key: $fileName)", "debug tree");
                     }
@@ -382,10 +389,6 @@ class VaultController extends Controller
         return ['tree' => $branch, 'missing' => $missing];
     }
 
-    /**
-     * Verifica ricorsivamente se un nodo dell'albero del Vault contiene file visibili
-     * o sotto-cartelle non vuote.
-     */
     private function hasFilesOrDirs(array $treeNode): bool
     {
         if (!empty($treeNode['_files'])) {
@@ -404,20 +407,25 @@ class VaultController extends Controller
     }
 
     /**
-     * Costruisce i dati per la visualizzazione a grafo
+     * Costruisce i dati per la visualizzazione a grafo per la campagna specificata.
      */
-    private function buildGraphData(): array
+    private function buildGraphData(?Campaign $campaign = null): array
     {
-        CustomLogger::graph("--- Inizio generazione dati grafo ---");
-        $vaultPath = base_path('Vault');
-        $files = File::allFiles($vaultPath);
+        $folder = VaultHelper::resolveCampaignFolder($campaign);
+        CustomLogger::graph("--- Inizio generazione dati grafo [$folder] ---");
+
+        $vaultPath = base_path('Vault/' . $folder);
+        if (!File::isDirectory($vaultPath)) {
+            $vaultPath = base_path('Vault');
+        }
+
+        $files = File::exists($vaultPath) ? File::allFiles($vaultPath) : [];
         CustomLogger::graph("File totali trovati nel vault: " . count($files));
 
         $nodes = [];
         $links = [];
         $nodeIndex = [];
 
-        // Prima passata: crea tutti i nodi visibili all'utente corrente
         foreach ($files as $file) {
             if ($file->getExtension() !== 'md') {
                 continue;
@@ -426,7 +434,6 @@ class VaultController extends Controller
             $relativePath = str_replace('\\', '/', $file->getRelativePath());
             $name = $file->getFilenameWithoutExtension();
 
-            // Fix encoding
             if (!mb_check_encoding($name, 'UTF-8')) {
                 $name = mb_convert_encoding($name, 'UTF-8', 'ISO-8859-1');
             }
@@ -437,18 +444,17 @@ class VaultController extends Controller
             $fullPath = $relativePath ? $relativePath . '/' . $name . '.md' : $name . '.md';
             $content = File::get($file->getPathname());
 
-            if (!AccessControlService::noteIsVisibleTo($content)) {
+            if (!AccessControlService::noteIsVisibleTo($content, null, $campaign)) {
                 CustomLogger::graph("Nodo escluso dal grafo per permessi: $fullPath");
                 continue;
             }
 
-            $originalName = VaultHelper::getOriginalName($fullPath, 'system');
+            $originalName = VaultHelper::getOriginalName($fullPath, 'system', $campaign);
 
-            // Estrai i tag
             preg_match_all('/(?<=^|\s)#([a-zA-Z][a-zA-Z0-9_-]*)(?=\s|$)/m', $content, $tagMatches);
             $tags = $tagMatches[1] ?? [];
 
-            $nodeId = $name; // Usa il nome come ID (Obsidian fa così)
+            $nodeId = $name;
             $nodeIndex[$name] = count($nodes);
 
             $nodes[] = [
@@ -461,9 +467,6 @@ class VaultController extends Controller
             ];
         }
 
-        CustomLogger::graph("Nodi indicizzati: " . count($nodes));
-
-        // Seconda passata: trova i link (wikilinks e embed)
         foreach ($files as $file) {
             if ($file->getExtension() !== 'md') {
                 continue;
@@ -472,18 +475,15 @@ class VaultController extends Controller
             $name = $file->getFilenameWithoutExtension();
             $content = File::get($file->getPathname());
 
-            if (!AccessControlService::noteIsVisibleTo($content)) {
+            if (!AccessControlService::noteIsVisibleTo($content, null, $campaign)) {
                 continue;
             }
 
-            // Trova tutti i wikilinks e gli embed (![[...]])
-            preg_match_all('/!?\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]+)?\]\]/', $content, $matches);
+            preg_match_all('/!?\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/', $content, $matches);
 
             if (!empty($matches[0])) {
                 foreach ($matches[1] as $linkedNote) {
                     $linkedNote = trim($linkedNote);
-
-                    // Se il link contiene un path, prendiamo solo il nome del file per il matching attuale
                     $linkedNoteName = basename($linkedNote, '.md');
 
                     if (isset($nodeIndex[$linkedNoteName])) {
@@ -497,16 +497,12 @@ class VaultController extends Controller
                             ];
                             $nodes[$sourceIdx]['connections']++;
                             $nodes[$targetIdx]['connections']++;
-                            // CustomLogger::note('system', "Link creato: $name -> $linkedNoteName");
                         }
-                    } else {
-                        CustomLogger::graph("Target non trovato per link in [$name]: '$linkedNote' (confrontato come '$linkedNoteName')");
                     }
                 }
             }
         }
 
-        // Rimuovi link duplicati
         $uniqueLinks = [];
         foreach ($links as $link) {
             $key = min($link['source'], $link['target']) . '-' . max($link['source'], $link['target']);
@@ -515,10 +511,6 @@ class VaultController extends Controller
             }
         }
 
-        CustomLogger::graph("Link totali creati: " . count($uniqueLinks));
-        CustomLogger::graph("--- Fine generazione dati grafo ---");
-
-        // Filtra i nodi senza connessioni (nodi fantasma/orfani)
         $connectedNodes = array_filter($nodes, function ($node) {
             return $node['connections'] > 0;
         });
@@ -532,8 +524,14 @@ class VaultController extends Controller
     /**
      * Converte il parametro dell'URL nel path reale di una cartella.
      */
-    public static function camelCaseToFolderPath(string $camelPath): ?string
+    public static function camelCaseToFolderPath(string $camelPath, ?Campaign $campaign = null): ?string
     {
+        $folder = VaultHelper::resolveCampaignFolder($campaign);
+        $full = base_path('Vault/' . $folder . '/' . $camelPath);
+        if (is_dir($full)) {
+            return $camelPath;
+        }
+
         if (is_dir(base_path('Vault/' . $camelPath))) {
             return $camelPath;
         }
@@ -541,45 +539,70 @@ class VaultController extends Controller
         return null;
     }
 
-    public function search(Request $request)
+    /**
+     * Verifica l'autorizzazione di accesso alla campagna per la richiesta corrente.
+     */
+    protected function checkCampaignAccess(Request $request, Campaign $campaign): void
     {
+        $user = Auth::user();
+        if ($user && !$user->hasAccessToCampaign($campaign)) {
+            abort(403, 'Accesso non autorizzato a questa campagna.');
+        }
+
+        // Salva in sessione la campagna correntemente visualizzata
+        session(['current_campaign' => $campaign->folder_name]);
+    }
+
+    /**
+     * Recupera l'elenco delle campagne accessibili all'utente.
+     */
+    protected function getAccessibleCampaigns()
+    {
+        return Auth::check() ? Auth::user()->accessibleCampaigns() : Campaign::orderBy('order')->get();
+    }
+
+    public function search(Request $request, Campaign $campaign)
+    {
+        $this->checkCampaignAccess($request, $campaign);
+
         $query = $request->query('q');
-        $note = "search=>$query";
-        $tree = $this->buildFileTree(null, note: $note);
+        $note = "search=>{$query}";
+        $tree = $this->buildFileTree(null, note: $note, campaign: $campaign);
         $results = [];
 
         if ($query) {
-            $results = VaultHelper::searchNotes($query, $note);
+            $results = VaultHelper::searchNotes($query, $note, $campaign);
 
             // Filter out DM-only files for non-masters
-            if (!Auth::check() || !Auth::user()->isMaster()) {
-                $results = array_filter($results, function ($result) {
+            $results = array_filter($results, function ($result) use ($campaign) {
+                $folder = VaultHelper::resolveCampaignFolder($campaign);
+                $path = base_path('Vault/' . $folder . '/' . $result['path'] . '.md');
+                if (!File::exists($path)) {
                     $path = base_path('Vault/' . $result['path'] . '.md');
-                    if (File::exists($path)) {
-                        return AccessControlService::noteIsVisibleTo(File::get($path));
-                    }
-                    return true;
-                });
-            }
+                }
+                if (File::exists($path)) {
+                    return AccessControlService::noteIsVisibleTo(File::get($path), null, $campaign);
+                }
+                return true;
+            });
 
-            // Convert paths to URLs and format results
             foreach ($results as &$result) {
                 $result['url'] = str_replace('.md', '', self::pathToCamelCase($result['path']));
-                // result['path'] in map is normalized (la-ruota.md), we want to show the directory path
                 $result['directory'] = dirname($result['path']);
                 if ($result['directory'] === '.') {
                     $result['directory'] = '';
                 }
             }
 
-            CustomLogger::note($note, print_r($results, true));
-
             if (count($results) == 1) {
-                return redirect()->route('vault.show', ['note' => $results[0]['url']]);
+                return redirect()->route('vault.show', [
+                    'campaign' => $campaign->folder_name,
+                    'note' => $results[0]['url']
+                ]);
             }
         }
 
-        $graphConfig = $this->loadGraphConfig();
+        $graphConfig = $this->loadGraphConfig($campaign);
 
         return view('vault.search', [
             'query' => $query,
@@ -587,60 +610,59 @@ class VaultController extends Controller
             'tree' => $tree,
             'note' => $note,
             'graphConfig' => $graphConfig,
+            'campaign' => $campaign,
+            'accessibleCampaigns' => $this->getAccessibleCampaigns(),
         ]);
     }
 
-    public function show(Request $request, $note = null)
+    public function show(Request $request, Campaign $campaign, $note = null)
     {
-        // If the requested note segment decodes to an existing file inside Vault,
-        // serve it directly (this allows image embeds to point to /vault/<encoded-path>). 
+        $this->checkCampaignAccess($request, $campaign);
+
+        $folder = VaultHelper::resolveCampaignFolder($campaign);
+
+        // Servire file binari (immagini) direttamente
         if ($note !== null) {
-            // decode the segment and normalize separators
             $decoded = rawurldecode($note);
-            // security: block attempts to escape the vault
             if (strpos($decoded, '..') !== false) {
                 abort(404);
             }
             $decoded = ltrim($decoded, '/\\');
-            $candidate = base_path('Vault' . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $decoded));
+
+            $candidate = base_path('Vault/' . $folder . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $decoded));
+            if (!File::exists($candidate)) {
+                $candidate = base_path('Vault' . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $decoded));
+            }
+
             $ext = strtolower(pathinfo($candidate, PATHINFO_EXTENSION));
             if (File::exists($candidate) && is_file($candidate) && $ext !== 'md') {
                 return response()->file($candidate);
-            } else {
-                // If the decoded segment looks like an image path/name but the file
-                // does not exist, log a warning to aid debugging.
-                $ext = strtolower(pathinfo($decoded, PATHINFO_EXTENSION));
-                $imageExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'avif'];
-                if (in_array($ext, $imageExt) || $ext === '') {
-                    Log::warning('Requested vault file not found: ' . $candidate . ' (decoded from: ' . $note . ')');
-                }
             }
         }
-        // Se non viene passato il parametro note, mostra la home del vault
-        // con pannello laterale (albero) e vista a grafo nella stessa pagina.
+
+        // Vista Home (Grafo + Albero)
         if ($note === null || $note === '') {
             $note = "graph";
-            $tree = $this->buildFileTree(null, note: $note);
-            $graphData = $this->buildGraphData();
-            $graphConfig = $this->loadGraphConfig();
+            $tree = $this->buildFileTree(null, note: $note, campaign: $campaign);
+            $graphData = $this->buildGraphData($campaign);
+            $graphConfig = $this->loadGraphConfig($campaign);
+
             return view('vault.index', [
-                'title' => 'Vault',
+                'title' => 'Vault - ' . $campaign->display_name,
                 'tree' => $tree,
                 'graphData' => $graphData,
                 'graphConfig' => $graphConfig,
                 'note' => $note,
+                'campaign' => $campaign,
+                'accessibleCampaigns' => $this->getAccessibleCampaigns(),
             ]);
         }
 
-        CustomLogger::note($note, "Visualizzazione nota $note");
+        CustomLogger::note($note, "Visualizzazione nota $note per campagna {$campaign->folder_name}");
 
-        // Prima controlla se è una cartella
-        $folderPath = self::camelCaseToFolderPath($note);
+        // Vista Cartella
+        $folderPath = self::camelCaseToFolderPath($note, $campaign);
         if ($folderPath !== null) {
-            Log::info("È una cartella: $folderPath");
-
-
-            // Determina quale vista mostrare
             $defaultView = SystemSetting::getVaultDefaultView();
             $requestedView = $request->query('view');
 
@@ -650,12 +672,10 @@ class VaultController extends Controller
                 $currentView = $defaultView;
             }
 
-            // Per le cartelle mostriamo solo la vista albero
-            CustomLogger::note($note, "inizio a generare il tree", "VaultController:468");
-            $tree = $this->buildFileTree($folderPath, $note);
-            CustomLogger::note($note, "inizio a generare il fulltree", "VaultController:470");
-            $fullTree = $this->buildFileTree(null, note: $note);
-            $graphConfig = $this->loadGraphConfig();
+            $tree = $this->buildFileTree($folderPath, $note, $campaign);
+            $fullTree = $this->buildFileTree(null, note: $note, campaign: $campaign);
+            $graphConfig = $this->loadGraphConfig($campaign);
+
             return view('vault.tree', [
                 'title' => 'Vault - ' . basename($folderPath),
                 'tree' => $tree,
@@ -664,76 +684,47 @@ class VaultController extends Controller
                 'folderPath' => $folderPath,
                 'graphConfig' => $graphConfig,
                 'note' => $note,
+                'campaign' => $campaign,
+                'accessibleCampaigns' => $this->getAccessibleCampaigns(),
             ]);
         }
 
-        // Risolve il path reale della nota (gestendo il case-sensitivity del server)
-        $filePath = MarkdownPreprocessor::findNotePath($note);
+        // Risoluzione Nota
+        $filePath = MarkdownPreprocessor::findNotePath($note, $campaign);
 
-        $fullSystemPath = base_path("Vault/" . $filePath . ".md");
+        $fullSystemPath = base_path("Vault/{$folder}/{$filePath}.md");
+        if (!File::exists($fullSystemPath)) {
+            $fullSystemPath = base_path("Vault/{$filePath}.md");
+        }
 
         $pathSegments = preg_split('#[\\\\/]#', $filePath);
 
-        Log::info("Il path reale della nota è: " . print_r($pathSegments, true));
-
-
-        CustomLogger::note($note, "cerco la nota: $fullSystemPath");
         if (!File::exists($fullSystemPath)) {
             CustomLogger::note($note, "Nota non trovata: $fullSystemPath", 'error');
             abort(404, 'Nota non trovata');
         }
 
         $content = File::get($fullSystemPath);
-        if (env('DEBUG_HTML', false))
-            CustomLogger::note($note, "Contenuto ORIGINALE dal file: " . $content);
-
         $currentUser = Auth::user();
-        CustomLogger::note($note, "ora controllo se è il master: " . ($currentUser?->isMaster() ? '1' : '0') . "(master=" . ($currentUser?->master ? '1' : '0') . ") e l'utente è " . ($currentUser?->name ?? 'Guest'));
-        // Gestione blocchi master e DM
-        // If file is DM-only or restricted to groups and user has no access, act as if file doesn't exist
-        $masterFile = false;
-        $accessBadges = [];
-        if (!AccessControlService::noteIsVisibleTo($content, $currentUser)) {
+
+        if (!AccessControlService::noteIsVisibleTo($content, $currentUser, $campaign)) {
             CustomLogger::note($note, "Accesso negato: file DM o gruppo riservato per non-autorizzati");
             abort(404, 'Nota non trovata');
         }
 
-        if (AccessControlService::isDmOnly($content)) {
-            $masterFile = true;
-        }
-
+        $masterFile = AccessControlService::isDmOnly($content);
+        $accessBadges = [];
         $requiredGroups = AccessControlService::requiredGroupsFromNoteTag($content);
         if (!empty($requiredGroups)) {
-            $accessBadges = AccessControlService::computeBadgeGroups($currentUser, $requiredGroups);
+            $accessBadges = AccessControlService::computeBadgeGroups($currentUser, $requiredGroups, $campaign->id);
         }
 
-        if (Auth::check() && Auth::user()->isMaster()) {
-            CustomLogger::note($note, "Mostro i blocchi master");
-        } else {
-            CustomLogger::note($note, "Filtro i blocchi master");
-        }
+        $title = VaultHelper::getOriginalName($filePath . '.md', $note, $campaign);
 
-        if (env('DEBUG_HTML', false))
-            CustomLogger::note($note, "Contenuto dopo filtro: " . $content);
+        $html = MarkdownPreprocessor::toHtml($content, $note, $campaign);
+        $tree = $this->buildFileTree(null, note: $note, campaign: $campaign);
+        $graphConfig = $this->loadGraphConfig($campaign);
 
-        if (preg_match('/(?<=^|[\\\\\\/])[^\\\\\\/]+(?=\\.md$)/', $fullSystemPath, $matches)) {
-            // Use VaultHelper to get the original displayed title if possible
-            // $fullSystemPath is absolute here. We need relative path to look up in map.
-            $relativePathForHelper = str_replace(base_path('Vault/'), '', $fullSystemPath);
-            // Fix slashes
-            $relativePathForHelper = str_replace('\\', '/', $relativePathForHelper);
-
-            $title = VaultHelper::getOriginalName($relativePathForHelper, $note);
-            CustomLogger::note($note, "il path del file è: $fullSystemPath e il titolo del file è: $title", "VaultController:532(show)");
-        }
-
-
-        // Converte Markdown → HTML con supporto wikilink/embed
-        $html = MarkdownPreprocessor::toHtml($content, $note);
-        if (env('DEBUG_HTML', false))
-            CustomLogger::note($note, "HTML generato: " . $html);
-        $tree = $this->buildFileTree(null, note: $note);
-        $graphConfig = $this->loadGraphConfig();
         return view('vault.note', [
             'title' => $title,
             'html' => $html,
@@ -743,22 +734,30 @@ class VaultController extends Controller
             'masterFile' => $masterFile,
             'accessBadges' => $accessBadges,
             'note' => $note,
+            'campaign' => $campaign,
+            'accessibleCampaigns' => $this->getAccessibleCampaigns(),
         ]);
     }
 
     /**
      * Ritorna il file markdown originale invece di renderizzarlo.
-     * Si comporta come show() ma restituisce il contenuto raw (filtrato).
      */
-    public function rawShow(Request $request, $note = null)
+    public function rawShow(Request $request, Campaign $campaign, $note = null)
     {
+        $this->checkCampaignAccess($request, $campaign);
+
+        $folder = VaultHelper::resolveCampaignFolder($campaign);
+
         if ($note !== null) {
             $decoded = rawurldecode($note);
             if (strpos($decoded, '..') !== false) {
                 abort(404);
             }
             $decoded = ltrim($decoded, '/\\');
-            $candidate = base_path('Vault' . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $decoded));
+            $candidate = base_path('Vault/' . $folder . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $decoded));
+            if (!File::exists($candidate)) {
+                $candidate = base_path('Vault' . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $decoded));
+            }
             $ext = strtolower(pathinfo($candidate, PATHINFO_EXTENSION));
             if (File::exists($candidate) && is_file($candidate) && $ext !== 'md') {
                 return response()->file($candidate);
@@ -769,9 +768,11 @@ class VaultController extends Controller
             abort(404, 'Nessuna nota specificata');
         }
 
-        // Risolve il path reale della nota
-        $filePath = MarkdownPreprocessor::findNotePath($note);
-        $fullSystemPath = base_path("Vault/" . $filePath . ".md");
+        $filePath = MarkdownPreprocessor::findNotePath($note, $campaign);
+        $fullSystemPath = base_path("Vault/{$folder}/{$filePath}.md");
+        if (!File::exists($fullSystemPath)) {
+            $fullSystemPath = base_path("Vault/{$filePath}.md");
+        }
 
         if (!File::exists($fullSystemPath)) {
             abort(404, 'Nota non trovata');
@@ -779,13 +780,12 @@ class VaultController extends Controller
 
         $content = File::get($fullSystemPath);
 
-        // Gestione blocchi master e DM
-        if (!AccessControlService::noteIsVisibleTo($content)) {
+        if (!AccessControlService::noteIsVisibleTo($content, null, $campaign)) {
             abort(403, 'Accesso negato');
         }
 
         if (!Auth::check() || !Auth::user()->isMaster()) {
-            $content = MarkdownPreprocessor::filterMasterBlocks($content);
+            $content = MarkdownPreprocessor::filterMasterBlocks($content, $campaign);
         } else {
             $content = MarkdownPreprocessor::stripDmMarker($content);
         }

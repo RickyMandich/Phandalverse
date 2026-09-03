@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AccessGroup;
+use App\Models\Campaign;
 use App\Models\SystemError;
 use App\Models\User;
 use App\Services\AccessControlService;
@@ -43,7 +44,6 @@ class AdminController extends Controller
             $status = $request->status;
         }
 
-        // Filter by status if provided
         if ($status !== 'all') {
             $query->where('status', $request->status);
         }
@@ -111,6 +111,149 @@ class AdminController extends Controller
         return redirect()->route('admin.errors.show', $error)->with('success', 'Errore segnato come ' . $action);
     }
 
+    // ========== GESTIONE CAMPAGNE ==========
+
+    /**
+     * Display list of all campaigns
+     */
+    public function campaigns()
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $campaigns = Campaign::withCount(['users', 'accessGroups', 'telegramSubscribers'])
+            ->orderBy('order')
+            ->paginate(20);
+
+        return view('admin.campaigns.index', compact('campaigns'));
+    }
+
+    /**
+     * Show form to create a new campaign
+     */
+    public function createCampaign()
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $maxOrder = (int) Campaign::max('order');
+        $suggestedOrder = $maxOrder > 0 ? $maxOrder + 10 : 10;
+        $users = User::orderBy('name')->get();
+
+        return view('admin.campaigns.create', compact('suggestedOrder', 'users'));
+    }
+
+    /**
+     * Store a new campaign
+     */
+    public function storeCampaign(Request $request)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $validated = $request->validate([
+            'folder_name' => [
+                'required',
+                'string',
+                'max:255',
+                'unique:campaigns,folder_name',
+                'regex:/^[a-zA-Z0-9_\-]+$/',
+            ],
+            'display_name' => 'required|string|max:255',
+            'order' => 'required|integer|unique:campaigns,order',
+            'users' => 'nullable|array',
+            'users.*' => 'exists:users,id',
+        ], [
+            'folder_name.regex' => 'Il nome cartella/branch deve contenere solo lettere, numeri, trattini e underscore (compatibile con i branch git).',
+        ]);
+
+        $campaign = Campaign::create([
+            'folder_name' => $validated['folder_name'],
+            'display_name' => $validated['display_name'],
+            'order' => $validated['order'],
+        ]);
+
+        if ($request->has('users')) {
+            $campaign->users()->sync($request->input('users', []));
+        }
+
+        return redirect()->route('admin.campaigns')->with('success', 'Campagna creata con successo');
+    }
+
+    /**
+     * Show form to edit a campaign
+     */
+    public function editCampaign(Campaign $campaign)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $users = User::orderBy('name')->get();
+        $campaignUserIds = $campaign->users->pluck('id')->toArray();
+
+        return view('admin.campaigns.edit', compact('campaign', 'users', 'campaignUserIds'));
+    }
+
+    /**
+     * Update an existing campaign
+     */
+    public function updateCampaign(Request $request, Campaign $campaign)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $validated = $request->validate([
+            'folder_name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('campaigns')->ignore($campaign->id),
+                'regex:/^[a-zA-Z0-9_\-]+$/',
+            ],
+            'display_name' => 'required|string|max:255',
+            'order' => [
+                'required',
+                'integer',
+                Rule::unique('campaigns')->ignore($campaign->id),
+            ],
+            'users' => 'nullable|array',
+            'users.*' => 'exists:users,id',
+        ], [
+            'folder_name.regex' => 'Il nome cartella/branch deve contenere solo lettere, numeri, trattini e underscore (compatibile con i branch git).',
+        ]);
+
+        $campaign->update([
+            'folder_name' => $validated['folder_name'],
+            'display_name' => $validated['display_name'],
+            'order' => $validated['order'],
+        ]);
+
+        if ($request->has('users')) {
+            $campaign->users()->sync($request->input('users', []));
+        }
+
+        return redirect()->route('admin.campaigns')->with('success', 'Campagna aggiornata con successo');
+    }
+
+    /**
+     * Delete a campaign
+     */
+    public function deleteCampaign(Campaign $campaign)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $campaign->delete();
+
+        return redirect()->route('admin.campaigns')->with('success', 'Campagna eliminata con successo');
+    }
+
     // ========== GESTIONE UTENTI ==========
 
     /**
@@ -118,9 +261,8 @@ class AdminController extends Controller
      */
     public function users(Request $request)
     {
-        $query = User::query()->with('accessGroups')->orderBy('created_at', 'desc');
+        $query = User::query()->with(['accessGroups', 'campaigns', 'defaultCampaign'])->orderBy('created_at', 'desc');
 
-        // Ricerca per nome o email
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -143,9 +285,10 @@ class AdminController extends Controller
             return $response;
         }
 
-        $accessGroups = AccessGroup::with('parent')->orderBy('name')->get();
+        $accessGroups = AccessGroup::with(['parent', 'campaign'])->orderBy('name')->get();
+        $campaigns = Campaign::orderBy('order')->get();
 
-        return view('admin.users.create', compact('accessGroups'));
+        return view('admin.users.create', compact('accessGroups', 'campaigns'));
     }
 
     /**
@@ -166,6 +309,9 @@ class AdminController extends Controller
             'master_utils' => 'boolean',
             'showEmbedLink' => 'boolean',
             'collapseEmbed' => 'boolean',
+            'default_campaign_id' => 'nullable|exists:campaigns,id',
+            'campaigns' => 'nullable|array',
+            'campaigns.*' => 'exists:campaigns,id',
             'access_groups' => 'nullable|array',
             'access_groups.*' => 'exists:access_groups,id',
         ]);
@@ -179,14 +325,18 @@ class AdminController extends Controller
             'master_utils' => $request->has('master_utils'),
             'showEmbedLink' => $request->has('showEmbedLink'),
             'collapseEmbed' => $request->has('collapseEmbed'),
+            'default_campaign_id' => $validated['default_campaign_id'] ?? null,
             'email_verified_at' => $request->has('verified') ? now() : null,
         ]);
+
+        if ($request->has('campaigns')) {
+            $newUser->campaigns()->sync($request->input('campaigns', []));
+        }
 
         if ($request->has('access_groups')) {
             $newUser->accessGroups()->sync($request->input('access_groups', []));
         }
 
-        // Notifica su Telegram la creazione del nuovo utente
         try {
             if (env('TELEGRAM_BOT_TOKEN')) {
                 \App\Services\TelegramService::notify(
@@ -210,10 +360,12 @@ class AdminController extends Controller
             return $response;
         }
 
-        $accessGroups = AccessGroup::with('parent')->orderBy('name')->get();
+        $accessGroups = AccessGroup::with(['parent', 'campaign'])->orderBy('name')->get();
         $userGroupIds = $user->accessGroups->pluck('id')->toArray();
+        $campaigns = Campaign::orderBy('order')->get();
+        $userCampaignIds = $user->campaigns->pluck('id')->toArray();
 
-        return view('admin.users.edit', compact('user', 'accessGroups', 'userGroupIds'));
+        return view('admin.users.edit', compact('user', 'accessGroups', 'userGroupIds', 'campaigns', 'userCampaignIds'));
     }
 
     /**
@@ -233,6 +385,9 @@ class AdminController extends Controller
             'master_utils' => 'boolean',
             'showEmbedLink' => 'boolean',
             'collapseEmbed' => 'boolean',
+            'default_campaign_id' => 'nullable|exists:campaigns,id',
+            'campaigns' => 'nullable|array',
+            'campaigns.*' => 'exists:campaigns,id',
             'access_groups' => 'nullable|array',
             'access_groups.*' => 'exists:access_groups,id',
         ]);
@@ -245,11 +400,12 @@ class AdminController extends Controller
             'master_utils' => $request->has('master_utils'),
             'showEmbedLink' => $request->has('showEmbedLink'),
             'collapseEmbed' => $request->has('collapseEmbed'),
+            'default_campaign_id' => $validated['default_campaign_id'] ?? null,
         ]);
 
+        $user->campaigns()->sync($request->input('campaigns', []));
         $user->accessGroups()->sync($request->input('access_groups', []));
 
-        // Gestione verifica email
         if ($request->has('verified') && !$user->email_verified_at) {
             $user->email_verified_at = now();
             $user->save();
@@ -274,29 +430,17 @@ class AdminController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        // Notifica su Telegram che la password dell'utente è stata modificata
         try {
             $hasToken = env('TELEGRAM_BOT_TOKEN') ? true : false;
             $hasChatId = env('TELEGRAM_ADMIN_CHAT_ID') ? true : false;
             $actor = \Illuminate\Support\Facades\Auth::user();
             $by = $actor ? ($actor->email ?? $actor->name) : 'sistema';
 
-            \Illuminate\Support\Facades\Log::info('Telegram notify attempt for password change', [
-                'has_token' => $hasToken,
-                'has_chat_id' => $hasChatId,
-                'target_user' => $user->email,
-                'actor' => $by,
-            ]);
-
             if ($hasToken && $hasChatId) {
                 \App\Services\TelegramService::notify(
                     'Password modificata',
                     "Utente: {$user->email}\nModificata da: {$by}"
                 );
-
-                \Illuminate\Support\Facades\Log::info('Telegram notify invoked for password change', ['target_user' => $user->email]);
-            } else {
-                \Illuminate\Support\Facades\Log::warning('Telegram not configured for password change notification', ['has_token' => $hasToken, 'has_chat_id' => $hasChatId]);
             }
         } catch (\Exception $ex) {
             \Illuminate\Support\Facades\Log::error('Impossibile inviare notifica Telegram per password aggiornata: ' . $ex->getMessage());
@@ -310,7 +454,6 @@ class AdminController extends Controller
      */
     public function deleteUser(User $user)
     {
-        // Non permettere di eliminare se stessi
         if ($user->id === Auth::id()) {
             return redirect()->route('admin.users')->with('error', 'Non puoi eliminare te stesso');
         }
@@ -344,6 +487,7 @@ class AdminController extends Controller
 
         return redirect()->route('admin.users')->with('success', "Richiesta di {$user->name} negata.");
     }
+
     // ========== STATISTICHE ==========
 
     /**
@@ -351,11 +495,9 @@ class AdminController extends Controller
      */
     public function statistics(Request $request)
     {
-        // Default to last 7 days if no dates provided
         $startDate = $request->input('start_date', now()->subDays(7)->startOfDay()->format('Y-m-d H:i:s'));
         $endDate = $request->input('end_date', now()->endOfDay()->format('Y-m-d H:i:s'));
 
-        // Base query for summary cards
         $baseQuery = \App\Models\Statistic::query()
             ->whereBetween('created_at', [$startDate, $endDate]);
 
@@ -363,15 +505,11 @@ class AdminController extends Controller
             $baseQuery->where('user_id', $request->user_id);
         }
 
-        // Calculate summary stats
         $totalVisits = (clone $baseQuery)->count();
         $uniqueVisitors = (clone $baseQuery)->whereNotNull('user_id')->distinct('user_id')->count('user_id');
         $uniqueIPs = (clone $baseQuery)->distinct('ip_address')->count('ip_address');
         $avgResponseTime = (clone $baseQuery)->avg('response_time');
 
-        // --- Data for Chart.js (2x2 Grid) ---
-
-        // 1. Weekly Trends (6-hour blocks)
         $weekStart = now()->subDays(7)->startOfDay();
         $weekTrends = \App\Models\Statistic::query()
             ->where('created_at', '>=', $weekStart)
@@ -383,7 +521,6 @@ class AdminController extends Controller
             ->orderByRaw('MIN(created_at)')
             ->get();
 
-        // 2. Monthly Trends (Daily)
         $monthStart = now()->subDays(30)->startOfDay();
         $monthTrends = \App\Models\Statistic::query()
             ->where('created_at', '>=', $monthStart)
@@ -392,39 +529,25 @@ class AdminController extends Controller
             ->orderByRaw('MIN(created_at)')
             ->get();
 
-        // 3. Weekly Distribution (Pie - All users)
         $weekDistribution = \App\Models\Statistic::query()
             ->where('statistics.created_at', '>=', $weekStart)
             ->selectRaw('COALESCE(users.name, statistics.ip_address) as label, COUNT(*) as count')
             ->leftJoin('users', 'statistics.user_id', '=', 'users.id')
             ->groupBy('label')
             ->orderByDesc('count')
+            ->limit(10)
             ->get();
 
-        // 4. Monthly Distribution (Pie - All users)
-        $monthDistribution = \App\Models\Statistic::query()
-            ->where('statistics.created_at', '>=', $monthStart)
-            ->selectRaw('COALESCE(users.name, statistics.ip_address) as label, COUNT(*) as count')
-            ->leftJoin('users', 'statistics.user_id', '=', 'users.id')
-            ->groupBy('label')
+        $topPages = (clone $baseQuery)
+            ->selectRaw('url, COUNT(*) as count, AVG(response_time) as avg_time')
+            ->groupBy('url')
             ->orderByDesc('count')
+            ->limit(10)
             ->get();
 
-        // Get grouped data for table (this still respects the user filters)
-        $groupedStats = \App\Models\Statistic::getGroupedByUserAndIp($startDate, $endDate);
-
-        if ($request->has('user_id') && $request->user_id) {
-            $groupedStats->where('user_id', $request->user_id);
-        }
-
-        $stats = $groupedStats->orderByDesc('request_count')->paginate(20)->withQueryString();
-        $users = User::orderBy('name')->get(); // For filter dropdown
+        $users = User::orderBy('name')->get();
 
         return view('admin.statistics', compact(
-            'stats',
-            'users',
-            'startDate',
-            'endDate',
             'totalVisits',
             'uniqueVisitors',
             'uniqueIPs',
@@ -432,64 +555,37 @@ class AdminController extends Controller
             'weekTrends',
             'monthTrends',
             'weekDistribution',
-            'monthDistribution'
+            'topPages',
+            'users',
+            'startDate',
+            'endDate'
         ));
     }
 
-    /**
-     * Export statistics specific requests details for a group
-     */
-    public function statisticsDetails(Request $request)
-    {
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-        $userId = $request->input('user_id'); // Can be 'guest'
-        $ipAddress = $request->input('ip_address');
-
-        $query = \App\Models\Statistic::query()
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('ip_address', $ipAddress)
-            ->orderByDesc('created_at');
-
-        if ($userId && $userId !== 'guest') {
-            $query->where('user_id', $userId);
-        } else {
-            $query->whereNull('user_id');
-        }
-
-        $details = $query->get();
-
-        return response()->json($details);
-    }
-
-    /**
-     * Export statistics to CSV (Raw records)
-     */
     public function exportStatisticsCSV(Request $request)
     {
-        $startDate = $request->input('start_date', now()->subDays(7)->format('Y-m-d H:i:s'));
-        $endDate = $request->input('end_date', now()->format('Y-m-d H:i:s'));
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
 
-        $filename = "statistics_raw_{$startDate}_{$endDate}.csv";
+        $startDate = $request->input('start_date', now()->subDays(7)->startOfDay()->format('Y-m-d H:i:s'));
+        $endDate = $request->input('end_date', now()->endOfDay()->format('Y-m-d H:i:s'));
 
+        $filename = "statistics_" . date('Y-m-d_H-i-s') . ".csv";
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
             'Pragma' => 'no-cache',
             'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
+            'Expires' => '0'
         ];
 
         $callback = function () use ($startDate, $endDate, $request) {
             $file = fopen('php://output', 'w');
-
-            // Write headers (Match DB structure)
             fputcsv($file, ['ID', 'User', 'IP Address', 'URL', 'Method', 'Status', 'Response Time (ms)', 'Referrer', 'User Agent', 'Created At']);
 
-            $query = \App\Models\Statistic::query()
-                ->whereBetween('created_at', [$startDate, $endDate])
-                ->with('user')
-                ->orderByDesc('created_at');
+            $query = \App\Models\Statistic::with('user')
+                ->whereBetween('created_at', [$startDate, $endDate]);
 
             if ($request->has('user_id') && $request->user_id) {
                 $query->where('user_id', $request->user_id);
@@ -518,33 +614,35 @@ class AdminController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    /**
-     * Export statistics to JSON (Raw records)
-     */
     public function exportStatisticsJSON(Request $request)
     {
-        $startDate = $request->input('start_date', now()->subDays(7)->format('Y-m-d H:i:s'));
-        $endDate = $request->input('end_date', now()->format('Y-m-d H:i:s'));
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
 
-        $filename = "statistics_raw_{$startDate}_{$endDate}.json";
+        $startDate = $request->input('start_date', now()->subDays(7)->startOfDay()->format('Y-m-d H:i:s'));
+        $endDate = $request->input('end_date', now()->endOfDay()->format('Y-m-d H:i:s'));
 
+        $filename = "statistics_" . date('Y-m-d_H-i-s') . ".json";
         $headers = [
             'Content-Type' => 'application/json',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
         ];
 
         $callback = function () use ($startDate, $endDate, $request) {
-            $query = \App\Models\Statistic::query()
-                ->whereBetween('created_at', [$startDate, $endDate])
-                ->with('user')
-                ->orderByDesc('created_at');
+            echo "[";
+            $first = true;
+
+            $query = \App\Models\Statistic::with('user')
+                ->whereBetween('created_at', [$startDate, $endDate]);
 
             if ($request->has('user_id') && $request->user_id) {
                 $query->where('user_id', $request->user_id);
             }
 
-            echo "[";
-            $first = true;
             $query->chunk(500, function ($rows) use (&$first) {
                 foreach ($rows as $row) {
                     if (!$first) {
@@ -571,9 +669,30 @@ class AdminController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    /**
-     * Display database query page
-     */
+    public function statisticsDetails(Request $request)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $query = \App\Models\Statistic::with('user')->orderBy('created_at', 'desc');
+
+        if ($request->has('user_id') && $request->user_id) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        if ($request->has('url') && $request->url) {
+            $query->where('url', 'like', "%{$request->url}%");
+        }
+
+        $statistics = $query->paginate(50);
+        $users = User::orderBy('name')->get();
+
+        return view('admin.statistics-details', compact('statistics', 'users'));
+    }
+
+    // ========== DATABASE ==========
+
     public function database()
     {
         if ($response = $this->checkAdmin()) {
@@ -583,9 +702,6 @@ class AdminController extends Controller
         return view('admin.database');
     }
 
-    /**
-     * Execute a raw SQL query
-     */
     public function executeQuery(Request $request)
     {
         if ($response = $this->checkAdmin()) {
@@ -633,9 +749,8 @@ class AdminController extends Controller
         }
     }
 
-    /**
-     * Send a test email using the configured mailer and queue
-     */
+    // ========== TEST MAIL ==========
+
     public function testMail(Request $request)
     {
         if ($response = $this->checkAdmin()) {
@@ -645,7 +760,6 @@ class AdminController extends Controller
         $email = $request->input('email', Auth::user()->email);
 
         try {
-            // Utilizzo il servizio di coda per testare l'intero flusso (rate limiting incluso)
             \App\Services\EmailQueueService::queue(
                 new \App\Mail\ErrorNotificationEmail(new \Exception('Test invio email tramite Altervista Mailer')),
                 $email,
@@ -667,23 +781,17 @@ class AdminController extends Controller
 
     // ========== GESTIONE GRUPPI DI ACCESSO ==========
 
-    /**
-     * Display list of all access groups
-     */
     public function accessGroups()
     {
         if ($response = $this->checkAdmin()) {
             return $response;
         }
 
-        $groups = AccessGroup::with(['parent', 'children'])->withCount('users')->orderBy('name')->get();
+        $groups = AccessGroup::with(['parent', 'children', 'campaign'])->withCount('users')->orderBy('name')->get();
 
         return view('admin.access_groups.index', compact('groups'));
     }
 
-    /**
-     * Show form to create a new access group
-     */
     public function createAccessGroup()
     {
         if ($response = $this->checkAdmin()) {
@@ -691,26 +799,27 @@ class AdminController extends Controller
         }
 
         $parents = AccessGroup::orderBy('name')->get();
+        $campaigns = Campaign::orderBy('order')->get();
 
-        return view('admin.access_groups.create', compact('parents'));
+        return view('admin.access_groups.create', compact('parents', 'campaigns'));
     }
 
-    /**
-     * Store a new access group
-     */
     public function storeAccessGroup(Request $request)
     {
         if ($response = $this->checkAdmin()) {
             return $response;
         }
 
+        $campaignId = $request->input('campaign_id');
+
         $validated = $request->validate([
+            'campaign_id' => 'required|exists:campaigns,id',
             'name' => 'required|string|max:255',
             'slug' => [
                 'required',
                 'string',
                 'max:255',
-                'unique:access_groups,slug',
+                Rule::unique('access_groups')->where(fn ($query) => $query->where('campaign_id', $campaignId)),
                 'regex:/^[a-z][a-zA-Z0-9]*$/',
             ],
             'description' => 'nullable|string',
@@ -727,9 +836,6 @@ class AdminController extends Controller
         return redirect()->route('admin.access_groups')->with('success', 'Gruppo di accesso creato con successo');
     }
 
-    /**
-     * Show form to edit an access group
-     */
     public function editAccessGroup(AccessGroup $group)
     {
         if ($response = $this->checkAdmin()) {
@@ -740,13 +846,11 @@ class AdminController extends Controller
         $excludedIds = array_merge([$group->id], $descendantIds);
 
         $parents = AccessGroup::whereNotIn('id', $excludedIds)->orderBy('name')->get();
+        $campaigns = Campaign::orderBy('order')->get();
 
-        return view('admin.access_groups.edit', compact('group', 'parents'));
+        return view('admin.access_groups.edit', compact('group', 'parents', 'campaigns'));
     }
 
-    /**
-     * Update an existing access group
-     */
     public function updateAccessGroup(Request $request, AccessGroup $group)
     {
         if ($response = $this->checkAdmin()) {
@@ -755,14 +859,16 @@ class AdminController extends Controller
 
         $descendantIds = $this->getDescendantIds($group);
         $excludedIds = array_merge([$group->id], $descendantIds);
+        $campaignId = $request->input('campaign_id', $group->campaign_id);
 
         $validated = $request->validate([
+            'campaign_id' => 'required|exists:campaigns,id',
             'name' => 'required|string|max:255',
             'slug' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('access_groups')->ignore($group->id),
+                Rule::unique('access_groups')->where(fn ($query) => $query->where('campaign_id', $campaignId))->ignore($group->id),
                 'regex:/^[a-z][a-zA-Z0-9]*$/',
             ],
             'description' => 'nullable|string',
@@ -784,9 +890,6 @@ class AdminController extends Controller
         return redirect()->route('admin.access_groups')->with('success', 'Gruppo di accesso aggiornato con successo');
     }
 
-    /**
-     * Delete an access group
-     */
     public function deleteAccessGroup(AccessGroup $group)
     {
         if ($response = $this->checkAdmin()) {
@@ -799,9 +902,6 @@ class AdminController extends Controller
         return redirect()->route('admin.access_groups')->with('success', 'Gruppo di accesso eliminato con successo');
     }
 
-    /**
-     * Risale ricorsivamente tutti gli ID dei gruppi discendenti
-     */
     private function getDescendantIds(AccessGroup $group): array
     {
         $descendants = [];
@@ -812,4 +912,3 @@ class AdminController extends Controller
         return $descendants;
     }
 }
-

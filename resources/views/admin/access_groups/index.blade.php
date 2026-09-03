@@ -31,6 +31,7 @@
         </div>
         <div class="card-body small text-muted">
             <ul class="mb-0">
+                <li><strong>Campagna:</strong> ciascun gruppo appartiene a una specifica campagna.</li>
                 <li><strong>Nota intera riservata:</strong> inserisci <code>#access-gruppo</code> o <code>#access-gruppo1_gruppo2</code> in testa alla nota.</li>
                 <li><strong>Blocco riservato parziale:</strong> racchiudi il testo tra <code>#startAccess-gruppo</code> (o <code>#startAccess-gruppo1_gruppo2</code> per più gruppi in OR) e <code>#endAccess</code>.</li>
                 <li><strong>Gerarchia:</strong> un utente appartenente a un gruppo <em>figlio</em> eredita automaticamente l'accesso ai contenuti del gruppo <em>padre</em>.</li>
@@ -44,6 +45,7 @@
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
+                        <th>Campagna</th>
                         <th>Nome</th>
                         <th>Tag Markdown</th>
                         <th>Colore</th>
@@ -56,6 +58,11 @@
                 <tbody>
                     @forelse($groups as $group)
                         <tr>
+                            <td>
+                                <span class="badge bg-dark border border-warning text-warning">
+                                    <i class="bi bi-compass me-1"></i> {{ $group->campaign ? $group->campaign->display_name : 'Default' }}
+                                </span>
+                            </td>
                             <td>
                                 <strong>{{ $group->name }}</strong>
                             </td>
@@ -105,7 +112,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">Nessun gruppo di accesso configurato.</td>
+                            <td colspan="8" class="text-center text-muted py-4">Nessun gruppo di accesso configurato.</td>
                         </tr>
                     @endforelse
                 </tbody>

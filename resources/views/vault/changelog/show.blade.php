@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', "Versione {$changelog['version']} - Vault")
+@section('title', "Versione {$changelog['version']} - " . $campaign->display_name)
 
 @section('content-class', 'container-fluid px-0')
 
@@ -193,12 +193,12 @@
 
 @section('content')
     <div class="d-flex gap-0 h-100 w-100 changelog-container">
-        @include('vault._sidebar', ['tree' => $tree, 'note' => $note])
+        @include('vault._sidebar', ['tree' => $tree, 'note' => $note, 'campaign' => $campaign, 'accessibleCampaigns' => $accessibleCampaigns])
 
         <section class="flex-grow-1 p-4 p-md-5" style="min-width: 0; overflow-y: auto;">
             <div class="container-narrow mx-auto" style="max-width: 1000px;">
                 <nav class="breadcrumb-custom">
-                    <a href="{{ route('vault.changelog.index') }}"><i class="bi bi-chevron-left"></i> Torna alla
+                    <a href="{{ route('vault.changelog.index', ['campaign' => $campaign->folder_name]) }}"><i class="bi bi-chevron-left"></i> Torna alla
                         cronologia</a>
                 </nav>
 
@@ -238,7 +238,7 @@
                                         @php
                                             $slug = str_replace('.md', '', \App\Http\Controllers\VaultController::pathToCamelCase($change['file']));
                                         @endphp
-                                        <a href="/vault/{{ $slug }}" class="view-file-link">
+                                        <a href="/vault/{{ $campaign->folder_name }}/{{ $slug }}" class="view-file-link">
                                             <i class="bi bi-eye">Visualizza nota</i>
                                         </a>
                                     @endif

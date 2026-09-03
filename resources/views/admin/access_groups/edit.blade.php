@@ -30,13 +30,25 @@
                         @method('PATCH')
 
                         <div class="mb-3">
-                            <label for="name" class="form-label">Nome Gruppo <span class="text-danger">*</span></label>
+                            <label for="campaign_id" class="form-label fw-bold">Campagna di Appartenenza <span class="text-danger">*</span></label>
+                            <select class="form-select @error('campaign_id') is-invalid @enderror" id="campaign_id" name="campaign_id" required>
+                                @foreach($campaigns as $camp)
+                                    <option value="{{ $camp->id }}" {{ old('campaign_id', $group->campaign_id) == $camp->id ? 'selected' : '' }}>
+                                        {{ $camp->display_name }} ({{ $camp->folder_name }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="form-text text-muted">La campagna in cui questo gruppo di accesso e i suoi tag avranno effetto.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-bold">Nome Gruppo <span class="text-danger">*</span></label>
                             <input type="text" class="form-control @error('name') is-invalid @enderror" 
                                    id="name" name="name" value="{{ old('name', $group->name) }}" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="slug" class="form-label">Slug (usato nei tag markdown) <span class="text-danger">*</span></label>
+                            <label for="slug" class="form-label fw-bold">Slug (usato nei tag markdown) <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text bg-dark text-muted">#access-</span>
                                 <input type="text" class="form-control @error('slug') is-invalid @enderror" 
@@ -46,7 +58,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="color" class="form-label">Colore Badge / Bordo</label>
+                            <label for="color" class="form-label fw-bold">Colore Badge / Bordo</label>
                             <div class="input-group" style="max-width: 250px;">
                                 <input type="color" class="form-control form-control-color bg-dark border-secondary" 
                                        id="colorPicker" value="{{ old('color', $group->color ?? '#a83232') }}" title="Scegli un colore">
@@ -57,7 +69,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="parent_id" class="form-label">Gruppo Padre (Opzionale)</label>
+                            <label for="parent_id" class="form-label fw-bold">Gruppo Padre (Opzionale)</label>
                             <select class="form-select @error('parent_id') is-invalid @enderror" id="parent_id" name="parent_id">
                                 <option value="">-- Nessun padre (Gruppo di primo livello) --</option>
                                 @foreach($parents as $parent)
@@ -70,7 +82,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="description" class="form-label">Descrizione (Opzionale)</label>
+                            <label for="description" class="form-label fw-bold">Descrizione (Opzionale)</label>
                             <textarea class="form-control @error('description') is-invalid @enderror" 
                                       id="description" name="description" rows="3">{{ old('description', $group->description) }}</textarea>
                         </div>

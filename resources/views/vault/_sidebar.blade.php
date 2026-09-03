@@ -1,10 +1,11 @@
 @php
     \App\Services\CustomLogger::note($note, "-------------------inizio view _sideboard-------------------");
-    // $tree expected, $path is the current note path array (e.g. ["Personaggi", "Giocanti", "Vargas (Paladino Nano, 65)"])
     $tree = $tree ?? [];
     $currentPath = $path ?? [];
     $masterFile = $masterFile ?? null;
     $note = $note ?? "note not found";
+    $campaignFolder = isset($campaign) ? ($campaign instanceof \App\Models\Campaign ? $campaign->folder_name : $campaign) : \App\Helpers\VaultHelper::resolveCampaignFolder(null);
+    $accessibleCampaigns = $accessibleCampaigns ?? (\Illuminate\Support\Facades\Auth::check() ? \Illuminate\Support\Facades\Auth::user()->accessibleCampaigns() : \App\Models\Campaign::orderBy('order')->get());
     \App\Services\CustomLogger::note($note, print_r($currentPath, true));
 @endphp
 <style>
@@ -12,7 +13,6 @@
     #vault-sidebar {
         width: 300px;
         min-width: 44px;
-        /* Collapsed width */
         flex-shrink: 0;
         position: relative;
         transition: width 0.2s ease, transform 0.25s ease;
@@ -48,7 +48,6 @@
         }
     }
 
-    /* Custom cursor for folder items as Bootstrap doesn't have a utility for it */
     .cursor-pointer {
         cursor: pointer;
     }
@@ -65,6 +64,28 @@
     </button>
 
     <div class="sidebar-content p-3 pt-5 overflow-auto h-100">
+        {{-- Selettore cambio campagna --}}
+        @if(isset($accessibleCampaigns) && $accessibleCampaigns->count() > 1)
+            <div class="mb-3 pb-2 border-bottom border-secondary">
+                <label for="campaign-select" class="form-label text-warning small fw-bold mb-1 d-flex align-items-center">
+                    <i class="bi bi-compass me-1"></i> Campagna
+                </label>
+                <select class="form-select form-select-sm bg-dark text-white border-secondary" id="campaign-select" onchange="window.location.href='/vault/' + this.value">
+                    @foreach($accessibleCampaigns as $camp)
+                        <option value="{{ $camp->folder_name }}" {{ $campaignFolder === $camp->folder_name ? 'selected' : '' }}>
+                            {{ $camp->display_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        @elseif(isset($campaign))
+            <div class="mb-3 pb-2 border-bottom border-secondary">
+                <span class="badge bg-dark border border-warning text-warning px-2 py-1">
+                    <i class="bi bi-compass me-1"></i> {{ $campaign->display_name }}
+                </span>
+            </div>
+        @endif
+
         <h5 class="text-warning mb-3 fw-bold"><i class="bi bi-book me-2"></i>Vault</h5>
         <div class="vault-tree font-monospace small">
             @php
@@ -85,129 +106,85 @@
                     }
                 }
 
-                // Renderer that auto-expands folders matching the current path
-                function renderTreeIndexPartial($items, $deep, $currentPath, $note, $masterFile)
-                {
-                    // \App\Services\CustomLogger::note($note, "renderTreeIndexPartial(\$items(" . print_r($items, true) . "), \$deep(" . print_r($deep, true) . "), \$currentPath(" . print_r($currentPath, true) . "), \$note(" . print_r($note, true) . "), \$masterFile(" . print_r($masterFile, true) . "))", "debug");
-                    // Check if current folder matches the path at this depth
-                    $pathSegment = $currentPath[$deep] ?? null;
-                    $isOnPath = $pathSegment !== null;
+                if (!function_exists('renderTreeIndexPartial')) {
+                    function renderTreeIndexPartial($items, $deep, $currentPath, $note, $masterFile, $campaignFolder)
+                    {
+                        $pathSegment = $currentPath[$deep] ?? null;
+                        $isOnPath = $pathSegment !== null;
 
-                    // Root level is always visible, nested levels depend on path match
-                    if ($deep == 0) {
-                        $html = '<ul class="list-unstyled m-0">';
-                    } else {
-                        $html = '<ul class="list-unstyled border-start border-secondary-subtle ps-3 d-none">';
-                    }
+                        if ($deep == 0) {
+                            $html = '<ul class="list-unstyled m-0">';
+                        } else {
+                            $html = '<ul class="list-unstyled border-start border-secondary-subtle ps-3 d-none">';
+                        }
 
-                    foreach ($items as $key => $value) {
-                        if ($key !== '_files' && $key !== '_dirs' && is_array($value)) {
-                            if (!sidebarHasFilesOrDirs($value['_dirs'] ?? [])) {
-                                continue;
+                        foreach ($items as $key => $value) {
+                            if ($key !== '_files' && $key !== '_dirs' && is_array($value)) {
+                                if (!sidebarHasFilesOrDirs($value['_dirs'] ?? [])) {
+                                    continue;
+                                }
+
+                                $folderMatchesPath = $isOnPath && strcasecmp($key, $pathSegment) === 0;
+                                $openClass = $folderMatchesPath ? ' open' : '';
+                                $icon = $folderMatchesPath ? '📂' : '📁';
+
+                                $displayName = $value['_label'] ?? $key;
+
+                                $html .= '<li class="my-1">';
+                                $html .= '<span class="folder' . $openClass . ' fw-bold text-warning cursor-pointer" onclick="this.classList.toggle(\'open\'); const ul = this.nextElementSibling; ul.classList.toggle(\'d-none\'); this.innerText = this.classList.contains(\'open\') ? \'📂\u00a0\' + this.dataset.name : \'📁\u00a0\' + this.dataset.name;" data-name="' . e($displayName) . '">' . $icon . '&nbsp;' . e($displayName) . '</span>';
+
+                                $childHtml = renderTreeIndexPartial($value['_dirs'] ?? [], $deep + 1, $currentPath, $note, $masterFile, $campaignFolder);
+
+                                if ($folderMatchesPath) {
+                                    $childHtml = preg_replace('/class="([^"]*)d-none([^"]*)"/', 'class="$1d-block$2"', $childHtml, 1);
+                                }
+
+                                $html .= $childHtml;
+                                $html .= '</li>';
+                            }
+                        }
+
+                        $files = $items['_files'] ?? [];
+                        foreach ($files as $file) {
+                            $isActiveFile = false;
+                            $fileUrlDecoded = rawurldecode($file['url']);
+                            $currentNoteDecoded = rawurldecode($note);
+
+                            if (strcasecmp($fileUrlDecoded, $currentNoteDecoded) === 0) {
+                                $isActiveFile = true;
                             }
 
-                            // Check if this folder matches the current path segment (case-insensitive)
-                            $folderMatchesPath = $isOnPath && strcasecmp($key, $pathSegment) === 0;
-                            $openClass = $folderMatchesPath ? ' open' : '';
-                            // Icon toggle logic relies on 'open' class
-                            $icon = $folderMatchesPath ? '📂' : '📁';
-
-                            $displayName = $value['_label'] ?? $key;
+                            $activeClass = $isActiveFile ? ' active bg-white bg-opacity-10 text-white rounded fw-semibold px-2 py-1' : ' text-info';
 
                             $html .= '<li class="my-1">';
-                            // Use d-bock/d-none toggling
-                            $html .= '<span class="folder' . $openClass . ' fw-bold text-warning cursor-pointer" onclick="this.classList.toggle(\'open\'); const ul = this.nextElementSibling; ul.classList.toggle(\'d-none\'); this.innerText = this.classList.contains(\'open\') ? \'📂\u00a0\' + this.dataset.name : \'📁\u00a0\' + this.dataset.name;" data-name="' . e($displayName) . '">' . $icon . '&nbsp;' . e($displayName) . '</span>';
+                            $isDmFile = isset($file['dm']) && $file['dm'];
+                            $accessBadges = $file['access_badges'] ?? [];
 
-                            // Render children, always passing the current path (for file highlighting)
-                            // but only increment depth if this folder matches the path (for auto-expansion)
-                            $childHtml = renderTreeIndexPartial($value['_dirs'] ?? [], $deep + 1, $currentPath, $note, $masterFile);
-
-                            // If folder matches path, show only its immediate child <ul> (remove d-none)
-                            if ($folderMatchesPath) {
-                                $childHtml = preg_replace('/class="([^"]*)d-none([^"]*)"/', 'class="$1d-block$2"', $childHtml, 1);
+                            $tagsHtml = '';
+                            if ($isDmFile || !empty($accessBadges)) {
+                                $tagsHtml .= '<span class="tag d-inline-flex align-items-center gap-1 ms-1">';
+                                if ($isDmFile) {
+                                    $tagsHtml .= '<span class="master-block">Master</span>';
+                                }
+                                foreach ($accessBadges as $badge) {
+                                    $bColor = htmlspecialchars($badge['color'] ?: '#6c757d');
+                                    $bName = htmlspecialchars($badge['name']);
+                                    $tagsHtml .= '<span class="badge" style="background-color: ' . $bColor . '; color: #fff; font-size: 0.7em;">' . $bName . '</span>';
+                                }
+                                $tagsHtml .= '</span>';
                             }
 
-                            $html .= $childHtml;
+                            $fileUrl = '/vault/' . $campaignFolder . '/' . $file['url'];
+                            $html .= '<a href="' . $fileUrl . '" class="file text-decoration-none d-inline-block' . $activeClass . ' hover-underline">📄&nbsp;' . e($file['name']) . '</a>' . $tagsHtml;
                             $html .= '</li>';
                         }
+                        $html .= '</ul>';
+                        return $html;
                     }
-
-                    // Check if current file matches (last element of path)
-                    \App\Services\CustomLogger::note($note, "currentPath: " . print_r($currentPath, true));
-                    $currentFileName = count($currentPath) > 0 ? end($currentPath) : null;
-                    \App\Services\CustomLogger::note($note, "currentFileName: $currentFileName");
-
-                    $files = $items['_files'] ?? [];
-                    foreach ($files as $file) {
-                        // Determine if this file is the active one by comparing the full relative path
-                        // $file['url'] is like "incantesimi/artefice/dardoincantato" (camelCase/normalized)
-                        // $currentPath is array ["incantesimi", "artefice", "dardoincantato"]
-
-                        // We need to compare specific unique paths. 
-                        // Let's rely on the URL property which is unique for the file location.
-
-                        // Reconstruct current URL-like path from $currentPath
-                        // But wait, $currentPath comes from the controller parsing the URL.
-                        // The 'url' in $file is exactly what we expect in the browser address bar.
-
-                        // The easiest valid comparison is to see if the file's URL ends with the current path sequence?
-                        // No, simpler: 
-                        // Does "vault/{$file['url']}" match the current request URI? 
-                        // OR: compare the reconstructed string.
-
-                        // Let's normalize $currentPath into a string similar to $file['url']
-                        // Note: $file['url'] uses forward slashes.
-
-                        // We can just verify if the start of the file structure matches the current path?
-                        // No, we want EXACT match.
-
-                        // Let's use the file['url'] which is the unique ID relative to vault root.
-                        // We need to know the "current active note URL" passed from controller?
-                        // The global $note variable passed to view contains the raw request param!
-                        // e.g. "incantesimi/artefice/dardoincantato"
-
-                        // So we can compare $file['url'] directly with $note (normalized)
-
-                        $isActiveFile = false;
-                        // Decode both just in case one is encoded
-                        $fileUrlDecoded = rawurldecode($file['url']);
-                        $currentNoteDecoded = rawurldecode($note);
-
-                        // Case-insensitive comparison
-                        if (strcasecmp($fileUrlDecoded, $currentNoteDecoded) === 0) {
-                            $isActiveFile = true;
-                        }
-
-                        $activeClass = $isActiveFile ? ' active bg-white bg-opacity-10 text-white rounded fw-semibold px-2 py-1' : ' text-info';
-
-                        $html .= '<li class="my-1">';
-                        $isDmFile = isset($file['dm']) && $file['dm'];
-                        $accessBadges = $file['access_badges'] ?? [];
-
-                        $tagsHtml = '';
-                        if ($isDmFile || !empty($accessBadges)) {
-                            $tagsHtml .= '<span class="tag d-inline-flex align-items-center gap-1">';
-                            if ($isDmFile) {
-                                $tagsHtml .= '<span class="master-block">Master</span>';
-                            }
-                            foreach ($accessBadges as $badge) {
-                                $bColor = htmlspecialchars($badge['color'] ?: '#6c757d');
-                                $bName = htmlspecialchars($badge['name']);
-                                $tagsHtml .= '<span class="badge" style="background-color: ' . $bColor . '; color: #fff; font-size: 0.7em;">' . $bName . '</span>';
-                            }
-                            $tagsHtml .= '</span>';
-                        }
-
-                        $html .= '<a href="/vault/' . $file['url'] . '" class="file text-decoration-none d-inline-block' . $activeClass . ' hover-underline">📄&nbsp;' . e($file['name']) . '</a>' . $tagsHtml;
-                        $html .= '</li>';
-                        \App\Services\CustomLogger::note($note, "(working on $currentFileName)" . $file["name"] . "\t=>\tdm: " . ($isDmFile ? 'true' : 'false'));
-                    }
-                    $html .= '</ul>';
-                    return $html;
                 }
             @endphp
 
-            {!! renderTreeIndexPartial($tree, 0, $currentPath, $note, $masterFile) !!}
+            {!! renderTreeIndexPartial($tree, 0, $currentPath, $note, $masterFile, $campaignFolder) !!}
 
         </div>
 
@@ -259,7 +236,6 @@
         (function () {
             const toggleBtn = document.getElementById('sidebar-toggle');
             const sidebar = document.getElementById('vault-sidebar');
-            // Create mobile open button
             let mobileOpenBtn = null;
 
             function ensureMobileButton() {
@@ -268,7 +244,6 @@
                     mobileOpenBtn.className = 'btn btn-dark border-secondary position-fixed start-0 top-0 mt-3 ms-2 z-3';
                     mobileOpenBtn.innerHTML = '☰';
                     mobileOpenBtn.onclick = () => {
-                        // Use the same toggle logic to ensure classes are consistent
                         toggleSidebar();
                     };
                     document.body.appendChild(mobileOpenBtn);
@@ -288,7 +263,6 @@
                 const isMobile = window.innerWidth <= 768;
 
                 if (isMobile) {
-                    // closed by default on mobile
                     if (!sidebar.classList.contains('open')) {
                         sidebar.classList.add('collapsed');
                     }
@@ -305,7 +279,6 @@
 
             function toggleSidebar() {
                 if (window.innerWidth <= 768) {
-                    // Mobile: toggle open class
                     const isOpen = sidebar.classList.contains('open');
                     if (isOpen) {
                         sidebar.classList.remove('open');
@@ -315,8 +288,7 @@
                         sidebar.classList.remove('collapsed');
                     }
                 } else {
-                    // Desktop: toggle collapsed class
-                    toggleBtn.blur(); // remove focus
+                    toggleBtn.blur();
                     const isCollapsed = sidebar.classList.contains('collapsed');
                     if (isCollapsed) {
                         sidebar.classList.remove('collapsed');
@@ -325,7 +297,6 @@
                     }
                 }
 
-                // Update toggle icon
                 const icon = document.getElementById('toggle-icon');
                 if (window.innerWidth <= 768) {
                     icon.textContent = sidebar.classList.contains('open') ? '✖' : '☰';
@@ -333,11 +304,9 @@
                     icon.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
                 }
 
-                // trigger resize for graphs
                 setTimeout(() => window.dispatchEvent(new Event('resize')), 250);
             }
 
-            // Close sidebar on mobile when clicking outside
             document.addEventListener('click', function (e) {
                 try {
                     if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
@@ -347,7 +316,6 @@
                         }
                     }
                 } catch (err) {
-                    // ignore
                 }
             });
 

@@ -122,6 +122,54 @@
                         </div>
 
                         <hr>
+                        <h6><i class="bi bi-compass"></i> Campagne Assegnate (Accesso Vault)</h6>
+                        <p class="text-muted small">Seleziona le campagne a cui l'utente può accedere. (I Master e gli Admin hanno sempre accesso a tutte).</p>
+
+                        @if(isset($campaigns) && $campaigns->count() > 0)
+                            <div class="row g-2 mb-3">
+                                @foreach($campaigns as $camp)
+                                    @php
+                                        $isCampChecked = is_array(old('campaigns'))
+                                            ? in_array($camp->id, old('campaigns'))
+                                            : in_array($camp->id, $userCampaignIds ?? []);
+                                    @endphp
+                                    <div class="col-md-6">
+                                        <div class="card p-2 h-100 bg-dark border-secondary">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="campaigns[]" 
+                                                       value="{{ $camp->id }}" 
+                                                       id="camp_{{ $camp->id }}"
+                                                       {{ $isCampChecked ? 'checked' : '' }}>
+                                                <label class="form-check-label d-flex align-items-center" for="camp_{{ $camp->id }}">
+                                                    <span class="badge bg-dark border border-warning text-warning me-2">
+                                                        {{ $camp->display_name }}
+                                                    </span>
+                                                    <small class="text-muted"><code>{{ $camp->folder_name }}</code></small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="default_campaign_id" class="form-label fw-bold">Campagna Predefinita</label>
+                                <select class="form-select" id="default_campaign_id" name="default_campaign_id">
+                                    <option value="">-- Nessuna (Usa ordine predefinito) --</option>
+                                    @foreach($campaigns as $camp)
+                                        <option value="{{ $camp->id }}" {{ (string) old('default_campaign_id', $user->default_campaign_id) === (string) $camp->id ? 'selected' : '' }}>
+                                            {{ $camp->display_name }} ({{ $camp->folder_name }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <small class="form-text text-muted">La campagna predefinita aperta quando l'utente visita /vault.</small>
+                            </div>
+                        @else
+                            <p class="text-muted fst-italic">Nessuna campagna configurata.</p>
+                        @endif
+
+                        <hr>
                         <h6><i class="bi bi-shield-lock"></i> Gruppi di Accesso al Vault</h6>
                         <p class="text-muted small">Seleziona i gruppi di appartenenza dell'utente per sbloccare le note e sezioni riservate.</p>
 
@@ -145,6 +193,11 @@
                                                     <span class="badge me-2" style="background-color: {{ $group->color ?? '#6c757d' }}; color: #fff;">
                                                         {{ $group->name }}
                                                     </span>
+                                                    @if($group->campaign)
+                                                        <span class="badge bg-dark border border-secondary text-muted me-1 small">
+                                                            {{ $group->campaign->display_name }}
+                                                        </span>
+                                                    @endif
                                                     <small class="text-muted"><code>#access-{{ $group->slug }}</code></small>
                                                 </label>
                                                 @if($group->parent)
