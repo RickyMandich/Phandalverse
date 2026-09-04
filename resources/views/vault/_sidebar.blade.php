@@ -64,27 +64,37 @@
     </button>
 
     <div class="sidebar-content p-3 pt-5 overflow-auto h-100">
-        {{-- Selettore cambio campagna --}}
-        @if(isset($accessibleCampaigns) && $accessibleCampaigns->count() > 1)
-            <div class="mb-3 pb-2 border-bottom border-secondary">
-                <label for="campaign-select" class="form-label text-warning small fw-bold mb-1 d-flex align-items-center">
-                    <i class="bi bi-compass me-1"></i> Campagna
-                </label>
-                <select class="form-select form-select-sm bg-dark text-white border-secondary" id="campaign-select" onchange="window.location.href='/vault/' + this.value">
-                    @foreach($accessibleCampaigns as $camp)
-                        <option value="{{ $camp->folder_name }}" {{ $campaignFolder === $camp->folder_name ? 'selected' : '' }}>
-                            {{ $camp->display_name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        @elseif(isset($campaign))
-            <div class="mb-3 pb-2 border-bottom border-secondary">
-                <span class="badge bg-dark border border-warning text-warning px-2 py-1">
-                    <i class="bi bi-compass me-1"></i> {{ $campaign->display_name }}
-                </span>
-            </div>
-        @endif
+        {{-- Selettore cambio campagna (solo utenti autenticati) --}}
+        @auth
+            @if(isset($accessibleCampaigns) && $accessibleCampaigns->count() > 1)
+                <div class="mb-3 pb-2 border-bottom border-secondary">
+                    <label for="campaign-select" class="form-label text-warning small fw-bold mb-1 d-flex align-items-center">
+                        <i class="bi bi-compass me-1"></i> Campagna
+                    </label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary" id="campaign-select" onchange="window.location.href='/vault/' + this.value">
+                        @foreach($accessibleCampaigns as $camp)
+                            <option value="{{ $camp->folder_name }}" {{ $campaignFolder === $camp->folder_name ? 'selected' : '' }}>
+                                {{ $camp->display_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            @elseif(isset($campaign))
+                <div class="mb-3 pb-2 border-bottom border-secondary">
+                    <span class="badge bg-dark border border-warning text-warning px-2 py-1">
+                        <i class="bi bi-compass me-1"></i> {{ $campaign->display_name }}
+                    </span>
+                </div>
+            @endif
+        @else
+            @if(isset($campaign))
+                <div class="mb-3 pb-2 border-bottom border-secondary">
+                    <span class="badge bg-dark border border-warning text-warning px-2 py-1">
+                        <i class="bi bi-compass me-1"></i> {{ $campaign->display_name }}
+                    </span>
+                </div>
+            @endif
+        @endauth
 
         <h5 class="text-warning mb-3 fw-bold"><i class="bi bi-book me-2"></i>Vault</h5>
         <div class="vault-tree font-monospace small">

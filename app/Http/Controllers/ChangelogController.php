@@ -21,6 +21,10 @@ class ChangelogController extends Controller
      */
     public function index(Request $request, Campaign $campaign)
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         $folder = VaultHelper::resolveCampaignFolder($campaign);
         $indexPath = $campaign->changelogsPath('index.json');
 
@@ -62,6 +66,10 @@ class ChangelogController extends Controller
      */
     public function show(Request $request, Campaign $campaign, $version)
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         $folder = VaultHelper::resolveCampaignFolder($campaign);
         $versionFile = preg_replace('/[^a-zA-Z0-9_]/', '', $version);
         $changelogPath = $campaign->changelogsPath("{$versionFile}.json");

@@ -193,11 +193,36 @@ Il Vault gestisce un sistema granulare di visibilità parametrizzato sui **Grupp
   - Chi appartiene a un gruppo *figlio* (es. `bibliotecari`) eredita l'accesso ai contenuti del gruppo *padre* (es. `artefici`). Il padre non vede i contenuti del figlio.
 
 ### Pannello ad Albero, Selettore Campagne e Grafo Interattivo
-- **Selettore Campagne nella Sidebar**: In cima alla barra laterale del Vault è presente un dropdown dinamico che mostra tutte le campagne accessibili all'utente. La selezione reindirizza immediatamente a `/vault/{selected_campaign}`.
+- **Selettore Campagne nella Sidebar**: In cima alla barra laterale del Vault è presente un dropdown dinamico che mostra tutte le campagne accessibili all'utente autenticato (`@auth`). La selezione reindirizza immediatamente a `/vault/{selected_campaign}`.
 - **Vista ad Albero (`VaultController@buildFileTree`)**: Costruisce la navigazione laterale analizzando il `map.json` della campagna ed escludendo tutte le note non visibili per l'utente corrente tramite `AccessControlService::noteIsVisibleTo()`.
 - **Grafo Interattivo (`VaultController@buildGraphData` e `graph.blade.php`)**:
   - Analizza tutti i file `.md` visibili all'utente nella cartella della campagna e ne estrae le connessioni.
   - Legge la configurazione estetica da `Vault/{folder_name}/.obsidian/graph-config.json` o `graph.json`.
+
+### Politica di Accesso Ospiti (Guest) e Condivisione via Link Diretto
+Per evitare che un utente non autenticato possa consultare e navigare liberamente all'interno dell'enciclopedia e delle campagne:
+1. **Blocco dell'Esplorazione per Utenti Anonimi**:
+   - Le rotte di indice `/vault`, le schermate home/grafo `/vault/{campaign}`, le viste cartella, la ricerca `/vault/{campaign}/search` e il changelog richiedono autenticazione e reindirizzano al login.
+   - Nella barra di navigazione globale (`layouts/app.blade.php`), i link a Vault, Changelog e il modulo di ricerca sono visibili solo per utenti loggati (`@auth`).
+   - Il selettore campagne nella sidebar viene nascosto per i guest.
+2. **Accesso alle Singole Pagine Condivise**:
+   - Un utente non loggato che riceve o apre un link diretto ad una nota (es. `/vault/{campaign}/NomeNota`) può consultare la pagina.
+   - **Nessuna Sidebar per Ospiti**: la pagina viene mostrata a tutto schermo senza la barra laterale dell'albero dei file, impedendo all'ospite di navigare tra le altre note della campagna.
+   - **Rigorosi Filtri di Accesso**: rimangono sempre attivi i controlli di `AccessControlService::noteIsVisibleTo()`:
+     - Se la nota ha `#dm` o tag `#access-gruppo`, viene restituito `404 Not Found`.
+     - All'interno della nota pubblica, eventuali blocchi `#startMaster...#endMaster` e `#startAccess-...#endAccess` vengono automaticamente rimossi.
+
+### Condivisione Pagina, QR Code, Esportazione PDF e Filtro Multi-Tag (`vault.show`)
+Nella schermata di visualizzazione della singola nota (`resources/views/vault/note.blade.php`):
+- **Pulsante "Condividi"**:
+  - Posizionato accanto al titolo e ai badge di permesso della nota, apre un modale con tre funzionalità principali:
+  1. **QR Code Dinamico**: visualizza un codice QR scansionabile all'istante tramite fotocamera smartphone per aprire direttamente la pagina corrente.
+  2. **Condivisione Link**: campo con URL completo, pulsante "Copia" con feedback visivo e supporto alla condivisione nativa da mobile (`navigator.share`).
+  3. **Esportazione in PDF**: genera un documento PDF formattato per la stampa o l'archiviazione (tramite `html2pdf.js`), con pulsante alternativo per stampa diretta (`window.print()`).
+- **Filtro Multi-Tag dei Livelli di Accesso (Evoluzione del Toggle Master)**:
+  - Quando un utente ha più livelli di autorizzazione (è Master e/o appartiene a gruppi di accesso presenti nella nota), nell'header compare una barra con tag cliccabili (es. 👑 Master, 🛡️ [Nome Gruppo]):
+  - **A Schermo**: cliccando su un tag, i blocchi corrispondenti nella pagina vengono mostrati o nascosti istantaneamente.
+  - **Nel Download PDF**: nel modale di condivisione è presente una checklist dei tag disponibili: l'utente può deselezionare i permessi desiderati prima di scaricare il PDF, permettendo di rimuovere note da master o dettagli di fazioni specifiche prima di consegnare o condividere il documento con terzi.
 
 ---
 

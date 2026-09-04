@@ -39,43 +39,49 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                @php
-                    $navCampaignFolder = session('current_campaign');
-                    if (!$navCampaignFolder) {
-                        if (Auth::check() && Auth::user()->defaultCampaign) {
-                            $navCampaignFolder = Auth::user()->defaultCampaign->folder_name;
-                        } else {
-                            $firstCamp = \App\Models\Campaign::orderBy('order')->first();
-                            $navCampaignFolder = $firstCamp ? $firstCamp->folder_name : 'newCampaign';
-                        }
-                    }
-                @endphp
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <!-- Left Side Of Navbar -->
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('vault.index') }}">
-                                <i class="bi bi-folder2-open"></i> {{ __('Vault') }}
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('vault.changelog.index', ['campaign' => $navCampaignFolder]) }}">
-                                <i class="bi bi-clock-history"></i> {{ __('Changelog') }}
-                            </a>
-                        </li>
-                    </ul>
+                    @auth
+                        @php
+                            $navCampaignFolder = session('current_campaign');
+                            if (!$navCampaignFolder) {
+                                try {
+                                    if (Auth::user()->defaultCampaign) {
+                                        $navCampaignFolder = Auth::user()->defaultCampaign->folder_name;
+                                    } else {
+                                        $firstCamp = \App\Models\Campaign::orderBy('order')->first();
+                                        $navCampaignFolder = $firstCamp ? $firstCamp->folder_name : 'newCampaign';
+                                    }
+                                } catch (\Throwable $e) {
+                                    $navCampaignFolder = 'newCampaign';
+                                }
+                            }
+                        @endphp
+                        <!-- Left Side Of Navbar -->
+                        <ul class="navbar-nav me-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('vault.index') }}">
+                                    <i class="bi bi-folder2-open"></i> {{ __('Vault') }}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('vault.changelog.index', ['campaign' => $navCampaignFolder]) }}">
+                                    <i class="bi bi-clock-history"></i> {{ __('Changelog') }}
+                                </a>
+                            </li>
+                        </ul>
 
-                    <!-- Search Form -->
-                    <form class="d-flex mx-auto col-12 col-lg-6 my-2 my-lg-0" action="{{ route('vault.search', ['campaign' => $navCampaignFolder]) }}"
-                        method="GET">
-                        <div class="input-group">
-                            <input class="form-control bg-dark text-white border-secondary" type="search" name="q"
-                                placeholder="Cerca nel Vault..." aria-label="Search" value="{{ is_string(request('q')) ? request('q') : '' }}">
-                            <button class="btn btn-outline-warning" type="submit">
-                                <i class="bi-search"></i>
-                            </button>
-                        </div>
-                    </form>
+                        <!-- Search Form -->
+                        <form class="d-flex mx-auto col-12 col-lg-6 my-2 my-lg-0" action="{{ route('vault.search', ['campaign' => $navCampaignFolder]) }}"
+                            method="GET">
+                            <div class="input-group">
+                                <input class="form-control bg-dark text-white border-secondary" type="search" name="q"
+                                    placeholder="Cerca nel Vault..." aria-label="Search" value="{{ is_string(request('q')) ? request('q') : '' }}">
+                                <button class="btn btn-outline-warning" type="submit">
+                                    <i class="bi-search"></i>
+                                </button>
+                            </div>
+                        </form>
+                    @endauth
 
                     <!-- Right Side Of Navbar -->
                     <ul class="navbar-nav ms-auto">

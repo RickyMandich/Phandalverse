@@ -21,6 +21,10 @@ class VaultController extends Controller
      */
     public function index(Request $request)
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         $user = Auth::user();
 
         if ($user) {
@@ -563,6 +567,10 @@ class VaultController extends Controller
 
     public function search(Request $request, Campaign $campaign)
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         $this->checkCampaignAccess($request, $campaign);
 
         $query = $request->query('q');
@@ -642,6 +650,10 @@ class VaultController extends Controller
 
         // Vista Home (Grafo + Albero)
         if ($note === null || $note === '') {
+            if (!Auth::check()) {
+                return redirect()->route('login');
+            }
+
             $note = "graph";
             $tree = $this->buildFileTree(null, note: $note, campaign: $campaign);
             $graphData = $this->buildGraphData($campaign);
@@ -663,6 +675,10 @@ class VaultController extends Controller
         // Vista Cartella
         $folderPath = self::camelCaseToFolderPath($note, $campaign);
         if ($folderPath !== null) {
+            if (!Auth::check()) {
+                return redirect()->route('login');
+            }
+
             $defaultView = SystemSetting::getVaultDefaultView();
             $requestedView = $request->query('view');
 
@@ -713,10 +729,54 @@ class VaultController extends Controller
         }
 
         $masterFile = AccessControlService::isDmOnly($content);
+        $hasMasterContent = $masterFile || (bool) preg_match('/#startMaster/i', $content);
+
         $accessBadges = [];
         $requiredGroups = AccessControlService::requiredGroupsFromNoteTag($content);
         if (!empty($requiredGroups)) {
             $accessBadges = AccessControlService::computeBadgeGroups($currentUser, $requiredGroups, $campaign->id);
+        }
+
+        // Estrai tutti i gruppi menzionati nella nota (sia a livello nota che a livello blocco)
+        $allNoteGroups = [];
+        if (preg_match_all('/#(?:access|startAccess)-([a-z0-9]+(?:_[a-z0-9]+)*)/i', $content, $mTags)) {
+            foreach ($mTags[1] as $match) {
+                $slugs = explode('_', strtolower($match));
+                foreach ($slugs as $s) {
+                    $allNoteGroups[$s] = true;
+                }
+            }
+        }
+        $noteGroupSlugs = array_keys($allNoteGroups);
+
+        $availableAccessLevels = [];
+        if ($currentUser && $currentUser->isMaster() && $hasMasterContent) {
+            $availableAccessLevels[] = [
+                'id' => 'master',
+                'type' => 'master',
+                'name' => 'Master',
+                'slug' => 'master',
+                'color' => '#ffc107',
+            ];
+        }
+
+        if (!empty($noteGroupSlugs)) {
+            $allGroups = AccessControlService::getAllGroups($campaign->id);
+            foreach ($allGroups as $group) {
+                $gSlug = strtolower($group->slug);
+                if (in_array($gSlug, $noteGroupSlugs, true)) {
+                    $canAccess = $currentUser && ($currentUser->isMaster() || $currentUser->hasAccessToAnyGroup([$gSlug]));
+                    if ($canAccess) {
+                        $availableAccessLevels[] = [
+                            'id' => 'group_' . $gSlug,
+                            'type' => 'group',
+                            'name' => $group->name,
+                            'slug' => $gSlug,
+                            'color' => $group->color ?: '#6c757d',
+                        ];
+                    }
+                }
+            }
         }
 
         $title = VaultHelper::getOriginalName($filePath . '.md', $note, $campaign);
@@ -733,6 +793,7 @@ class VaultController extends Controller
             'graphConfig' => $graphConfig,
             'masterFile' => $masterFile,
             'accessBadges' => $accessBadges,
+            'availableAccessLevels' => $availableAccessLevels,
             'note' => $note,
             'campaign' => $campaign,
             'accessibleCampaigns' => $this->getAccessibleCampaigns(),

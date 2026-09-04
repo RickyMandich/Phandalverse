@@ -148,7 +148,7 @@ class MarkdownPreprocessor
         $pattern = '/<!--MASTER_START-->(.*?)<!--MASTER_END-->/is';
         return preg_replace_callback($pattern, function ($m) {
             $inner = $m[1];
-            return '<div class="master-block">' . $inner . '</div>';
+            return '<div class="master-block" data-access-type="master">' . $inner . '</div>';
         }, $html);
     }
 
@@ -567,6 +567,7 @@ class MarkdownPreprocessor
                 'content' => $m[2],
                 'badges' => $badges,
                 'color' => $color,
+                'groups' => $requiredGroups,
             ];
 
             return "<!--ACCESS_BLOCK:{$idx}-->";
@@ -601,7 +602,7 @@ class MarkdownPreprocessor
         foreach ($masterBlocks as $i => $innerMarkdown) {
             $innerMarkdown = $processContent($innerMarkdown);
             $innerHtml = $converter->convert($innerMarkdown)->getContent();
-            $wrapped = '<div class="master-block">' . $innerHtml . '</div>';
+            $wrapped = '<div class="master-block" data-access-type="master">' . $innerHtml . '</div>';
             $html = str_replace("<!--MASTER_BLOCK:{$i}-->", $wrapped, $html);
         }
 
@@ -621,7 +622,8 @@ class MarkdownPreprocessor
             }
 
             $color = htmlspecialchars($blockData['color']);
-            $wrapped = "<div class=\"access-block\" style=\"--access-color: {$color}; border-left: 3px solid {$color}; padding: 0.5rem 1rem; margin: 1rem 0; background: rgba(255,255,255,0.03); border-radius: 4px;\">{$badgesHtml}{$innerHtml}</div>";
+            $groupsAttr = htmlspecialchars(implode(',', $blockData['groups'] ?? []));
+            $wrapped = "<div class=\"access-block\" data-access-type=\"group\" data-groups=\"{$groupsAttr}\" style=\"--access-color: {$color}; border-left: 3px solid {$color}; padding: 0.5rem 1rem; margin: 1rem 0; background: rgba(255,255,255,0.03); border-radius: 4px;\">{$badgesHtml}{$innerHtml}</div>";
             $html = str_replace("<!--ACCESS_BLOCK:{$i}-->", $wrapped, $html);
         }
 
