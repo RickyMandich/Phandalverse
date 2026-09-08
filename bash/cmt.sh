@@ -67,7 +67,14 @@ echo "Versione trovata: '$APP_VERSION'"
 nomeCommit=$(date "+%Y %m %d %H:%M")
 nomeCommit="aggiornamento $nomeCommit [$APP_VERSION]$messaggio"
 echo "Messaggio commit: $nomeCommit"
-git commit -am "$nomeCommit"
+# Esegui il commit: con -n committa solo ciò che è già in staging,
+# altrimenti (comportamento originale) usa -a per includere anche
+# tutte le modifiche ai file già tracciati.
+if [ "$NO_ADD" = true ]; then
+    git commit -m "$nomeCommit"
+else
+    git commit -am "$nomeCommit"
+fi
 
 # Esegui il push sul repository remoto
 git push

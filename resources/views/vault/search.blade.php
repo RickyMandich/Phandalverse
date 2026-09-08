@@ -27,14 +27,25 @@
                         @foreach($results as $result)
                             <a href="{{ route('vault.show', ['campaign' => $campaign->folder_name, 'note' => $result['url']]) }}"
                                 class="list-group-item list-group-item-action bg-dark border-secondary text-white mb-2 rounded border">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h5 class="mb-1 text-warning">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <h5 class="mb-1 text-warning d-flex align-items-center">
+                                        @if(!empty($result['is_pdf']))
+                                            <i class="bi bi-file-earmark-pdf-fill text-danger me-2" title="Documento PDF"></i>
+                                        @else
+                                            <i class="bi bi-file-earmark-text text-secondary me-2" title="Nota Markdown"></i>
+                                        @endif
                                         @php
                                             $highlighted = preg_replace('/(' . preg_quote($query, '/') . ')/i', '<span class="bg-warning text-dark px-1">$1</span>', e($result['original']));
                                         @endphp
                                         {!! $highlighted !!}
                                     </h5>
-                                    <small class="text-info"><i class="bi bi-file-text"></i> Visualizza</small>
+                                    <small class="text-info">
+                                        @if(!empty($result['is_pdf']))
+                                            <i class="bi bi-file-earmark-pdf"></i> Visualizza PDF
+                                        @else
+                                            <i class="bi bi-file-text"></i> Visualizza Nota
+                                        @endif
+                                    </small>
                                 </div>
                                 <p class="mb-1 small text-muted">
                                     <i class="bi bi-folder"></i>

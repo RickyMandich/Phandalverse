@@ -51,8 +51,11 @@ class MarkdownPreprocessor
             return self::$fileIndices[$folder];
         }
 
+        // I wikilink si riferiscono sempre a note markdown: l'indice comprende solo i file .md,
+        // i PDF restano navigabili solo da albero/sidebar/ricerca (VaultController + VaultHelper).
         foreach ($files as $file) {
-            if ($file->getExtension() === 'md') {
+            $ext = strtolower($file->getExtension());
+            if ($ext === 'md') {
                 $isMaster = Auth::check() && Auth::user()->isMaster();
                 $shouldSkip = false;
 
@@ -97,6 +100,8 @@ class MarkdownPreprocessor
         // Rimuovi estensione se presente per il lookup nell'indice
         if (str_ends_with($cleanName, '.md')) {
             $cleanName = substr($cleanName, 0, -3);
+        } elseif (str_ends_with($cleanName, '.pdf')) {
+            $cleanName = substr($cleanName, 0, -4);
         }
 
         if (isset($index[$cleanName])) {
@@ -187,16 +192,22 @@ class MarkdownPreprocessor
                 // Rimuovi estensione se presente per il lookup nell'indice
                 if (str_ends_with($cleanName, '.md')) {
                     $cleanName = substr($cleanName, 0, -3);
+                } elseif (str_ends_with($cleanName, '.pdf')) {
+                    $cleanName = substr($cleanName, 0, -4);
                 }
 
-                $found = isset($index[$cleanName]);
-                $path = $found ? $index[$cleanName] : $cleanName;
+                $found = false;
+                $path = $cleanName;
+                if (isset($index[$cleanName])) {
+                    $path = $index[$cleanName];
+                    $found = true;
+                }
 
                 if (isset($matches[2]) && !empty(trim($matches[2]))) {
                     $label = trim($matches[2]);
                 } else {
                     // Se non c'è alias, prova a prendere il nome originale dalla mappa della campagna
-                    $label = VaultHelper::getOriginalName($path . '.md', $note, $campaign);
+                    $label = VaultHelper::getOriginalName($path, $note, $campaign);
                 }
 
                 // Genera il link solo se la nota è nell'indice (quindi è pubblica o l'utente ha accesso)
@@ -474,6 +485,7 @@ class MarkdownPreprocessor
                     $url = '/vault/' . $folder . '/' . $enc;
                     $replacement = '<img src="' . $url . '" alt="' . htmlspecialchars($content) . '" class="wikilink-image" style="max-width: 100%; height: auto;">';
                 } else {
+                    // I wikilink (anche negli embed) si riferiscono sempre a note markdown: i PDF non sono embeddabili qui.
                     $replacement = self::loadEmbedContent($content, $note, $index, $campaign);
                 }
             }

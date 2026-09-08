@@ -96,6 +96,17 @@ class VaultHelper
                         CustomLogger::note($note, 'trovato file/lowerPart: ' . $lowerPart, "VaultHelper:getOriginalName");
                     return $currentNode['files'][$lowerPart];
                 }
+
+                $cleanLowerPart = preg_replace('/\.(md|pdf)$/i', '', $lowerPart);
+                if (isset($currentNode['files'][$cleanLowerPart . '.md'])) {
+                    return $currentNode['files'][$cleanLowerPart . '.md'];
+                }
+                if (isset($currentNode['files'][$cleanLowerPart . '.pdf'])) {
+                    return $currentNode['files'][$cleanLowerPart . '.pdf'];
+                }
+                if (isset($currentNode['files'][$cleanLowerPart])) {
+                    return $currentNode['files'][$cleanLowerPart];
+                }
             } else {
                 if ($debug)
                     CustomLogger::note($note, "cerco di entrare in directory/lowerPart: " . $lowerPart, "VaultHelper:getOriginalName");
@@ -138,6 +149,17 @@ class VaultHelper
                 // Look in 'files'
                 if (isset($currentNode['files'][$lowerPart])) {
                     return $currentNode['files'][$lowerPart];
+                }
+
+                $cleanLowerPart = preg_replace('/\.(md|pdf)$/i', '', $lowerPart);
+                if (isset($currentNode['files'][$cleanLowerPart . '.md'])) {
+                    return $currentNode['files'][$cleanLowerPart . '.md'];
+                }
+                if (isset($currentNode['files'][$cleanLowerPart . '.pdf'])) {
+                    return $currentNode['files'][$cleanLowerPart . '.pdf'];
+                }
+                if (isset($currentNode['files'][$cleanLowerPart])) {
+                    return $currentNode['files'][$cleanLowerPart];
                 }
             } else {
                 // Look in 'directories'
@@ -199,10 +221,13 @@ class VaultHelper
         if (isset($node['files'])) {
             foreach ($node['files'] as $normalizedName => $originalName) {
                 if (str_contains(strtolower($originalName), $query)) {
-                    if (str_ends_with($normalizedName, "md")) {
+                    $isMd = str_ends_with(strtolower($normalizedName), "md");
+                    $isPdf = str_ends_with(strtolower($normalizedName), "pdf");
+                    if ($isMd || $isPdf) {
                         $results[] = [
                             'original' => $originalName,
                             'path' => $currentPath ? $currentPath . '/' . $normalizedName : $normalizedName,
+                            'is_pdf' => $isPdf,
                         ];
                     }
                 }
@@ -225,7 +250,7 @@ class VaultHelper
 
     protected static function prettify($slug)
     {
-        $name = basename($slug, '.md');
-        return ucwords(str_replace('-', ' ', $name));
+        $name = preg_replace('/\.(md|pdf)$/i', '', basename($slug));
+        return ucwords(str_replace(['-', '_'], ' ', $name));
     }
 }

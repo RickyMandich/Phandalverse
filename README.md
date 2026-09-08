@@ -195,6 +195,9 @@ Il Vault gestisce un sistema granulare di visibilità parametrizzato sui **Grupp
 ### Pannello ad Albero, Selettore Campagne e Grafo Interattivo
 - **Selettore Campagne nella Sidebar**: In cima alla barra laterale del Vault è presente un dropdown dinamico che mostra tutte le campagne accessibili all'utente autenticato (`@auth`). La selezione reindirizza immediatamente a `/vault/{selected_campaign}`.
 - **Vista ad Albero (`VaultController@buildFileTree`)**: Costruisce la navigazione laterale analizzando il `map.json` della campagna ed escludendo tutte le note non visibili per l'utente corrente tramite `AccessControlService::noteIsVisibleTo()`.
+- **Distinzione Visiva Formati nell'Albero**:
+  - **File PDF**: evidenziati con icona dedicata rossa (<i class="bi bi-file-earmark-pdf-fill text-danger"></i>).
+  - **Note Markdown**: contrassegnate con icona documento (<i class="bi bi-file-earmark-text text-secondary"></i>).
 - **Grafo Interattivo (`VaultController@buildGraphData` e `graph.blade.php`)**:
   - Analizza tutti i file `.md` visibili all'utente nella cartella della campagna e ne estrae le connessioni.
   - Legge la configurazione estetica da `Vault/{folder_name}/.obsidian/graph-config.json` o `graph.json`.
@@ -212,17 +215,19 @@ Per evitare che un utente non autenticato possa consultare e navigare liberament
      - Se la nota ha `#dm` o tag `#access-gruppo`, viene restituito `404 Not Found`.
      - All'interno della nota pubblica, eventuali blocchi `#startMaster...#endMaster` e `#startAccess-...#endAccess` vengono automaticamente rimossi.
 
-### Condivisione Pagina, QR Code, Esportazione PDF e Filtro Multi-Tag (`vault.show`)
+### Visualizzazione Note Markdown e Note PDF (`vault.show`)
 Nella schermata di visualizzazione della singola nota (`resources/views/vault/note.blade.php`):
+- **Note Markdown (.md)**:
+  - Renderizzate tramite il preprocessore Markdown con supporto a wikilink, embed, callout e blocchi di accesso condizionale.
+  - Gli utenti con ruolo Master dispongono del pulsante **"Scarica MD"**.
+  - **Filtro Multi-Tag dei Livelli di Accesso**: quando un utente ha più autorizzazioni (Master o gruppi), compare la barra con tag cliccabili per mostrare o nascondere sezioni sia a schermo che nel PDF esportato.
+  - **Esportazione in PDF**: nel modale di condivisione, genera un documento formattato per la stampa o l'archiviazione (tramite `html2pdf.js`).
+- **Note PDF (.pdf)**:
+  - **Visualizzatore PDF Integrato**: il documento viene incorporato direttamente all'interno della pagina in un visualizzatore responsive con toolbar browser (zoom, navigazione pagine, stampa) e pulsante di fallback per apertura a schermo intero in nuova scheda.
+  - **Nessun Pulsante "Scarica MD"**: per i PDF il download in formato Markdown non è presente.
+  - **Download Diretto del File PDF**: sia dalla barra delle azioni principale che all'interno del modale di condivisione, il pulsante **"Scarica PDF"** effettua il download immediato del file binario originale presente sul server, senza alcuna generazione dinamica.
 - **Pulsante "Condividi"**:
-  - Posizionato accanto al titolo e ai badge di permesso della nota, apre un modale con tre funzionalità principali:
-  1. **QR Code Dinamico**: visualizza un codice QR scansionabile all'istante tramite fotocamera smartphone per aprire direttamente la pagina corrente.
-  2. **Condivisione Link**: campo con URL completo, pulsante "Copia" con feedback visivo e supporto alla condivisione nativa da mobile (`navigator.share`).
-  3. **Esportazione in PDF**: genera un documento PDF formattato per la stampa o l'archiviazione (tramite `html2pdf.js`), con pulsante alternativo per stampa diretta (`window.print()`).
-- **Filtro Multi-Tag dei Livelli di Accesso (Evoluzione del Toggle Master)**:
-  - Quando un utente ha più livelli di autorizzazione (è Master e/o appartiene a gruppi di accesso presenti nella nota), nell'header compare una barra con tag cliccabili (es. 👑 Master, 🛡️ [Nome Gruppo]):
-  - **A Schermo**: cliccando su un tag, i blocchi corrispondenti nella pagina vengono mostrati o nascosti istantaneamente.
-  - **Nel Download PDF**: nel modale di condivisione è presente una checklist dei tag disponibili: l'utente può deselezionare i permessi desiderati prima di scaricare il PDF, permettendo di rimuovere note da master o dettagli di fazioni specifiche prima di consegnare o condividere il documento con terzi.
+  - Posizionato accanto al titolo e ai badge di permesso (sia per MD che per PDF), apre un modale con QR Code scansionabile e link diretto con copia veloce negli appunti.
 
 ---
 

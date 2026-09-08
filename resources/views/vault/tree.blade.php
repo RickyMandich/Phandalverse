@@ -77,6 +77,7 @@
                                 foreach ($files as $file) {
                                     $isDmFile = isset($file['dm']) && $file['dm'];
                                     $accessBadges = $file['access_badges'] ?? [];
+                                    $isPdf = !empty($file['is_pdf']) || (isset($file['type']) && $file['type'] === 'pdf') || str_ends_with(strtolower($file['url'] ?? ''), '.pdf');
 
                                     $tagsHtml = '';
                                     if ($isDmFile || !empty($accessBadges)) {
@@ -93,8 +94,11 @@
                                     }
 
                                     $fileUrl = '/vault/' . $campaignFolder . '/' . $file['url'];
+                                    $icon = $isPdf 
+                                        ? '<i class="bi bi-file-earmark-pdf-fill text-danger me-1" title="PDF"></i>' 
+                                        : '<i class="bi bi-file-earmark-text text-secondary me-1" title="Markdown"></i>';
                                     $html .= '<li class="my-1 d-flex align-items-center">';
-                                    $html .= '<a href="' . $fileUrl . '" class="file text-info text-decoration-none link-underline link-underline-opacity-0 link-underline-opacity-100-hover">📄&nbsp;' . e($file['name']) . '</a>' . $tagsHtml;
+                                    $html .= '<a href="' . $fileUrl . '" class="file text-info text-decoration-none link-underline link-underline-opacity-0 link-underline-opacity-100-hover">' . $icon . e($file['name']) . '</a>' . $tagsHtml;
                                     $html .= '</li>';
                                 }
 

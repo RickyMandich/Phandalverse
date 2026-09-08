@@ -158,9 +158,10 @@
                         foreach ($files as $file) {
                             $isActiveFile = false;
                             $fileUrlDecoded = rawurldecode($file['url']);
-                            $currentNoteDecoded = rawurldecode($note);
+                            $currentNoteDecoded = rawurldecode((string)$note);
 
-                            if (strcasecmp($fileUrlDecoded, $currentNoteDecoded) === 0) {
+                            if (strcasecmp($fileUrlDecoded, $currentNoteDecoded) === 0 ||
+                                strcasecmp(preg_replace('/\.(md|pdf)$/i', '', $fileUrlDecoded), preg_replace('/\.(md|pdf)$/i', '', $currentNoteDecoded)) === 0) {
                                 $isActiveFile = true;
                             }
 
@@ -169,6 +170,7 @@
                             $html .= '<li class="my-1">';
                             $isDmFile = isset($file['dm']) && $file['dm'];
                             $accessBadges = $file['access_badges'] ?? [];
+                            $isPdf = !empty($file['is_pdf']) || (isset($file['type']) && $file['type'] === 'pdf') || str_ends_with(strtolower($file['url'] ?? ''), '.pdf');
 
                             $tagsHtml = '';
                             if ($isDmFile || !empty($accessBadges)) {
@@ -185,7 +187,10 @@
                             }
 
                             $fileUrl = '/vault/' . $campaignFolder . '/' . $file['url'];
-                            $html .= '<a href="' . $fileUrl . '" class="file text-decoration-none d-inline-block' . $activeClass . ' hover-underline">📄&nbsp;' . e($file['name']) . '</a>' . $tagsHtml;
+                            $icon = $isPdf 
+                                ? '<i class="bi bi-file-earmark-pdf-fill text-danger me-1" title="PDF"></i>' 
+                                : '<i class="bi bi-file-earmark-text text-secondary me-1" title="Markdown"></i>';
+                            $html .= '<a href="' . $fileUrl . '" class="file text-decoration-none d-inline-block' . $activeClass . ' hover-underline">' . $icon . e($file['name']) . '</a>' . $tagsHtml;
                             $html .= '</li>';
                         }
                         $html .= '</ul>';
