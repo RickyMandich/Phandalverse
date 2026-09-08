@@ -9,10 +9,11 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 # Variabili per le opzioni
 VERSION_MAJOR=false
 VERSION_PATCH=false
+NO_ADD=false
 COMMIT_MESSAGE=""
 
 # Parsing delle opzioni
-while getopts "vpm:h" opt; do
+while getopts "vpnm:h" opt; do
     case $opt in
         v)
             VERSION_MAJOR=true
@@ -20,23 +21,28 @@ while getopts "vpm:h" opt; do
         p)
             VERSION_PATCH=true
             ;;
+        n)
+            NO_ADD=true
+            ;;
         m)
             COMMIT_MESSAGE="$OPTARG"
             echo "Messaggio personalizzato: $COMMIT_MESSAGE"
             ;;
         h)
-            echo "Uso: $0 [-v] [-p] [-m messaggio]"
+            echo "Uso: $0 [-v] [-p] [-n] [-m messaggio]"
             echo "  -v  (versione): Incrementa APP_VERSION_PRIMARY e resetta APP_VERSION_SECONDARY a 0"
             echo "  -p  (patch): Incrementa APP_VERSION_SECONDARY"
+            echo "  -n  (no-add): non esegue 'git add .' in cmt.sh, committa solo i file già in staging"
             echo "  -m  (messaggio): Aggiungi un messaggio personale al commit"
             echo "Le opzioni -v e -p non possono essere usate insieme"
             exit 0
             ;;
         \?)
             echo "Opzione non valida: -$OPTARG" >&2
-            echo "Uso: $0 [-v] [-p] [-m messaggio]"
+            echo "Uso: $0 [-v] [-p] [-n] [-m messaggio]"
             echo "  -v  (versione): Incrementa APP_VERSION_PRIMARY e resetta APP_VERSION_SECONDARY a 0"
             echo "  -p  (patch): Incrementa APP_VERSION_SECONDARY"
+            echo "  -n  (no-add): non esegue 'git add .' in cmt.sh, committa solo i file già in staging"
             echo "  -m  (messaggio): Aggiungi un messaggio personale al commit"
             echo "Le opzioni -v e -p non possono essere usate insieme"
             exit 1
@@ -50,12 +56,12 @@ if [ "$VERSION_MAJOR" = true ] && [ "$VERSION_PATCH" = true ]; then
     exit 1
 fi
 
-# Funzione per incrementare le versioni nel file .env
+# Funzione per incrementare le versioni nel file .env-overrides
 increment_version() {
-    local env_file="$PROJECT_DIR/.env"
+    local env_file="$PROJECT_DIR/.env-overrides"
 
     if [ ! -f "$env_file" ]; then
-        echo "Errore: File .env non trovato in $env_file"
+        echo "Errore: File .env-overrides non trovato in $env_file"
         exit 1
     fi
 
@@ -64,7 +70,7 @@ increment_version() {
         current_primary=$(grep "^APP_VERSION_PRIMARY=" "$env_file" | cut -d'=' -f2)
 
         if [ -z "$current_primary" ]; then
-            echo "Errore: APP_VERSION_PRIMARY non trovato nel file .env"
+            echo "Errore: APP_VERSION_PRIMARY non trovato nel file .env-overrides"
             exit 1
         fi
 
@@ -84,7 +90,7 @@ increment_version() {
         current_secondary=$(grep "^APP_VERSION_SECONDARY=" "$env_file" | cut -d'=' -f2)
 
         if [ -z "$current_secondary" ]; then
-            echo "Errore: APP_VERSION_SECONDARY non trovato nel file .env"
+            echo "Errore: APP_VERSION_SECONDARY non trovato nel file .env-overrides"
             exit 1
         fi
 
@@ -102,7 +108,7 @@ increment_version() {
         current_tertiary=$(grep "^APP_VERSION_TERTIARY=" "$env_file" | cut -d'=' -f2)
 
         if [ -z "$current_tertiary" ]; then
-            echo "Errore: APP_VERSION_TERTIARY non trovato nel file .env"
+            echo "Errore: APP_VERSION_TERTIARY non trovato nel file .env-overrides"
             exit 1
         fi
 
@@ -119,9 +125,12 @@ increment_version() {
 increment_version
 
 # Esegui gli script usando il percorso completo
-# Passa il messaggio personalizzato a cmt.sh se presente
-if [ -n "$COMMIT_MESSAGE" ]; then
-    "$SCRIPT_DIR/cmt.sh" -m "$COMMIT_MESSAGE"
-else
-    "$SCRIPT_DIR/cmt.sh"
+# Passa a cmt.sh le opzioni rilevanti (-n e/o -m) se presenti
+CMT_ARGS=()
+if [ "$NO_ADD" = true ]; then
+    CMT_ARGS+=(-n)
 fi
+if [ -n "$COMMIT_MESSAGE" ]; then
+    CMT_ARGS+=(-m "$COMMIT_MESSAGE")
+fi
+"$SCRIPT_DIR/cmt.sh" "${CMT_ARGS[@]}"

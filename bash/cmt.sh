@@ -2,40 +2,50 @@
 
 # Variabile per il messaggio personalizzato
 messaggio=""
+NO_ADD=false
 
 # Guarda se ci sono opzioni
-while getopts "m:h" opt; do
+while getopts "nm:h" opt; do
     case $opt in
+        n)
+            NO_ADD=true
+            ;;
         m)
             messaggio=" - $OPTARG"
             echo "Messaggio personalizzato: $messaggio"
             ;;
         h)
-            echo "Uso: $0 [-m messaggio]"
+            echo "Uso: $0 [-n] [-m messaggio]"
+            echo "  -n  (no-add): non esegue 'git add .', committa solo i file già in staging"
             echo "  -m  (messaggio): aggiungi un messaggio personale al commit oltre a quello di default"
             exit 0
             ;;
         \?)
             echo "Opzione non valida: -$OPTARG" >&2
-            echo "Uso: $0 [-m messaggio]"
+            echo "Uso: $0 [-n] [-m messaggio]"
+            echo "  -n  (no-add): non esegue 'git add .', committa solo i file già in staging"
             echo "  -m  (messaggio): aggiungi un messaggio personale al commit oltre a quello di default"
             exit 1
             ;;
     esac
 done
 
-# Aggiungi tutti i file al commit
-git add .
+# Aggiungi tutti i file al commit, a meno che non sia stata passata -n
+if [ "$NO_ADD" = true ]; then
+    echo "Opzione -n attiva: salto 'git add .', verranno committati solo i file già in staging"
+else
+    git add .
+fi
 # Mostra lo stato dei file
 git status
 
-# Leggi la versione dell'app dal file .env
-if [ -f .env ]; then
-    # Leggi le variabili di versione dal file .env
-    APP_VERSION_TYPE=$(grep "^APP_VERSION_TYPE=" .env | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
-    APP_VERSION_PRIMARY=$(grep "^APP_VERSION_PRIMARY=" .env | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
-    APP_VERSION_SECONDARY=$(grep "^APP_VERSION_SECONDARY=" .env | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
-    APP_VERSION_TERTIARY=$(grep "^APP_VERSION_TERTIARY=" .env | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
+# Leggi la versione dell'app dal file .env-overrides (tracciato in Git)
+if [ -f .env-overrides ]; then
+    # Leggi le variabili di versione dal file .env-overrides
+    APP_VERSION_TYPE=$(grep "^APP_VERSION_TYPE=" .env-overrides | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
+    APP_VERSION_PRIMARY=$(grep "^APP_VERSION_PRIMARY=" .env-overrides | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
+    APP_VERSION_SECONDARY=$(grep "^APP_VERSION_SECONDARY=" .env-overrides | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
+    APP_VERSION_TERTIARY=$(grep "^APP_VERSION_TERTIARY=" .env-overrides | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
 
     # Componi la versione
     if [ -n "$APP_VERSION_PRIMARY" ] && [ -n "$APP_VERSION_SECONDARY" ] && [ -n "$APP_VERSION_TERTIARY" ]; then
