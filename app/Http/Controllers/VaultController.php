@@ -636,49 +636,45 @@ class VaultController extends Controller
         $query = $request->query('q');
         $note = "search=>{$query}";
         $tree = $this->buildFileTree(null, note: $note, campaign: $campaign);
-        $results = [];
+        $resultsByCampaign = [];
+        $totalResults = 0;
 
         if ($query) {
-            $results = VaultHelper::searchNotes($query, $note, $campaign);
+            $user = Auth::user();
+            $orderedCampaigns = $user->accessibleCampaigns();
 
-            // Filter out DM-only files for non-masters
-            $results = array_filter($results, function ($result) use ($campaign) {
-                $folder = VaultHelper::resolveCampaignFolder($campaign);
-                $isPdf = !empty($result['is_pdf']) || str_ends_with(strtolower($result['path']), '.pdf');
-                $cleanPath = preg_replace('/\.(md|pdf)$/i', '', $result['path']);
-                $ext = $isPdf ? '.pdf' : '.md';
-                $path = base_path('Vault/' . $folder . '/' . $cleanPath . $ext);
-                if (!File::exists($path)) {
-                    $path = base_path('Vault/' . $cleanPath . $ext);
-                }
-                if (File::exists($path)) {
-                    if ($isPdf) {
-                        $isDm = (bool) preg_match('/(?:^|[\/_\-\s\[\(])dm(?:$|[\/_\-\s\]\.]|\.pdf)/i', basename($path));
-                        if ($isDm && (!Auth::check() || !Auth::user()->isMaster())) {
-                            return false;
-                        }
-                        return true;
+            // Se l'utente ha una default_campaign_id accessibile, spostarla in prima posizione
+            if ($user->default_campaign_id) {
+                $defaultIndex = null;
+                foreach ($orderedCampaigns as $idx => $camp) {
+                    if ($camp->id === $user->default_campaign_id) {
+                        $defaultIndex = $idx;
+                        break;
                     }
-                    return AccessControlService::noteIsVisibleTo(File::get($path), null, $campaign);
                 }
-                return true;
-            });
-
-            foreach ($results as &$result) {
-                $isPdf = !empty($result['is_pdf']) || str_ends_with(strtolower($result['path']), '.pdf');
-                $cleanPath = preg_replace('/\.(md|pdf)$/i', '', $result['path']);
-                $result['url'] = self::pathToCamelCase($isPdf ? $cleanPath . '.pdf' : $cleanPath);
-                $result['is_pdf'] = $isPdf;
-                $result['directory'] = dirname($result['path']);
-                if ($result['directory'] === '.') {
-                    $result['directory'] = '';
+                if ($defaultIndex !== null && $defaultIndex !== 0) {
+                    $defaultCampaign = $orderedCampaigns->pull($defaultIndex);
+                    $orderedCampaigns->prepend($defaultCampaign);
                 }
             }
 
-            if (count($results) == 1) {
+            foreach ($orderedCampaigns as $camp) {
+                $campResults = $this->searchInCampaign($query, $camp, $note);
+                if (!empty($campResults)) {
+                    $resultsByCampaign[] = [
+                        'campaign' => $camp,
+                        'results' => $campResults,
+                    ];
+                    $totalResults += count($campResults);
+                }
+            }
+
+            // Redirect automatico a risultato singolo, nella campagna corretta (non necessariamente quella dell'URL)
+            if ($totalResults === 1) {
+                $only = $resultsByCampaign[0];
                 return redirect()->route('vault.show', [
-                    'campaign' => $campaign->folder_name,
-                    'note' => $results[0]['url']
+                    'campaign' => $only['campaign']->folder_name,
+                    'note' => $only['results'][0]['url']
                 ]);
             }
         }
@@ -687,13 +683,60 @@ class VaultController extends Controller
 
         return view('vault.search', [
             'query' => $query,
-            'results' => $results,
+            'resultsByCampaign' => $resultsByCampaign,
+            'totalResults' => $totalResults,
             'tree' => $tree,
             'note' => $note,
             'graphConfig' => $graphConfig,
             'campaign' => $campaign,
             'accessibleCampaigns' => $this->getAccessibleCampaigns(),
         ]);
+    }
+
+    /**
+     * Esegue la ricerca all'interno di una singola campagna, applicando lo stesso
+     * filtro di visibilità/DM/gruppi già in uso, e arricchisce i risultati con url/is_pdf/directory.
+     */
+    private function searchInCampaign(string $query, Campaign $campaign, string $note): array
+    {
+        $results = VaultHelper::searchNotes($query, $note, $campaign);
+
+        // Filter out DM-only / gruppo-riservato files per l'utente corrente
+        $results = array_filter($results, function ($result) use ($campaign) {
+            $folder = VaultHelper::resolveCampaignFolder($campaign);
+            $isPdf = !empty($result['is_pdf']) || str_ends_with(strtolower($result['path']), '.pdf');
+            $cleanPath = preg_replace('/\.(md|pdf)$/i', '', $result['path']);
+            $ext = $isPdf ? '.pdf' : '.md';
+            $path = base_path('Vault/' . $folder . '/' . $cleanPath . $ext);
+            if (!File::exists($path)) {
+                $path = base_path('Vault/' . $cleanPath . $ext);
+            }
+            if (File::exists($path)) {
+                if ($isPdf) {
+                    $isDm = (bool) preg_match('/(?:^|[\/_\-\s\[\(])dm(?:$|[\/_\-\s\]\.]|\.pdf)/i', basename($path));
+                    if ($isDm && (!Auth::check() || !Auth::user()->isMaster())) {
+                        return false;
+                    }
+                    return true;
+                }
+                return AccessControlService::noteIsVisibleTo(File::get($path), null, $campaign);
+            }
+            return true;
+        });
+
+        foreach ($results as &$result) {
+            $isPdf = !empty($result['is_pdf']) || str_ends_with(strtolower($result['path']), '.pdf');
+            $cleanPath = preg_replace('/\.(md|pdf)$/i', '', $result['path']);
+            $result['url'] = self::pathToCamelCase($isPdf ? $cleanPath . '.pdf' : $cleanPath);
+            $result['is_pdf'] = $isPdf;
+            $result['directory'] = dirname($result['path']);
+            if ($result['directory'] === '.') {
+                $result['directory'] = '';
+            }
+        }
+        unset($result);
+
+        return array_values($results);
     }
 
     public function show(Request $request, Campaign $campaign, $note = null)

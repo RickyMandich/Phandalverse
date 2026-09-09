@@ -72,6 +72,11 @@
 
         <section class="flex-grow-1 p-4 {{ Auth::check() ? '' : 'mx-auto' }}" style="min-width: 0; {{ Auth::check() ? '' : 'max-width: 960px;' }}">
             <div class="title-container">
+                <div class="mb-1">
+                    <span class="badge rounded-pill bg-dark-subtle border border-secondary text-info fw-normal" style="font-size: 0.75rem;" title="Campagna corrente">
+                        <i class="bi bi-collection me-1"></i>{{ $campaign->display_name }}
+                    </span>
+                </div>
                 <h1 class="display-5 mb-4 border-bottom pb-2 text-warning fw-bold">{{ $title }}</h1>
                 <div class="d-flex align-items-center flex-wrap gap-2 mb-4">
                     @if ($masterFile)

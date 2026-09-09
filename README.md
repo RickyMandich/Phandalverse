@@ -138,7 +138,7 @@ Le rotte del Vault sono strutturate come segue:
   3. Per i visitatori anonimi, reindirizza alla prima campagna pubblica per `order`.
 - **`/vault/{campaign:folder_name}`**: Homepage del Vault per la campagna (grafo interattivo + albero).
 - **`/vault/{campaign:folder_name}/{note}`**: Visualizzazione della nota o cartella all'interno della campagna.
-- **`/vault/{campaign:folder_name}/search`**: Ricerca note circoscritta alla campagna.
+- **`/vault/{campaign:folder_name}/search`**: Ricerca note estesa a **tutte le campagne accessibili** all'utente (vedi sezione dedicata sotto), non solo a quella indicata nell'URL.
 - **`/vault/{campaign:folder_name}/changelog`**: Changelog e cronologia versioni della campagna.
 - **`/api/vault/{campaign:folder_name}/{note}`**: Download del Markdown raw per la campagna.
 
@@ -202,6 +202,12 @@ Il Vault gestisce un sistema granulare di visibilità parametrizzato sui **Grupp
   - Analizza tutti i file `.md` visibili all'utente nella cartella della campagna e ne estrae le connessioni.
   - Legge la configurazione estetica da `Vault/{folder_name}/.obsidian/graph-config.json` o `graph.json`.
 
+### Ricerca, API Raw e Embed Immagini Scoped
+- **Ricerca Multi-Campagna (`VaultController@search`)**: la ricerca non è più circoscritta alla campagna presente nell'URL. L'elenco delle campagne su cui cercare parte da `User::accessibleCampaigns()` (già ordinate per `order` crescente); se l'utente ha impostato una `default_campaign_id` accessibile, questa viene spostata in prima posizione. Per ciascuna campagna viene eseguita `VaultHelper::searchNotes()` con lo stesso filtro di visibilità/DM/gruppi già in uso (estratto nell'helper privato `VaultController::searchInCampaign()`), e i risultati vengono raggruppati per campagna (`$resultsByCampaign`) mantenendo l'ordine di priorità.
+  - La vista `vault/search.blade.php` mostra un'intestazione per campagna solo quando i risultati provengono da più di una campagna.
+  - **Redirect automatico a risultato singolo**: se il totale dei risultati su tutte le campagne è 1, il redirect punta alla nota nella campagna a cui realmente appartiene, anche se diversa da quella dell'URL di partenza.
+  - Il segmento `{campaign}` nell'URL della rotta resta usato solo per determinare quale albero mostrare nella sidebar di contesto, non per filtrare i risultati.
+
 ### Politica di Accesso Ospiti (Guest) e Condivisione via Link Diretto
 Per evitare che un utente non autenticato possa consultare e navigare liberamente all'interno dell'enciclopedia e delle campagne:
 1. **Blocco dell'Esplorazione per Utenti Anonimi**:
@@ -217,6 +223,7 @@ Per evitare che un utente non autenticato possa consultare e navigare liberament
 
 ### Visualizzazione Note Markdown e Note PDF (`vault.show`)
 Nella schermata di visualizzazione della singola nota (`resources/views/vault/note.blade.php`):
+- **Badge Campagna nell'Header**: sopra il titolo compare sempre un piccolo badge con il `display_name` della campagna corrente (icona `bi-collection`), utile su mobile dove la sidebar è collassata di default e, soprattutto dopo una ricerca multi-campagna, altrimenti non sarebbe subito chiaro in quale campagna ci si trova.
 - **Note Markdown (.md)**:
   - Renderizzate tramite il preprocessore Markdown con supporto a wikilink, embed, callout e blocchi di accesso condizionale.
   - Gli utenti con ruolo Master dispongono del pulsante **"Scarica MD"**.

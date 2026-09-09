@@ -28,7 +28,7 @@
 - [X] aggiungere filtro per player specifici oltre che a quello per i master
 - [X] aggiungere visualizzazione PDF
 - [ ] capire un modo per inserire il filtro master/gruppi di accesso per i pdf
-- [ ] sistemare il sistema di ricerca per mostrare i risultati da tutte le campagna a cui si ha accesso e ben divisi tra esse (prima tutti quelli di una campagna, poi tutti quelli dell'altra, usando ordine di priorità dalla tabella campagne e dando priorità alla campagna di default dell'utente corrente)
+- [X] sistemare il sistema di ricerca per mostrare i risultati da tutte le campagna a cui si ha accesso e ben divisi tra esse (prima tutti quelli di una campagna, poi tutti quelli dell'altra, usando ordine di priorità dalla tabella campagne e dando priorità alla campagna di default dell'utente corrente)
 # inabion
 ## dadi
 - [X] manca la possibilità di ritirare i singoli dadi
