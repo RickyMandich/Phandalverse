@@ -51,14 +51,22 @@ class MarkdownPreprocessor
             return self::$fileIndices[$folder];
         }
 
-        // I wikilink si riferiscono sempre a note markdown: l'indice comprende solo i file .md,
-        // i PDF restano navigabili solo da albero/sidebar/ricerca (VaultController + VaultHelper).
+        // I wikilink [[Nome]] risolvono sempre e solo verso note markdown: l'indice non aggiunge mai
+        // per i pdf la chiave "nuda" (nome senza estensione) usata da convertWikilinks()/embed.
+        // I pdf vengono comunque indicizzati con chiave .pdf esplicita: serve a VaultController::show()/
+        // rawShow() per risolvere l'URL (spesso tutto minuscolo) al nome reale su disco, che puo' avere
+        // maiuscole diverse — il filesystem e' case-sensitive, quindi senza questo l'apertura di un pdf
+        // con maiuscole nel nome fallisce con 404 anche se il file esiste.
         foreach ($files as $file) {
             $ext = strtolower($file->getExtension());
-            if ($ext === 'md') {
-                $isMaster = Auth::check() && Auth::user()->isMaster();
-                $shouldSkip = false;
+            if ($ext !== 'md' && $ext !== 'pdf') {
+                continue;
+            }
 
+            $isMaster = Auth::check() && Auth::user()->isMaster();
+            $shouldSkip = false;
+
+            if ($ext === 'md') {
                 // If user is not master, skip files that are DM-only so they are not discoverable
                 if (!$isMaster) {
                     try {
@@ -70,15 +78,28 @@ class MarkdownPreprocessor
                         $shouldSkip = true;
                     }
                 }
-
-                if ($shouldSkip) {
-                    continue;
+            } elseif ($ext === 'pdf') {
+                if (!$isMaster) {
+                    $isDmPdf = (bool) preg_match('/(?:^|[\/_\-\s\[\(])dm(?:$|[\/_\-\s\]\.]|\.pdf)/i', $file->getFilename());
+                    if ($isDmPdf) {
+                        $shouldSkip = true;
+                    }
                 }
+            }
 
-                $name = strtolower($file->getFilenameWithoutExtension());
-                $relativePath = str_replace('\\', '/', $file->getRelativePath());
-                $fullPath = $relativePath ? $relativePath . '/' . $file->getFilenameWithoutExtension() : $file->getFilenameWithoutExtension();
+            if ($shouldSkip) {
+                continue;
+            }
 
+            $name = strtolower($file->getFilenameWithoutExtension());
+            $relativePath = str_replace('\\', '/', $file->getRelativePath());
+            $fullPath = $relativePath ? $relativePath . '/' . $file->getFilenameWithoutExtension() : $file->getFilenameWithoutExtension();
+
+            if ($ext === 'pdf') {
+                // Solo chiavi con estensione esplicita: mai un alias "nudo" (vedi nota sopra).
+                self::$fileIndices[$folder][$name . '.pdf'] = $fullPath . '.pdf';
+                self::$fileIndices[$folder][strtolower($fullPath) . '.pdf'] = $fullPath . '.pdf';
+            } else {
                 // Index by name (lowercase)
                 if (!isset(self::$fileIndices[$folder][$name])) {
                     self::$fileIndices[$folder][$name] = $fullPath;
@@ -102,6 +123,10 @@ class MarkdownPreprocessor
             $cleanName = substr($cleanName, 0, -3);
         } elseif (str_ends_with($cleanName, '.pdf')) {
             $cleanName = substr($cleanName, 0, -4);
+        }
+
+        if (isset($index[$cleanName . '.pdf'])) {
+            return $index[$cleanName . '.pdf'];
         }
 
         if (isset($index[$cleanName])) {
