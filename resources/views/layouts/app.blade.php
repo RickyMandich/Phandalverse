@@ -71,7 +71,7 @@
                         </ul>
 
                         <!-- Search Form -->
-                        <form class="d-flex mx-auto col-12 col-lg-6 my-2 my-lg-0" action="{{ route('vault.search', ['campaign' => $navCampaignFolder]) }}"
+                        <form class="d-flex mx-auto col-12 col-lg-6 my-2 my-lg-0" action="{{ route('vault.search') }}"
                             method="GET">
                             <div class="input-group">
                                 <input class="form-control bg-dark text-white border-secondary" type="search" name="q"

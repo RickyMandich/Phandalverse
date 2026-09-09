@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AccessGroup;
 use App\Models\Campaign;
 use App\Models\User;
+use App\Helpers\VaultHelper;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 
@@ -108,6 +109,51 @@ class AccessControlService
         $requiredGroups = self::requiredGroupsFromNoteTag($content);
         if (empty($requiredGroups)) {
             // Nessun tag di gruppo: la nota è pubblica
+            return true;
+        }
+
+        if (!$user) {
+            return false;
+        }
+
+        return $user->hasAccessToAnyGroup($requiredGroups);
+    }
+
+    /**
+     * Punto unico di verità per i PDF: usa .normalize/pdf-map.json (generato da normalize.sh)
+     * al posto del contenuto della nota, riusando la stessa sintassi di tag (#dm / #access-gruppo1_gruppo2)
+     * e la stessa logica di noteIsVisibleTo(). Un pdf assente dalla mappa è considerato pubblico.
+     *
+     * @param string $normalizedPdfPath Percorso normalizzato relativo alla root del vault, con estensione .pdf
+     * @param User|null $user Se null, usa Auth::user() corrente.
+     * @param Campaign|string|null $campaign Se specificata, controlla anche l'accesso alla campagna per utenti loggati.
+     */
+    public static function pdfIsVisibleTo(string $normalizedPdfPath, ?User $user = null, Campaign|string|null $campaign = null): bool
+    {
+        $user = $user ?? Auth::user();
+
+        // Master vede sempre tutto, bypass immediato
+        if ($user && $user->isMaster()) {
+            return true;
+        }
+
+        // Controllo accesso alla campagna per utenti loggati
+        if ($campaign !== null && $user !== null) {
+            if (!$user->hasAccessToCampaign($campaign)) {
+                return false;
+            }
+        }
+
+        $tag = VaultHelper::getPdfAccessTag($normalizedPdfPath, $campaign);
+
+        // #dm resta gestito come "gruppo implicito master": nessun altro può vederlo
+        if (self::isDmOnly($tag)) {
+            return false;
+        }
+
+        $requiredGroups = self::requiredGroupsFromNoteTag($tag);
+        if (empty($requiredGroups)) {
+            // Nessun tag di gruppo (o entry assente dalla mappa): il pdf è pubblico
             return true;
         }
 

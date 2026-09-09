@@ -21,8 +21,10 @@ Route::get('/', function () {
 // ========== VAULT ENTRYPOINT & MULTI-CAMPAIGN ROUTES ==========
 Route::get('/vault', [VaultController::class, 'index'])->name('vault.index');
 
+// Ricerca svincolata da una singola campagna: copre tutte quelle accessibili all'utente
+Route::get('/vault/search', [VaultController::class, 'search'])->name('vault.search');
+
 Route::prefix('vault/{campaign:folder_name}')->group(function () {
-    Route::get('/search', [VaultController::class, 'search'])->name('vault.search');
     Route::get('/changelog', [ChangelogController::class, 'index'])->name('vault.changelog.index');
     Route::get('/changelog/{version}', [ChangelogController::class, 'show'])->name('vault.changelog.show');
     Route::get('/{note?}', [VaultController::class, 'show'])

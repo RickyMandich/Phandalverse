@@ -138,7 +138,7 @@ Le rotte del Vault sono strutturate come segue:
   3. Per i visitatori anonimi, reindirizza alla prima campagna pubblica per `order`.
 - **`/vault/{campaign:folder_name}`**: Homepage del Vault per la campagna (grafo interattivo + albero).
 - **`/vault/{campaign:folder_name}/{note}`**: Visualizzazione della nota o cartella all'interno della campagna.
-- **`/vault/{campaign:folder_name}/search`**: Ricerca note estesa a **tutte le campagne accessibili** all'utente (vedi sezione dedicata sotto), non solo a quella indicata nell'URL.
+- **`/vault/search?q=...`**: Ricerca note estesa a **tutte le campagne accessibili** all'utente (vedi sezione dedicata sotto). Non più vincolata a una campagna nell'URL.
 - **`/vault/{campaign:folder_name}/changelog`**: Changelog e cronologia versioni della campagna.
 - **`/api/vault/{campaign:folder_name}/{note}`**: Download del Markdown raw per la campagna.
 
@@ -191,6 +191,10 @@ Il Vault gestisce un sistema granulare di visibilità parametrizzato sui **Grupp
   - **Per chi non ha accesso**: il blocco viene interamente rimosso prima del rendering HTML.
 - **Ereditarietà Gerarchica dei Gruppi**:
   - Chi appartiene a un gruppo *figlio* (es. `bibliotecari`) eredita l'accesso ai contenuti del gruppo *padre* (es. `artefici`). Il padre non vede i contenuti del figlio.
+- **Gruppi di Accesso sui PDF (`.normalize/pdf-map.json`)**:
+  - I PDF non hanno un corpo testuale in cui scrivere tag, quindi il livello di accesso (pubblico, `#dm`, oppure `#access-gruppo1_gruppo2`) è memorizzato in un file sidecar per campagna, `Vault/{folder_name}/.normalize/pdf-map.json`, generato dallo script `bash/normalize.sh` di ciascuna campagna (vedi `bash/normalizeREADME.md` per il dettaglio del prompt interattivo). La chiave è il percorso normalizzato del pdf (con estensione), il valore è la stessa sintassi di tag usata nel corpo delle note.
+  - Lato Laravel, `VaultHelper::getPdfAccessTag()` legge la entry e `AccessControlService::pdfIsVisibleTo()` applica **esattamente la stessa logica** di `noteIsVisibleTo()` (bypass Master, `#dm` riservato, gruppi in logica OR con gerarchia, badge colorati) riusando `isDmOnly()`/`requiredGroupsFromNoteTag()`/`computeBadgeGroups()` senza duplicazione di codice.
+  - Un pdf assente da `pdf-map.json` (file nuovo non ancora processato da `normalize.sh`) è considerato **pubblico** per non bloccare l'accesso per errore.
 
 ### Pannello ad Albero, Selettore Campagne e Grafo Interattivo
 - **Selettore Campagne nella Sidebar**: In cima alla barra laterale del Vault è presente un dropdown dinamico che mostra tutte le campagne accessibili all'utente autenticato (`@auth`). La selezione reindirizza immediatamente a `/vault/{selected_campaign}`.
@@ -203,10 +207,10 @@ Il Vault gestisce un sistema granulare di visibilità parametrizzato sui **Grupp
   - Legge la configurazione estetica da `Vault/{folder_name}/.obsidian/graph-config.json` o `graph.json`.
 
 ### Ricerca, API Raw e Embed Immagini Scoped
-- **Ricerca Multi-Campagna (`VaultController@search`)**: la ricerca non è più circoscritta alla campagna presente nell'URL. L'elenco delle campagne su cui cercare parte da `User::accessibleCampaigns()` (già ordinate per `order` crescente); se l'utente ha impostato una `default_campaign_id` accessibile, questa viene spostata in prima posizione. Per ciascuna campagna viene eseguita `VaultHelper::searchNotes()` con lo stesso filtro di visibilità/DM/gruppi già in uso (estratto nell'helper privato `VaultController::searchInCampaign()`), e i risultati vengono raggruppati per campagna (`$resultsByCampaign`) mantenendo l'ordine di priorità.
+- **Ricerca Multi-Campagna (`VaultController@search`)**: la rotta è `GET /vault/search?q=...`, senza segmento `{campaign}` nell'URL. L'elenco delle campagne su cui cercare parte da `User::accessibleCampaigns()` (già ordinate per `order` crescente); se l'utente ha impostato una `default_campaign_id` accessibile, questa viene spostata in prima posizione. Per ciascuna campagna viene eseguita `VaultHelper::searchNotes()` con lo stesso filtro di visibilità/DM/gruppi già in uso (estratto nell'helper privato `VaultController::searchInCampaign()`), e i risultati vengono raggruppati per campagna (`$resultsByCampaign`) mantenendo l'ordine di priorità.
   - La vista `vault/search.blade.php` mostra un'intestazione per campagna solo quando i risultati provengono da più di una campagna.
-  - **Redirect automatico a risultato singolo**: se il totale dei risultati su tutte le campagne è 1, il redirect punta alla nota nella campagna a cui realmente appartiene, anche se diversa da quella dell'URL di partenza.
-  - Il segmento `{campaign}` nell'URL della rotta resta usato solo per determinare quale albero mostrare nella sidebar di contesto, non per filtrare i risultati.
+  - **Redirect automatico a risultato singolo**: se il totale dei risultati su tutte le campagne è 1, il redirect punta alla nota nella campagna a cui realmente appartiene.
+  - **Campagna di contesto per la sidebar**: non essendoci più un `{campaign}` nell'URL, l'albero mostrato nella sidebar durante la ricerca usa la campagna salvata in sessione (`current_campaign`, impostata dall'ultima nota visitata) e, in mancanza, `User::resolveInitialCampaign()`. Questa campagna di contesto non filtra in alcun modo i risultati.
 
 ### Politica di Accesso Ospiti (Guest) e Condivisione via Link Diretto
 Per evitare che un utente non autenticato possa consultare e navigare liberamente all'interno dell'enciclopedia e delle campagne:

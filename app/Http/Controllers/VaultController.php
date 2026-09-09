@@ -374,12 +374,17 @@ class VaultController extends Controller
                     $currentUser = Auth::user();
 
                     if ($isPdf) {
-                        $isDm = (bool) preg_match('/(?:^|[\/_\-\s\[\(])dm(?:$|[\/_\-\s\]\.]|\.pdf)/i', $realFileName);
-                        if ($isDm && (!$currentUser || !$currentUser->isMaster())) {
+                        $pdfTag = VaultHelper::getPdfAccessTag($relPathNoExt . '.pdf', $campaign);
+                        $isDm = AccessControlService::isDmOnly($pdfTag);
+
+                        if (!AccessControlService::pdfIsVisibleTo($relPathNoExt . '.pdf', $currentUser, $campaign)) {
                             continue;
                         }
-                        if (!AccessControlService::userHasCampaignAccess($currentUser, $campaign)) {
-                            continue;
+
+                        $pdfRequiredGroups = AccessControlService::requiredGroupsFromNoteTag($pdfTag);
+                        if (!empty($pdfRequiredGroups)) {
+                            $campaignId = ($campaign instanceof Campaign) ? $campaign->id : null;
+                            $accessBadges = AccessControlService::computeBadgeGroups($currentUser, $pdfRequiredGroups, $campaignId);
                         }
                     } else {
                         $content = '';
@@ -429,13 +434,19 @@ class VaultController extends Controller
             if ($ext === 'pdf') {
                 $cleanRName = pathinfo($rName, PATHINFO_FILENAME);
                 $relPathNoExt = $currentPath ? $currentPath . '/' . strtolower($cleanRName) : strtolower($cleanRName);
-                $isDm = (bool) preg_match('/(?:^|[\/_\-\s\[\(])dm(?:$|[\/_\-\s\]\.]|\.pdf)/i', $rName);
                 $currentUser = Auth::user();
-                if ($isDm && (!$currentUser || !$currentUser->isMaster())) {
+                $pdfTag = VaultHelper::getPdfAccessTag($relPathNoExt . '.pdf', $campaign);
+                $isDm = AccessControlService::isDmOnly($pdfTag);
+
+                if (!AccessControlService::pdfIsVisibleTo($relPathNoExt . '.pdf', $currentUser, $campaign)) {
                     continue;
                 }
-                if (!AccessControlService::userHasCampaignAccess($currentUser, $campaign)) {
-                    continue;
+
+                $unmappedAccessBadges = [];
+                $pdfRequiredGroups = AccessControlService::requiredGroupsFromNoteTag($pdfTag);
+                if (!empty($pdfRequiredGroups)) {
+                    $campaignId = ($campaign instanceof Campaign) ? $campaign->id : null;
+                    $unmappedAccessBadges = AccessControlService::computeBadgeGroups($currentUser, $pdfRequiredGroups, $campaignId);
                 }
 
                 $branch['_files'][] = [
@@ -443,7 +454,7 @@ class VaultController extends Controller
                     'path' => $relPathNoExt,
                     'url' => self::pathToCamelCase($relPathNoExt . '.pdf'),
                     'dm' => $isDm,
-                    'access_badges' => [],
+                    'access_badges' => $unmappedAccessBadges,
                     'type' => 'pdf',
                     'is_pdf' => true,
                 ];
@@ -625,22 +636,36 @@ class VaultController extends Controller
         return Auth::check() ? Auth::user()->accessibleCampaigns() : Campaign::orderBy('order')->get();
     }
 
-    public function search(Request $request, Campaign $campaign)
+    public function search(Request $request)
     {
         if (!Auth::check()) {
             return redirect()->route('login');
         }
 
-        $this->checkCampaignAccess($request, $campaign);
+        $user = Auth::user();
+
+        // Campagna di contesto per l'albero della sidebar (non filtra i risultati):
+        // priorità alla campagna vista di recente in sessione, poi a resolveInitialCampaign()
+        $contextCampaign = null;
+        $sessionFolder = session('current_campaign');
+        if ($sessionFolder) {
+            $contextCampaign = $user->accessibleCampaigns()->firstWhere('folder_name', $sessionFolder);
+        }
+        if (!$contextCampaign) {
+            $contextCampaign = $user->resolveInitialCampaign();
+        }
+
+        if (!$contextCampaign) {
+            abort(404, 'Nessuna campagna configurata nel sistema.');
+        }
 
         $query = $request->query('q');
         $note = "search=>{$query}";
-        $tree = $this->buildFileTree(null, note: $note, campaign: $campaign);
+        $tree = $this->buildFileTree(null, note: $note, campaign: $contextCampaign);
         $resultsByCampaign = [];
         $totalResults = 0;
 
         if ($query) {
-            $user = Auth::user();
             $orderedCampaigns = $user->accessibleCampaigns();
 
             // Se l'utente ha una default_campaign_id accessibile, spostarla in prima posizione
@@ -669,7 +694,7 @@ class VaultController extends Controller
                 }
             }
 
-            // Redirect automatico a risultato singolo, nella campagna corretta (non necessariamente quella dell'URL)
+            // Redirect automatico a risultato singolo, nella campagna corretta (non necessariamente quella di contesto)
             if ($totalResults === 1) {
                 $only = $resultsByCampaign[0];
                 return redirect()->route('vault.show', [
@@ -679,7 +704,7 @@ class VaultController extends Controller
             }
         }
 
-        $graphConfig = $this->loadGraphConfig($campaign);
+        $graphConfig = $this->loadGraphConfig($contextCampaign);
 
         return view('vault.search', [
             'query' => $query,
@@ -688,7 +713,7 @@ class VaultController extends Controller
             'tree' => $tree,
             'note' => $note,
             'graphConfig' => $graphConfig,
-            'campaign' => $campaign,
+            'campaign' => $contextCampaign,
             'accessibleCampaigns' => $this->getAccessibleCampaigns(),
         ]);
     }
@@ -713,11 +738,7 @@ class VaultController extends Controller
             }
             if (File::exists($path)) {
                 if ($isPdf) {
-                    $isDm = (bool) preg_match('/(?:^|[\/_\-\s\[\(])dm(?:$|[\/_\-\s\]\.]|\.pdf)/i', basename($path));
-                    if ($isDm && (!Auth::check() || !Auth::user()->isMaster())) {
-                        return false;
-                    }
-                    return true;
+                    return AccessControlService::pdfIsVisibleTo($cleanPath . '.pdf', null, $campaign);
                 }
                 return AccessControlService::noteIsVisibleTo(File::get($path), null, $campaign);
             }
@@ -761,6 +782,9 @@ class VaultController extends Controller
             $ext = strtolower(pathinfo($candidate, PATHINFO_EXTENSION));
             if (File::exists($candidate) && is_file($candidate) && $ext !== 'md') {
                 if ($ext === 'pdf') {
+                    if (!AccessControlService::pdfIsVisibleTo(str_replace('\\', '/', $decoded), Auth::user(), $campaign)) {
+                        abort(403, 'Accesso negato');
+                    }
                     if ($request->has('download') || $request->query('download')) {
                         $downloadName = VaultHelper::getOriginalName(basename($candidate), $note, $campaign);
                         if (!str_ends_with(strtolower($downloadName), '.pdf')) {
@@ -875,14 +899,19 @@ class VaultController extends Controller
         $currentUser = Auth::user();
 
         if ($isPdf) {
-            $isDm = (bool) preg_match('/(?:^|[\/_\-\s\[\(])dm(?:$|[\/_\-\s\]\.]|\.pdf)/i', basename($pdfSystemPath));
-            if ($isDm && (!$currentUser || !$currentUser->isMaster())) {
-                CustomLogger::note($note, "Accesso negato: PDF DM per non-master");
+            $pdfRelPath = self::pathToCamelCase($cleanFilePath . '.pdf');
+            $pdfTag = VaultHelper::getPdfAccessTag($pdfRelPath, $campaign);
+            $isDm = AccessControlService::isDmOnly($pdfTag);
+
+            if (!AccessControlService::pdfIsVisibleTo($pdfRelPath, $currentUser, $campaign)) {
+                CustomLogger::note($note, "Accesso negato: PDF riservato (dm o gruppo) per utente non autorizzato");
                 abort(404, 'Nota non trovata');
             }
-            if (!AccessControlService::userHasCampaignAccess($currentUser, $campaign)) {
-                CustomLogger::note($note, "Accesso negato: utente non abilitato alla campagna");
-                abort(404, 'Nota non trovata');
+
+            $accessBadges = [];
+            $pdfRequiredGroups = AccessControlService::requiredGroupsFromNoteTag($pdfTag);
+            if (!empty($pdfRequiredGroups)) {
+                $accessBadges = AccessControlService::computeBadgeGroups($currentUser, $pdfRequiredGroups, $campaign->id);
             }
 
             $title = VaultHelper::getOriginalName($cleanFilePath . '.pdf', $note, $campaign);
@@ -899,7 +928,7 @@ class VaultController extends Controller
                 'path' => $pathSegments,
                 'graphConfig' => $graphConfig,
                 'masterFile' => $isDm,
-                'accessBadges' => [],
+                'accessBadges' => $accessBadges,
                 'availableAccessLevels' => [],
                 'note' => $note,
                 'campaign' => $campaign,
@@ -1014,9 +1043,8 @@ class VaultController extends Controller
             $ext = strtolower(pathinfo($candidate, PATHINFO_EXTENSION));
             if (File::exists($candidate) && is_file($candidate) && $ext !== 'md') {
                 if ($ext === 'pdf') {
-                    $isDm = (bool) preg_match('/(?:^|[\/_\-\s\[\(])dm(?:$|[\/_\-\s\]\.]|\.pdf)/i', basename($candidate));
                     $currentUser = Auth::user();
-                    if ($isDm && (!$currentUser || !$currentUser->isMaster())) {
+                    if (!AccessControlService::pdfIsVisibleTo(str_replace('\\', '/', $decoded), $currentUser, $campaign)) {
                         abort(403, 'Accesso negato');
                     }
                 }
@@ -1051,9 +1079,8 @@ class VaultController extends Controller
             $tryPdf = base_path("Vault/{$cleanFilePath}.pdf");
         }
         if (File::exists($tryPdf) && is_file($tryPdf)) {
-            $isDm = (bool) preg_match('/(?:^|[\/_\-\s\[\(])dm(?:$|[\/_\-\s\]\.]|\.pdf)/i', basename($tryPdf));
             $currentUser = Auth::user();
-            if ($isDm && (!$currentUser || !$currentUser->isMaster())) {
+            if (!AccessControlService::pdfIsVisibleTo(self::pathToCamelCase($cleanFilePath . '.pdf'), $currentUser, $campaign)) {
                 abort(403, 'Accesso negato');
             }
             if ($request->has('download') || $request->query('download')) {

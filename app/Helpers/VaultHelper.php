@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\File;
 class VaultHelper
 {
     protected static array $maps = [];
+    protected static array $pdfMaps = [];
 
     /**
      * Risolve il nome della cartella della campagna (stringa).
@@ -246,6 +247,51 @@ class VaultHelper
     public static function getMap($note, Campaign|string|null $campaign = null): array
     {
         return self::loadMap($campaign, $note);
+    }
+
+    /**
+     * Carica (e cachea per-request) `.normalize/pdf-map.json` per la campagna,
+     * generato da normalize.sh: mappa percorso-normalizzato-pdf => tag di accesso
+     * (stessa sintassi usata nel corpo delle note: '', '#dm', '#access-gruppo1_gruppo2').
+     * Fallback su Vault/.normalize/pdf-map.json per retrocompatibilità.
+     */
+    protected static function loadPdfMap(Campaign|string|null $campaign): array
+    {
+        $folder = self::resolveCampaignFolder($campaign);
+
+        if (isset(self::$pdfMaps[$folder])) {
+            return self::$pdfMaps[$folder];
+        }
+
+        $pdfMapPath = base_path('Vault/' . $folder . '/.normalize/pdf-map.json');
+
+        if (!File::exists($pdfMapPath)) {
+            $legacyPath = base_path('Vault/.normalize/pdf-map.json');
+            if (File::exists($legacyPath)) {
+                $pdfMapPath = $legacyPath;
+            }
+        }
+
+        if (File::exists($pdfMapPath)) {
+            $data = json_decode(File::get($pdfMapPath), true);
+            self::$pdfMaps[$folder] = is_array($data) ? $data : [];
+        } else {
+            self::$pdfMaps[$folder] = [];
+        }
+
+        return self::$pdfMaps[$folder];
+    }
+
+    /**
+     * Ritorna il tag di accesso grezzo ('', '#dm', '#access-...') per un pdf,
+     * così com'è scritto in pdf-map.json. Stringa vuota se assente dalla mappa (= pubblico).
+     */
+    public static function getPdfAccessTag(string $normalizedPdfPath, Campaign|string|null $campaign = null): string
+    {
+        $map = self::loadPdfMap($campaign);
+        $normalizedPdfPath = str_replace('\\', '/', $normalizedPdfPath);
+
+        return $map[$normalizedPdfPath] ?? '';
     }
 
     protected static function prettify($slug)
