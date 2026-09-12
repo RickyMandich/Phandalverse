@@ -56,25 +56,27 @@ phandalverse/
 │   │   └── VaultHelper.php          # Risoluzione map.json per campagna, nomi originali, ricerca note
 │   ├── Http/
 │   │   ├── Controllers/
-│   │   │   ├── AdminController.php  # Gestione campagne, utenti, gruppi, errori, SQL console, stats
+│   │   │   ├── AdminController.php  # Gestione campagne, utenti, gruppi, errori, SQL console, stats, iscrizioni telegram
 │   │   │   ├── DmController.php     # Logica DM Screen, sessioni combat, player view
 │   │   │   ├── VaultController.php  # Rendering note, albero, grafo interattivo, API raw per campagna
 │   │   │   ├── TelegramBotController.php # Webhook telegram, comandi, notifiche multi-campagna
+│   │   │   ├── TelegramLinkController.php # Conferma web dei token /link (account personale o gruppo↔campagna)
 │   │   │   ├── JobController.php    # Processore asincrono della coda email
 │   │   │   ├── ReportController.php # Segnalazioni utenti
 │   │   │   └── ChangelogController.php # Visualizzazione versioni del vault per campagna
 │   │   └── Middleware/
 │   ├── Jobs/                        # Job per invio mail in coda
 │   ├── Models/
-│   │   ├── Campaign.php             # Modello Campagna (folder_name, display_name, order)
-│   │   ├── User.php                 # Modello Utente (Admin, Master, default_campaign_id, accessibleCampaigns)
+│   │   ├── Campaign.php             # Modello Campagna (folder_name, display_name, order, telegram_chat_id/telegram_thread_id)
+│   │   ├── User.php                 # Modello Utente (Admin, Master, default_campaign_id, telegram_user_id/telegram_username, accessibleCampaigns)
 │   │   ├── AccessGroup.php          # Gruppi di accesso gerarchici al Vault legati a campaign_id
 │   │   ├── DmSession.php            # Sessione di combattimento (dati JSON + share_code)
 │   │   ├── DmCharacter.php          # Template e PG/PNG salvati
 │   │   ├── SystemError.php          # Log errori di sistema per admin
 │   │   ├── SystemSetting.php        # Impostazioni di sistema (es. default vault view)
 │   │   ├── Statistic.php            # Statistiche visite e tempo di risposta
-│   │   └── TelegramSubscriber.php   # Iscritti alle notifiche telegram per campaign_id
+│   │   ├── TelegramSubscriber.php   # Iscritti alle notifiche telegram per campaign_id (+ telegram_user_id di audit)
+│   │   └── TelegramLinkToken.php    # Token temporanei (1h) per il collegamento account/gruppo Telegram
 │   └── Services/
 │       ├── AccessControlService.php # Controllo accessi unificato note/blocchi e gerarchia gruppi
 │       ├── MarkdownPreprocessor.php # Engine di parsing Markdown (Wikilink, Embed, AccessBlock, Statblock)
@@ -91,9 +93,10 @@ phandalverse/
 │   ├── js/                          # Javascript per DM Screen, Graph View, ecc.
 │   ├── sass/ & css/                 # Stili CSS personalizzati e Bootstrap
 │   └── views/
-│       ├── admin/                   # Dashboard amministrativa (campagne, utenti, gruppi, errori, db, stats)
+│       ├── admin/                   # Dashboard amministrativa (campagne, utenti, gruppi, errori, db, stats, iscrizioni telegram)
 │       ├── dm/                      # Schermate DM Screen, Manage e Player View
 │       ├── vault/                   # Note, albero side-bar, grafo, ricerca, changelog
+│       ├── telegram/                # Pagine web di conferma /link (account personale e gruppo↔campagna)
 │       └── layouts/                 # Master layout dell'applicazione
 ├── routes/
 │   └── web.php                      # Rotte web, scoping campagne, API pubbliche e webhook
@@ -302,14 +305,30 @@ Sugli hosting condivisi (come Altervista), non è possibile eseguire il comando 
 
 ## 🤖 Integrazione Telegram Bot & Notifiche Multi-Campagna
 
-Il bot Telegram di Phandalverse ([`TelegramBotController`](file:///c:/Users/RickyMandich/PROJECT/Phandalverse/phandalverse/app/Http/Controllers/TelegramBotController.php) e [`TelegramService`](file:///c:/Users/RickyMandich/PROJECT/Phandalverse/phandalverse/app/Services/TelegramService.php)) permette di interagire con il Vault e ricevere notifiche di sistema isolate per campagna.
+Il bot Telegram di Phandalverse ([`TelegramBotController`](file:///c:/Users/RickyMandich/PROJECT/Phandalverse/phandalverse/app/Http/Controllers/TelegramBotController.php), [`TelegramLinkController`](file:///c:/Users/RickyMandich/PROJECT/Phandalverse/phandalverse/app/Http/Controllers/TelegramLinkController.php) e [`TelegramService`](file:///c:/Users/RickyMandich/PROJECT/Phandalverse/phandalverse/app/Services/TelegramService.php)) permette di interagire con il Vault e ricevere notifiche di sistema isolate per campagna.
+
+### Collegamento Account (chat privata) e Gruppo (chat di gruppo)
+Prima di potersi iscrivere alle notifiche, un account Telegram deve essere **autenticato**, cioè collegato a un utente del sito (chat privata) o a una campagna (gruppo):
+
+- **`/link` in chat privata**: genera un token temporaneo (1 ora, tabella `telegram_link_tokens`, `type = personal`) e invia un bottone che apre `/telegram/link/{token}`. Effettuando il login sul sito, l'account Telegram viene collegato all'utente autenticato, valorizzando `users.telegram_user_id` e `users.telegram_username`.
+- **`/link` in un gruppo**: genera un token (`type = group`) e invia un bottone che apre la stessa rotta. Solo un **Master** (`isMaster()`) può completare l'operazione: sul sito sceglie da un menu a quale campagna collegare il gruppo. Il collegamento è **1 gruppo ↔ 1 campagna**, memorizzato direttamente su `campaigns.telegram_chat_id`/`campaigns.telegram_thread_id` (nessuna tabella ponte).
+- **`/unlink`**: in chat privata scollega l'account (azzera `telegram_user_id`/`telegram_username`); in un gruppo (richiede un Master collegato) scollega il gruppo dalla campagna e cancella la relativa iscrizione.
+- I token sono a **soft-delete** (colonna `active`, mai cancellati dal DB) per finalità di debug/audit.
 
 ### Comandi Telegram Supportati:
-- `/start`: Messaggio di benvenuto e lista comandi.
-- `/subscribe`: Se sono presenti più campagne, mostra una tastiera inline per scegliere a quale/i campagna/e iscrivere la chat o il topic.
-- `/unsubscribe`: Permette di disattivare le notifiche per una specifica campagna o per tutte.
-- `/search <query>`: Cerca note tra tutte le campagne e restituisce pulsanti inline per la lettura sul sito o in-app.
-- `/view <slug>`: Renderizza il testo di una nota direttamente dentro la chat Telegram.
+- `/start`: Messaggio di benvenuto e lista comandi (diversa per chat privata e gruppo).
+- `/link`: Avvia il collegamento account (privato) o gruppo↔campagna (gruppo).
+- `/unlink`: Rimuove il collegamento account (privato) o gruppo↔campagna (gruppo, solo Master).
+- `/subscribe`: In chat privata richiede l'account collegato e mostra le campagne accessibili all'utente (con bottone "Iscriviti a TUTTE" se più di una); in un gruppo agisce direttamente sull'unica campagna eventualmente collegata.
+- `/unsubscribe`: Permette di disattivare le notifiche per una specifica campagna o per tutte (in chat privata richiede l'account collegato).
+- `/search` e `/view`: **Temporaneamente disattivati** (codice commentato in `TelegramBotController::webhook()`, in attesa del refactor per il pieno supporto multi-campagna). Il bot risponde con un messaggio esplicativo se invocati.
+
+### Controllo di Accesso all'Invio delle Notifiche
+Ad ogni invio broadcast (`TelegramService::broadcastCampaign()`), prima di inviare il messaggio si verifica che l'iscritto abbia ancora accesso:
+- **Chat privata**: l'utente collegato (`telegram_user_id`) deve avere ancora accesso alla campagna (`User::hasAccessToCampaign()`).
+- **Gruppo**: il gruppo/topic deve essere ancora quello collegato alla campagna su `campaigns.telegram_chat_id`/`telegram_thread_id`.
+
+Se l'accesso non è più verificabile (account scollegato, utente rimosso dalla campagna, utente eliminato, gruppo scollegato), l'iscritto riceve un messaggio di avviso e la sua riga viene cancellata da `telegram_subscribers` invece del changelog.
 
 ### Notifiche Broadcast per Campagna (`notifyUpdate`):
 Quando viene rilasciata una nuova versione del Vault per una campagna, lo script di upload/webhook chiama:
@@ -324,7 +343,8 @@ Il bot invia la notifica del changelog esclusivamente agli iscritti della campag
 
 Accessibile solo agli utenti con flag `admin = 1`:
 
-- **Gestione Campagne (`/admin/campaigns`)**: Creazione, modifica di nome visualizzato, cartella Vault/branch, ordine di priorità e assegnazione utenti con accesso.
+- **Gestione Campagne (`/admin/campaigns`)**: Creazione, modifica di nome visualizzato, cartella Vault/branch, ordine di priorità, assegnazione utenti con accesso e visualizzazione/scollegamento del gruppo Telegram eventualmente collegato alla campagna.
+- **Iscrizioni Telegram (`/admin/telegram-subscribers`)**: Elenco di tutte le iscrizioni alle notifiche (chat private e gruppi), con indicazione dell'utente o della campagna collegata, filtro per campagna ed eliminazione delle singole iscrizioni.
 - **Gestione Gruppi di Accesso (`/admin/access-groups`)**: Creazione e modifica di gruppi gerarchici legati a una specifica campagna.
 - **Gestione Utenti (`/admin/users`)**: Assegnazione ruoli (Admin, Master, MasterUtils), campagne abilitate, campagna predefinita e gruppi di accesso.
 - **Gestione Errori (`/admin/errors`)**: Tracciamento eccezioni di runtime con stato (`new`, `in_progress`, `resolved`, `ignored`).

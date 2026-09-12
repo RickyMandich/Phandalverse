@@ -120,6 +120,9 @@
                                         <a class="dropdown-item" href="{{ route('admin.campaigns') }}">
                                             <i class="bi bi-compass"></i> Campagne
                                         </a>
+                                        <a class="dropdown-item" href="{{ route('admin.telegram.index') }}">
+                                            <i class="bi bi-telegram"></i> Iscrizioni Telegram
+                                        </a>
                                         <a class="dropdown-item" href="{{ route('admin.users') }}">
                                             <i class="bi bi-people"></i> Utenti
                                         </a>

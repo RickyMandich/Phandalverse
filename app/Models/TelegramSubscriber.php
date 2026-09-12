@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TelegramSubscriber extends Model
 {
-    protected $fillable = ['campaign_id', 'chat_id', 'thread_id', 'username'];
+    protected $fillable = ['campaign_id', 'chat_id', 'thread_id', 'username', 'telegram_user_id'];
 
     public function campaign(): BelongsTo
     {

@@ -15,6 +15,8 @@ class Campaign extends Model
         'folder_name',
         'display_name',
         'order',
+        'telegram_chat_id',
+        'telegram_thread_id',
     ];
 
     protected function casts(): array
@@ -46,6 +48,23 @@ class Campaign extends Model
     public function telegramSubscribers(): HasMany
     {
         return $this->hasMany(TelegramSubscriber::class);
+    }
+
+    /**
+     * Verifica se questa campagna ha un gruppo Telegram collegato.
+     */
+    public function isTelegramGroupLinked(): bool
+    {
+        return !empty($this->telegram_chat_id);
+    }
+
+    /**
+     * Trova la campagna collegata a un determinato gruppo/topic Telegram.
+     * Una chat di gruppo può essere collegata a una sola campagna alla volta.
+     */
+    public static function findByTelegramGroup(string $chatId, ?string $threadId): ?self
+    {
+        return static::where('telegram_chat_id', $chatId)->where('telegram_thread_id', $threadId)->first();
     }
 
     /**

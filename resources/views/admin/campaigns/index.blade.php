@@ -51,6 +51,7 @@
                         <th>Giocatori Assegnati</th>
                         <th>Gruppi di Accesso</th>
                         <th>Iscritti Telegram</th>
+                        <th>Gruppo Telegram</th>
                         <th>Azioni</th>
                     </tr>
                 </thead>
@@ -81,6 +82,23 @@
                                 <span class="badge bg-secondary">{{ $campaign->telegram_subscribers_count }} iscritti</span>
                             </td>
                             <td>
+                                @if($campaign->telegram_chat_id)
+                                    <span class="badge bg-success" title="{{ $campaign->telegram_chat_id }}">
+                                        <i class="bi bi-telegram"></i> Collegato
+                                    </span>
+                                    <form action="{{ route('admin.campaigns.telegram-group.delete', $campaign) }}" method="POST" class="d-inline"
+                                          onsubmit="return confirm('Scollegare il gruppo Telegram da {{ $campaign->display_name }}? Verrà eliminata anche la relativa iscrizione.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Scollega gruppo">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </form>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
+                            <td>
                                 <div class="btn-group btn-group-sm">
                                     <a href="{{ route('admin.campaigns.edit', $campaign) }}" class="btn btn-primary" title="Modifica">
                                         <i class="bi bi-pencil"></i> Modifica
@@ -98,7 +116,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-4">Nessuna campagna configurata.</td>
+                            <td colspan="9" class="text-center text-muted py-4">Nessuna campagna configurata.</td>
                         </tr>
                     @endforelse
                 </tbody>

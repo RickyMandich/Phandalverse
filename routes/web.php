@@ -52,6 +52,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/profile/request-master', [HomeController::class, 'requestMasterUtils'])->name('profile.request_master');
 });
 
+// ========== COLLEGAMENTO TELEGRAM (autenticato) ==========
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/telegram/link/{token}', [\App\Http\Controllers\TelegramLinkController::class, 'confirm'])->name('telegram.link.confirm');
+    Route::post('/telegram/link/{token}/group', [\App\Http\Controllers\TelegramLinkController::class, 'storeGroupLink'])->name('telegram.link.group.store');
+});
+
 // ========== SEGNALAZIONI (pubbliche) ==========
 Route::get('/report', [ReportController::class, 'create'])->name('report.create');
 Route::post('/report', [ReportController::class, 'store'])->name('report.store');
@@ -108,6 +114,11 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->group(functio
     Route::get('/campaigns/{campaign}/edit', [AdminController::class, 'editCampaign'])->name('admin.campaigns.edit');
     Route::patch('/campaigns/{campaign}', [AdminController::class, 'updateCampaign'])->name('admin.campaigns.update');
     Route::delete('/campaigns/{campaign}', [AdminController::class, 'deleteCampaign'])->name('admin.campaigns.delete');
+    Route::delete('/campaigns/{campaign}/telegram-group', [AdminController::class, 'unlinkTelegramGroup'])->name('admin.campaigns.telegram-group.delete');
+
+    // Iscrizioni Telegram
+    Route::get('/telegram-subscribers', [AdminController::class, 'telegramSubscribers'])->name('admin.telegram.index');
+    Route::delete('/telegram-subscribers/{subscriber}', [AdminController::class, 'deleteTelegramSubscriber'])->name('admin.telegram.delete');
 
     // Gestione utenti
     Route::get('/users', [AdminController::class, 'users'])->name('admin.users');

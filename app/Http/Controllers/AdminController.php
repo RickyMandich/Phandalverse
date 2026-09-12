@@ -254,6 +254,70 @@ class AdminController extends Controller
         return redirect()->route('admin.campaigns')->with('success', 'Campagna eliminata con successo');
     }
 
+    /**
+     * Scollega il gruppo Telegram associato a una campagna (e rimuove la relativa iscrizione).
+     */
+    public function unlinkTelegramGroup(Campaign $campaign)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        if ($campaign->telegram_chat_id) {
+            \App\Models\TelegramSubscriber::where('chat_id', $campaign->telegram_chat_id)
+                ->where('thread_id', $campaign->telegram_thread_id)
+                ->where('campaign_id', $campaign->id)
+                ->delete();
+
+            $campaign->update(['telegram_chat_id' => null, 'telegram_thread_id' => null]);
+        }
+
+        return redirect()->route('admin.campaigns')->with('success', 'Gruppo Telegram scollegato dalla campagna');
+    }
+
+    // ========== ISCRIZIONI TELEGRAM ==========
+
+    /**
+     * Display list of all Telegram subscriptions
+     */
+    public function telegramSubscribers(Request $request)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $query = \App\Models\TelegramSubscriber::with('campaign')->orderBy('created_at', 'desc');
+
+        if ($request->filled('campaign_id')) {
+            $query->where('campaign_id', $request->campaign_id);
+        }
+
+        $subscribers = $query->paginate(30)->withQueryString();
+
+        $telegramUserIds = $subscribers->getCollection()->pluck('telegram_user_id')->filter()->unique();
+        $linkedUsers = User::whereIn('telegram_user_id', $telegramUserIds)->get()->keyBy('telegram_user_id');
+
+        $campaigns = Campaign::orderBy('order')->get();
+        $totalSubscribers = \App\Models\TelegramSubscriber::count();
+        $linkedCount = \App\Models\TelegramSubscriber::whereNotNull('telegram_user_id')->count();
+
+        return view('admin.telegram.index', compact('subscribers', 'linkedUsers', 'campaigns', 'totalSubscribers', 'linkedCount'));
+    }
+
+    /**
+     * Delete a Telegram subscription
+     */
+    public function deleteTelegramSubscriber(\App\Models\TelegramSubscriber $subscriber)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $subscriber->delete();
+
+        return redirect()->route('admin.telegram.index')->with('success', 'Iscrizione eliminata con successo');
+    }
+
     // ========== GESTIONE UTENTI ==========
 
     /**

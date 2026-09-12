@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Campaign;
+use App\Models\User;
+use App\Models\TelegramLinkToken;
 use Illuminate\Http\Request;
 use App\Services\TelegramService;
 use App\Models\TelegramSubscriber;
@@ -36,8 +38,12 @@ class TelegramBotController extends Controller
 
             // Determiniamo il nome da visualizzare/salvare
             $chat = $message['chat'];
-            if ($chat['type'] === 'private') {
-                $displayName = $message['from']['username'] ?? ($message['from']['first_name'] ?? 'User');
+            $isGroup = ($chat['type'] !== 'private');
+            $telegramUserId = $message['from']['id'] ?? null;
+            $telegramUsername = $message['from']['username'] ?? ($message['from']['first_name'] ?? null);
+
+            if (!$isGroup) {
+                $displayName = $telegramUsername ?? 'User';
             } else {
                 $displayName = $chat['title'] ?? 'Gruppo';
                 if ($threadId) {
@@ -65,15 +71,23 @@ class TelegramBotController extends Controller
                         $slug = str_replace(['___', '__'], '/', $slug);
                         return $this->handleView($chatId, $slug, $threadId);
                     }
-                    $this->handleStart($chatId, $displayName, $threadId);
+                    $this->handleStart($chatId, $displayName, $threadId, $isGroup);
+                } elseif ($command === '/link') {
+                    $this->handleLink($chatId, $threadId, $telegramUserId, $telegramUsername, $isGroup);
+                } elseif ($command === '/unlink') {
+                    $this->handleUnlink($chatId, $threadId, $telegramUserId, $isGroup);
                 } elseif ($command === '/subscribe') {
-                    $this->handleSubscribe($chatId, $displayName, $threadId);
+                    $this->handleSubscribe($chatId, $telegramUsername ?? $displayName, $threadId, $telegramUserId, $isGroup);
                 } elseif ($command === '/unsubscribe') {
-                    $this->handleUnsubscribe($chatId, $threadId);
-                } elseif ($command === '/search') {
-                    $this->handleSearch($chatId, $params, $threadId);
-                } elseif ($command === '/view') {
-                    $this->handleView($chatId, $params, $threadId);
+                    $this->handleUnsubscribe($chatId, $threadId, $telegramUserId, $isGroup);
+                } elseif (in_array($command, ['/search', '/view'])) {
+                    // Temporaneamente disattivati in attesa del refactor multi-campagna
+                    // (vedi implementationPlan-V-telegramNotificheIscrizioniELink.md)
+                    // } elseif ($command === '/search') {
+                    //     $this->handleSearch($chatId, $params, $threadId);
+                    // } elseif ($command === '/view') {
+                    //     $this->handleView($chatId, $params, $threadId);
+                    TelegramService::sendToChat($chatId, "🔧 Questo comando è temporaneamente disattivato, verrà ripristinato con il supporto completo alle campagne multiple.", 'HTML', null, $threadId);
                 }
             }
 
@@ -94,6 +108,9 @@ class TelegramBotController extends Controller
         $chatId = $callbackQuery['message']['chat']['id'];
         $threadId = $callbackQuery['message']['message_thread_id'] ?? null;
         $data = $callbackQuery['data'];
+        $isGroup = str_starts_with((string) $chatId, '-');
+        $telegramUserId = $callbackQuery['from']['id'] ?? null;
+        $telegramUsername = $callbackQuery['from']['username'] ?? ($callbackQuery['from']['first_name'] ?? 'User');
 
         if (str_starts_with($data, 'view:')) {
             $payload = str_replace('view:', '', $data);
@@ -104,27 +121,31 @@ class TelegramBotController extends Controller
         } elseif (str_starts_with($data, 'sub:camp_')) {
             $campaignId = (int) str_replace('sub:camp_', '', $data);
             $campaign = Campaign::find($campaignId);
-            if ($campaign) {
-                $subscriber = TelegramSubscriber::where('chat_id', $chatId)
-                    ->where('thread_id', $threadId)
-                    ->where('campaign_id', $campaign->id)
-                    ->first();
 
-                if ($subscriber) {
-                    TelegramService::sendToChat($chatId, "Questa chat/topic è già iscritta alle notifiche di <b>{$campaign->display_name}</b>! ✅", 'HTML', null, $threadId);
-                } else {
-                    TelegramSubscriber::create([
-                        'campaign_id' => $campaign->id,
-                        'chat_id' => $chatId,
-                        'thread_id' => $threadId,
-                        'username' => $callbackQuery['from']['username'] ?? ($callbackQuery['from']['first_name'] ?? 'User')
-                    ]);
-                    TelegramService::sendToChat($chatId, "Iscrizione completata per <b>{$campaign->display_name}</b>! 🔔 Riceverai una notifica ad ogni aggiornamento.", 'HTML', null, $threadId);
+            if ($campaign && $this->canManageCampaignSubscription($chatId, $threadId, $telegramUserId, $isGroup, $campaign)) {
+                $this->createSubscription($chatId, $threadId, $campaign, $telegramUsername, $telegramUserId);
+            }
+        } elseif ($data === 'sub:all') {
+            if (!$isGroup) {
+                $user = $this->requireLinkedUser($chatId, $telegramUserId, $threadId);
+                if ($user) {
+                    $campaigns = $user->accessibleCampaigns();
+                    foreach ($campaigns as $campaign) {
+                        $this->createSubscription($chatId, $threadId, $campaign, $telegramUsername, $telegramUserId, false);
+                    }
+                    TelegramService::sendToChat($chatId, "Iscrizione completata a tutte le campagne accessibili! 🔔", 'HTML', null, $threadId);
                 }
             }
+            // Nei gruppi il bottone "Iscriviti a tutte" non viene generato (esiste al più una campagna collegata).
         } elseif (str_starts_with($data, 'unsub:camp_')) {
             $campaignId = (int) str_replace('unsub:camp_', '', $data);
             $campaign = Campaign::find($campaignId);
+
+            if (!$isGroup && !$this->requireLinkedUser($chatId, $telegramUserId, $threadId)) {
+                TelegramService::answerCallbackQuery($callbackQuery['id']);
+                return response('OK');
+            }
+
             TelegramSubscriber::where('chat_id', $chatId)
                 ->where('thread_id', $threadId)
                 ->where('campaign_id', $campaignId)
@@ -133,60 +154,242 @@ class TelegramBotController extends Controller
             $name = $campaign ? $campaign->display_name : "Campagna #{$campaignId}";
             TelegramService::sendToChat($chatId, "Notifiche disattivate per <b>{$name}</b>. 📴", 'HTML', null, $threadId);
         } elseif ($data === 'unsub:all') {
+            if (!$isGroup && !$this->requireLinkedUser($chatId, $telegramUserId, $threadId)) {
+                TelegramService::answerCallbackQuery($callbackQuery['id']);
+                return response('OK');
+            }
+
             TelegramSubscriber::where('chat_id', $chatId)
                 ->where('thread_id', $threadId)
                 ->delete();
             TelegramService::sendToChat($chatId, "Tutte le notifiche sono state disattivate per questo topic. 📴", 'HTML', null, $threadId);
+        } elseif ($data === 'unlink:confirm') {
+            $user = $telegramUserId ? User::findByTelegramUserId($telegramUserId) : null;
+            if ($user) {
+                $user->update(['telegram_user_id' => null, 'telegram_username' => null]);
+                TelegramService::sendToChat($chatId, "🔓 Account scollegato. Da questo momento non riceverai più le notifiche delle campagne a cui eri iscritto, perché non è più possibile verificare il tuo accesso. Usa /link per ricollegarti quando vuoi.", 'HTML', null, $threadId);
+            }
+        } elseif (str_starts_with($data, 'unlinkgroup:')) {
+            $campaignId = (int) str_replace('unlinkgroup:', '', $data);
+            $master = $telegramUserId ? User::findByTelegramUserId($telegramUserId) : null;
+            $campaign = Campaign::find($campaignId);
+
+            if ($master && $master->isMaster() && $campaign
+                && $campaign->telegram_chat_id === (string) $chatId
+                && $campaign->telegram_thread_id === $threadId) {
+
+                TelegramSubscriber::where('chat_id', $chatId)
+                    ->where('thread_id', $threadId)
+                    ->where('campaign_id', $campaign->id)
+                    ->delete();
+
+                $campaign->update(['telegram_chat_id' => null, 'telegram_thread_id' => null]);
+
+                TelegramService::sendToChat($chatId, "📴 Questo gruppo è stato scollegato dalla campagna <b>{$campaign->display_name}</b>.", 'HTML', null, $threadId);
+            } else {
+                TelegramService::sendToChat($chatId, "Impossibile completare l'operazione: verifica di essere un Master collegato al tuo account.", 'HTML', null, $threadId);
+            }
         }
 
         TelegramService::answerCallbackQuery($callbackQuery['id']);
         return response('OK');
     }
 
-    protected function handleStart($chatId, $username, $threadId = null)
+    /**
+     * Helper: verifica se una chat (privata o gruppo) può iscriversi/gestire l'iscrizione a una campagna.
+     */
+    protected function canManageCampaignSubscription($chatId, $threadId, ?int $telegramUserId, bool $isGroup, Campaign $campaign): bool
     {
-        $message = "Ciao $username! Benvenuto nel bot di Phandalverse. 🌌\n\n";
-        $message .= "Comandi disponibili:\n";
-        $message .= "🚀 /subscribe - Attiva le notifiche per una o più campagne\n";
-        $message .= "📴 /unsubscribe - Disattiva le notifiche\n";
-        $message .= "🔍 /search <nome> - Cerca una nota nel vault\n\n";
-        $message .= "Puoi anche semplicemente scrivere il nome di una nota per cercarla.";
-
-        TelegramService::sendToChat($chatId, $message, 'HTML', null, $threadId);
-    }
-
-    protected function handleSubscribe($chatId, $username, $threadId = null)
-    {
-        $campaigns = Campaign::orderBy('order')->get();
-
-        if ($campaigns->isEmpty()) {
-            TelegramService::sendToChat($chatId, "Nessuna campagna attiva disponibile per l'iscrizione al momento.", 'HTML', null, $threadId);
-            return;
+        if ($isGroup) {
+            return $campaign->telegram_chat_id === (string) $chatId && $campaign->telegram_thread_id === $threadId;
         }
 
-        if ($campaigns->count() === 1) {
-            $campaign = $campaigns->first();
-            $subscriber = TelegramSubscriber::where('chat_id', $chatId)
-                ->where('thread_id', $threadId)
-                ->where('campaign_id', $campaign->id)
-                ->first();
+        $user = $this->requireLinkedUser($chatId, $telegramUserId, $threadId);
+        if (!$user) {
+            return false;
+        }
 
-            if ($subscriber) {
+        if (!$user->hasAccessToCampaign($campaign)) {
+            TelegramService::sendToChat($chatId, "Non hai accesso a questa campagna.", 'HTML', null, $threadId);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Helper: crea l'iscrizione (se non già esistente) e invia il messaggio di conferma.
+     */
+    protected function createSubscription($chatId, $threadId, Campaign $campaign, ?string $username, ?int $telegramUserId, bool $sendMessage = true): void
+    {
+        $subscriber = TelegramSubscriber::where('chat_id', $chatId)
+            ->where('thread_id', $threadId)
+            ->where('campaign_id', $campaign->id)
+            ->first();
+
+        if ($subscriber) {
+            if ($sendMessage) {
                 TelegramService::sendToChat($chatId, "Questa chat/topic è già iscritta alle notifiche di <b>{$campaign->display_name}</b>! ✅", 'HTML', null, $threadId);
-            } else {
-                TelegramSubscriber::create([
-                    'campaign_id' => $campaign->id,
-                    'chat_id' => $chatId,
-                    'thread_id' => $threadId,
-                    'username' => $username
-                ]);
-                TelegramService::sendToChat($chatId, "Iscrizione completata per <b>{$campaign->display_name}</b>! 🔔", 'HTML', null, $threadId);
             }
             return;
         }
 
-        // Più campagne: mostra bottoni inline per scegliere
-        $keyboard = [];
+        TelegramSubscriber::create([
+            'campaign_id' => $campaign->id,
+            'chat_id' => $chatId,
+            'thread_id' => $threadId,
+            'username' => $username,
+            'telegram_user_id' => $telegramUserId,
+        ]);
+
+        if ($sendMessage) {
+            TelegramService::sendToChat($chatId, "Iscrizione completata per <b>{$campaign->display_name}</b>! 🔔 Riceverai una notifica ad ogni aggiornamento.", 'HTML', null, $threadId);
+        }
+    }
+
+    /**
+     * Verifica che la chat privata sia collegata a un utente del sito; se no, avvisa e ritorna null.
+     */
+    protected function requireLinkedUser($chatId, ?int $telegramUserId, ?string $threadId): ?User
+    {
+        $user = $telegramUserId ? User::findByTelegramUserId($telegramUserId) : null;
+        if (!$user) {
+            TelegramService::sendToChat(
+                $chatId,
+                "🔒 Devi prima collegare il tuo account con il sito.\nUsa il comando /link in privato per autenticarti.",
+                'HTML', null, $threadId
+            );
+        }
+        return $user;
+    }
+
+    protected function handleStart($chatId, $username, $threadId = null, bool $isGroup = false)
+    {
+        $message = "Ciao $username! Benvenuto nel bot di Phandalverse. 🌌\n\n";
+        $message .= "Comandi disponibili:\n";
+
+        if ($isGroup) {
+            $message .= "🔗 /link - Collega questo gruppo a una campagna (completato da un Master sul sito)\n";
+            $message .= "🔓 /unlink - Scollega questo gruppo dalla campagna (richiede Master collegato)\n";
+            $message .= "🚀 /subscribe - Attiva le notifiche del gruppo per la campagna collegata\n";
+            $message .= "📴 /unsubscribe - Disattiva le notifiche del gruppo\n";
+        } else {
+            $message .= "🔗 /link - Collega il tuo account Telegram con quello del sito\n";
+            $message .= "🔓 /unlink - Scollega il tuo account\n";
+            $message .= "🚀 /subscribe - Attiva le notifiche per una o più campagne (richiede account collegato)\n";
+            $message .= "📴 /unsubscribe - Disattiva le notifiche\n";
+        }
+
+        TelegramService::sendToChat($chatId, $message, 'HTML', null, $threadId);
+    }
+
+    /**
+     * /link - collega un account privato oppure genera il link per collegare un gruppo a una campagna.
+     */
+    protected function handleLink($chatId, $threadId, ?int $telegramUserId, ?string $telegramUsername, bool $isGroup)
+    {
+        if (!$telegramUserId) {
+            return;
+        }
+
+        if ($isGroup) {
+            $token = TelegramLinkToken::generateFor('group', $telegramUserId, $telegramUsername, (string) $chatId, $threadId);
+            $url = rtrim(config('app.url'), '/') . '/telegram/link/' . $token->token;
+            $replyMarkup = ['inline_keyboard' => [[['text' => '🔗 Collega questo gruppo a una campagna', 'url' => $url]]]];
+            TelegramService::sendToChat(
+                $chatId,
+                "Per collegare questo gruppo a una campagna, un <b>Master</b> deve aprire il link qui sotto ed effettuare l'accesso sul sito. Il link scade tra 1 ora.",
+                'HTML', $replyMarkup, $threadId
+            );
+            return;
+        }
+
+        $token = TelegramLinkToken::generateFor('personal', $telegramUserId, $telegramUsername, (string) $chatId);
+        $url = rtrim(config('app.url'), '/') . '/telegram/link/' . $token->token;
+        $replyMarkup = ['inline_keyboard' => [[['text' => '🔗 Collega il tuo account', 'url' => $url]]]];
+        TelegramService::sendToChat(
+            $chatId,
+            "Clicca il pulsante per collegare il tuo account Telegram a quello del sito. Il link scade tra 1 ora.",
+            'HTML', $replyMarkup, $threadId
+        );
+    }
+
+    /**
+     * /unlink - scollega un account privato, oppure (per i gruppi) scollega il gruppo dalla campagna.
+     */
+    protected function handleUnlink($chatId, $threadId, ?int $telegramUserId, bool $isGroup)
+    {
+        if ($isGroup) {
+            $master = $telegramUserId ? User::findByTelegramUserId($telegramUserId) : null;
+            if (!$master || !$master->isMaster()) {
+                TelegramService::sendToChat($chatId, "Solo un Master collegato al proprio account può gestire il collegamento di questo gruppo. Usa prima /link in privato per collegare il tuo account.", 'HTML', null, $threadId);
+                return;
+            }
+
+            $campaign = Campaign::findByTelegramGroup((string) $chatId, $threadId);
+            if (!$campaign) {
+                TelegramService::sendToChat($chatId, "Questo gruppo non è collegato a nessuna campagna.", 'HTML', null, $threadId);
+                return;
+            }
+
+            $replyMarkup = ['inline_keyboard' => [[['text' => "📴 Scollega da {$campaign->display_name}", 'callback_data' => "unlinkgroup:{$campaign->id}"]]]];
+            TelegramService::sendToChat($chatId, "Questo gruppo è collegato a <b>{$campaign->display_name}</b>. Confermi lo scollegamento?", 'HTML', $replyMarkup, $threadId);
+            return;
+        }
+
+        $user = $this->requireLinkedUser($chatId, $telegramUserId, $threadId);
+        if (!$user) {
+            return;
+        }
+
+        $replyMarkup = ['inline_keyboard' => [[['text' => '🔓 Conferma scollegamento', 'callback_data' => 'unlink:confirm']]]];
+        TelegramService::sendToChat(
+            $chatId,
+            "Sei sicuro di voler scollegare il tuo account? Da questo momento non riceverai più le notifiche delle campagne a cui sei iscritto, perché non sarà più possibile verificare il tuo accesso.",
+            'HTML', $replyMarkup, $threadId
+        );
+    }
+
+    protected function handleSubscribe($chatId, $username, $threadId = null, ?int $telegramUserId = null, bool $isGroup = false)
+    {
+        if ($isGroup) {
+            $campaign = Campaign::findByTelegramGroup((string) $chatId, $threadId);
+
+            if (!$campaign) {
+                TelegramService::sendToChat($chatId, "Questo gruppo non è ancora collegato a nessuna campagna. Chiedi a un Master di eseguire /link qui per collegarlo.", 'HTML', null, $threadId);
+                return;
+            }
+
+            $this->createSubscription($chatId, $threadId, $campaign, $username, $telegramUserId);
+            return;
+        }
+
+        $user = $this->requireLinkedUser($chatId, $telegramUserId, $threadId);
+        if (!$user) {
+            return;
+        }
+
+        $campaigns = $user->accessibleCampaigns();
+
+        if ($campaigns->isEmpty()) {
+            TelegramService::sendToChat($chatId, "Non hai accesso a nessuna campagna al momento.", 'HTML', null, $threadId);
+            return;
+        }
+
+        if ($campaigns->count() === 1) {
+            $this->createSubscription($chatId, $threadId, $campaigns->first(), $username, $telegramUserId);
+            return;
+        }
+
+        // Più campagne accessibili: mostra bottoni inline per scegliere, più il bottone "Iscriviti a tutte"
+        $keyboard = [
+            [
+                [
+                    'text' => '🌟 Iscriviti a TUTTE',
+                    'callback_data' => 'sub:all'
+                ]
+            ]
+        ];
         foreach ($campaigns as $camp) {
             $isSubbed = TelegramSubscriber::where('chat_id', $chatId)
                 ->where('thread_id', $threadId)
@@ -206,8 +409,15 @@ class TelegramBotController extends Controller
         TelegramService::sendToChat($chatId, "Scegli a quale campagna desideri iscriverti per ricevere gli aggiornamenti:", 'HTML', $replyMarkup, $threadId);
     }
 
-    protected function handleUnsubscribe($chatId, $threadId = null)
+    protected function handleUnsubscribe($chatId, $threadId = null, ?int $telegramUserId = null, bool $isGroup = false)
     {
+        if (!$isGroup) {
+            $user = $this->requireLinkedUser($chatId, $telegramUserId, $threadId);
+            if (!$user) {
+                return;
+            }
+        }
+
         $subs = TelegramSubscriber::where('chat_id', $chatId)
             ->where('thread_id', $threadId)
             ->with('campaign')

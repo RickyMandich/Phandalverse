@@ -102,12 +102,51 @@ class TelegramService
     }
 
     /**
-     * Invia un messaggio agli iscritti di una specifica campagna
+     * Verifica se un iscritto ha ancora accesso alla campagna per cui è iscritto.
+     * Per i gruppi: verifica che il gruppo/topic sia ancora collegato a questa campagna.
+     * Per le chat private: verifica che l'utente collegato abbia ancora accesso alla campagna.
+     */
+    protected static function subscriberHasAccess(\App\Models\TelegramSubscriber $subscriber, \App\Models\Campaign $campaign): bool
+    {
+        $isGroup = str_starts_with((string) $subscriber->chat_id, '-');
+
+        if ($isGroup) {
+            return $campaign->telegram_chat_id === $subscriber->chat_id
+                && $campaign->telegram_thread_id === $subscriber->thread_id;
+        }
+
+        if (!$subscriber->telegram_user_id) {
+            return false; // mai collegato, oppure scollegato con /unlink: accesso non verificabile
+        }
+
+        $user = \App\Models\User::findByTelegramUserId($subscriber->telegram_user_id);
+        if (!$user) {
+            return false; // utente eliminato dal sito
+        }
+
+        return $user->hasAccessToCampaign($campaign);
+    }
+
+    /**
+     * Invia un messaggio agli iscritti di una specifica campagna.
+     * Prima dell'invio verifica che l'iscritto abbia ancora accesso alla campagna:
+     * se non è più verificabile, avvisa l'iscritto e cancella la sua iscrizione
+     * invece di inviare il messaggio.
      */
     public static function broadcastCampaign(\App\Models\Campaign $campaign, string $message, bool $parseHtml = true, $replyMarkup = null): void
     {
         $subscribers = \App\Models\TelegramSubscriber::where('campaign_id', $campaign->id)->get();
         foreach ($subscribers as $subscriber) {
+            if (!self::subscriberHasAccess($subscriber, $campaign)) {
+                self::sendToChat(
+                    $subscriber->chat_id,
+                    "⚠️ Non è più possibile confermare l'accesso alla campagna <b>{$campaign->display_name}</b>, quindi l'iscrizione alle notifiche è stata rimossa.",
+                    'HTML', null, $subscriber->thread_id
+                );
+                $subscriber->delete();
+                continue;
+            }
+
             self::sendToChat($subscriber->chat_id, $message, $parseHtml, $replyMarkup, $subscriber->thread_id);
         }
     }

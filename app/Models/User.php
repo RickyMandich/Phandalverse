@@ -51,6 +51,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'showEmbedLink',
         'collapseEmbed',
         'default_campaign_id',
+        'telegram_user_id',
+        'telegram_username',
     ];
 
     /**
@@ -183,6 +185,22 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return $this->campaigns()->where('campaigns.id', $campaignId)->exists();
+    }
+
+    /**
+     * Verifica se l'utente ha collegato il proprio account Telegram (chat privata).
+     */
+    public function isTelegramLinked(): bool
+    {
+        return !empty($this->telegram_user_id);
+    }
+
+    /**
+     * Trova l'utente del sito collegato a un determinato ID utente Telegram.
+     */
+    public static function findByTelegramUserId(int $telegramUserId): ?self
+    {
+        return static::where('telegram_user_id', $telegramUserId)->first();
     }
 
     /**
