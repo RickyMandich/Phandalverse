@@ -29,6 +29,7 @@
 - [X] aggiungere visualizzazione PDF
 - [X] capire un modo per inserire il filtro master/gruppi di accesso per i pdf
 - [X] sistemare il sistema di ricerca per mostrare i risultati da tutte le campagna a cui si ha accesso e ben divisi tra esse (prima tutti quelli di una campagna, poi tutti quelli dell'altra, usando ordine di priorità dalla tabella campagne e dando priorità alla campagna di default dell'utente corrente)
+- [] aggiungere gestione calendario delle sessioni relative a una specifica campagna tramite server ics
 # inabion
 ## dadi
 - [X] manca la possibilità di ritirare i singoli dadi
