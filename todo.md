@@ -33,6 +33,7 @@
 - [X] materiale condiviso tra campagne: pseudo-campagna pubblica `/vault/materiale` (nessuna riga in `campaigns`), fallback wikilink/embed campagna→materiale, pulsante header "Materiali", import batch stat-block da `materiale/stat-block/*.md` verso il Fight Manager (`dm.manage`)
 - [X] fix schermata nera in `/dm/manage` dovuta a modale e `modal-backdrop` fuori dal context Alpine `x-data`
 - [X] sostituzione link ed endpoint interni hardcoded con helper route()
+- [X] parsing stat-block: estrarre solo il valore numerico delle caratteristiche ignorando il bonus tra parentesi
 # inabion
 ## dadi
 - [X] manca la possibilità di ritirare i singoli dadi

@@ -97,7 +97,15 @@ class StatBlockParser
         $attributes = [];
         foreach ($keys as $i => $key) {
             if (isset($cells[$i]) && $cells[$i] !== '') {
-                $attributes[$key] = $cells[$i];
+                $cell = $cells[$i];
+                // Rimuove eventuale modificatore/bonus tra parentesi (es. "(+0)", "(-1)")
+                $cleaned = preg_replace('/\s*\([^)]*\)/', '', $cell);
+                // Estrae il punteggio numerico della caratteristica
+                if (preg_match('/\d+/', $cleaned, $match)) {
+                    $attributes[$key] = (int) $match[0];
+                } else {
+                    $attributes[$key] = $cell;
+                }
             }
         }
 

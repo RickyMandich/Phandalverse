@@ -336,7 +336,7 @@ function dmScreen(config = {}) {
             for (let i = 0; i < countToAdd; i++) {
                 let init = 0;
                 let stats = typeof char.stats === 'string' ? JSON.parse(char.stats) : (char.stats || {});
-                let dexVal = (stats.attributes && stats.attributes.dex) ? stats.attributes.dex : 10;
+                let dexVal = stats.attributes?.des ?? stats.attributes?.dex ?? 10;
                 let dexMod = this.getStatModifier(dexVal);
 
                 if (char.type === 'player') init = 0;
@@ -382,7 +382,7 @@ function dmScreen(config = {}) {
             // 1. Ordina tutti secondo l'iniziativa ideale
             this.combatants.sort((a, b) => {
                 if (b.initiative !== a.initiative) return b.initiative - a.initiative;
-                return this.getStatModifier(b.stats?.attributes?.dex || 10) - this.getStatModifier(a.stats?.attributes?.dex || 10);
+                return this.getStatModifier(b.stats?.attributes?.des ?? b.stats?.attributes?.dex ?? 10) - this.getStatModifier(a.stats?.attributes?.des ?? a.stats?.attributes?.dex ?? 10);
             });
 
             // 2. Ruota l'array per riportare l'attivo in cima (preservando il cerchio)
