@@ -250,7 +250,7 @@
             .attr('r', d => (3 + Math.sqrt(d.connections || 0) * 1.5) * nodeSizeMultiplier)
             .attr('fill', d => getNodeColor(d))
             .on('click', (event, d) => {
-                window.location.href = '/vault/' + d.url;
+                window.location.href = '{{ route('vault.index') }}/' + d.url;
             })
             .on('mouseover', (event, d) => {
                 const tooltip = document.getElementById('tooltip');

@@ -3,7 +3,8 @@
 @section('content')
     <div class="container-fluid py-4" x-data="playerView({ 
                                         shareCode: '{{ $session->share_code }}',
-                                        sessionId: {{ $session->id }}
+                                        sessionId: {{ $session->id }},
+                                        sessionUrl: '{{ route('dm.api.public.sessions.load', ['share_code' => $session->share_code]) }}'
                                     })">
         <div class="row justify-content-center">
             <div class="col-md-8">
@@ -96,7 +97,7 @@
 
                 async fetchData() {
                     try {
-                        const response = await fetch(`/dm/api/public/sessions/${config.shareCode}`);
+                        const response = await fetch(config.sessionUrl);
                         if (response.ok) {
                             const session = await response.json();
                             console.log("Sync Response:", session);

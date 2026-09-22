@@ -238,7 +238,7 @@
                                         @php
                                             $slug = str_replace('.md', '', \App\Http\Controllers\VaultController::pathToCamelCase($change['file']));
                                         @endphp
-                                        <a href="/vault/{{ $campaign->folder_name }}/{{ $slug }}" class="view-file-link">
+                                        <a href="{{ route('vault.show', ['campaign' => $campaign->folder_name, 'note' => $slug]) }}" class="view-file-link">
                                             <i class="bi bi-eye">Visualizza nota</i>
                                         </a>
                                     @endif

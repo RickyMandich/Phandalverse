@@ -284,7 +284,7 @@ class DmController extends Controller
      */
     public function scanMaterialeStatBlocks()
     {
-        $dir = base_path('Vault/materiale/manuali/stat-block');
+        $dir = base_path('Vault/materiale/stat-block');
         $results = [];
 
         if (is_dir($dir)) {

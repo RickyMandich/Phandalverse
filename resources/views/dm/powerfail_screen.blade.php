@@ -18,7 +18,7 @@
             <div class="col-md-6 d-flex align-items-center">
                 <h4 class="m-0 me-3 text-warning"><i class="bi bi-shield-shaded"></i> <span x-text="scene.name"></span></h4>
                 <div x-show="currentSessionCode" class="badge bg-secondary font-monospace p-2">
-                    CODE: <a :href="'/dm/player/' + currentSessionCode" target="_blank"
+                    CODE: <a :href="'{{ route('dm.player.index') }}/' + currentSessionCode" target="_blank"
                         class="text-info text-decoration-none" title="Apri Player View">
                         <span x-text="currentSessionCode"></span> <i class="bi bi-box-arrow-up-right small"></i>
                     </a>
@@ -747,7 +747,7 @@
 
                 copySessionLink() {
                     if (!this.currentSessionCode) return;
-                    const link = `${window.location.origin}/dm/player/${this.currentSessionCode}`;
+                    const link = `{{ route('dm.player.index') }}/${this.currentSessionCode}`;
                     navigator.clipboard.writeText(link).then(() => {
                         this.showAlert("Link Copiato!", "Il link per i giocatori è stato copiato negli appunti.");
                     });
@@ -757,7 +757,7 @@
 
                 async loadBestiary() {
                     try {
-                        const response = await fetch('/dm/api/characters');
+                        const response = await fetch('{{ route('dm.api.characters.index') }}');
                         if (!response.ok) return;
                         const data = await response.json();
                         // Filter for Powerfail system templates
@@ -826,7 +826,7 @@
                     const headers = { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token };
 
                     try {
-                        let url = '/dm/api/characters';
+                        let url = '{{ route('dm.api.characters.index') }}';
                         let method = 'POST';
 
                         if (this.editingMonsterId) {
@@ -853,7 +853,7 @@
                         if (val !== 'ELIMINA') return;
                         try {
                             const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                            const res = await fetch(`/dm/api/characters/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': token } });
+                            const res = await fetch(`{{ route('dm.api.characters.index') }}/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': token } });
                             if (res.ok) {
                                 await this.loadBestiary();
                                 this.showAlert("Eliminato", "Mostro rimosso dall'archivio.");
@@ -1101,9 +1101,9 @@
 
                         let response;
                         if (!this.currentSessionId) {
-                            response = await fetch('/dm/api/sessions', { method: 'POST', headers, body: JSON.stringify(payload) });
+                            response = await fetch('{{ route('dm.api.sessions.store') }}', { method: 'POST', headers, body: JSON.stringify(payload) });
                         } else {
-                            response = await fetch(`/dm/api/sessions/${this.currentSessionId}`, { method: 'PATCH', headers, body: JSON.stringify(payload) });
+                            response = await fetch(`{{ route('dm.api.sessions.index') }}/${this.currentSessionId}`, { method: 'PATCH', headers, body: JSON.stringify(payload) });
                         }
 
                         console.info("Server Response Status:", response.status);
@@ -1128,7 +1128,7 @@
 
                 async loadSessionsList() {
                     try {
-                        const response = await fetch('/dm/api/sessions');
+                        const response = await fetch('{{ route('dm.api.sessions.index') }}');
                         if (!response.ok) {
                             console.warn('API Sessioni non raggiungibile o errore server.');
                             return;
@@ -1148,7 +1148,7 @@
 
                 async loadSession(id) {
                     try {
-                        const response = await fetch(`/dm/api/sessions/${id}`);
+                        const response = await fetch(`{{ route('dm.api.sessions.index') }}/${id}`);
                         const session = await response.json();
 
                         this.currentSessionId = session.id;

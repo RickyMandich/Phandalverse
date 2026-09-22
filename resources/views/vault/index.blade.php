@@ -223,7 +223,7 @@
         node.append('circle')
             .attr('r', d => (3 + Math.sqrt(d.connections || 0) * 1.5) * nodeSizeMultiplier)
             .attr('fill', d => getNodeColor(d))
-            .on('click', (event, d) => window.location.href = '/vault/{{ $campaign->folder_name }}/' + d.url)
+            .on('click', (event, d) => window.location.href = '{{ route('vault.show', ['campaign' => $campaign->folder_name, 'note' => '']) }}/' + d.url)
             .on('mouseover', (event, d) => {
                 const tooltip = document.getElementById('tooltip');
                 tooltip.style.display = 'block';

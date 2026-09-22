@@ -32,6 +32,7 @@
 - [] aggiungere gestione calendario delle sessioni relative a una specifica campagna tramite server ics
 - [X] materiale condiviso tra campagne: pseudo-campagna pubblica `/vault/materiale` (nessuna riga in `campaigns`), fallback wikilink/embed campagna→materiale, pulsante header "Materiali", import batch stat-block da `materiale/manuali/stat-block/*.md` verso il Fight Manager (`dm.manage`)
 - [X] fix schermata nera in `/dm/manage` dovuta a modale e `modal-backdrop` fuori dal context Alpine `x-data`
+- [X] sostituzione link ed endpoint interni hardcoded con helper route()
 # inabion
 ## dadi
 - [X] manca la possibilità di ritirare i singoli dadi

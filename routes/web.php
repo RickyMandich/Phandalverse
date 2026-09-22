@@ -51,7 +51,7 @@ Route::get('/api/vault/{campaign:folder_name}/{note?}', [VaultController::class,
 Route::get('/home', [HomeController::class, 'index'])->name('dashboard')->middleware(['auth', 'verified']);
 
 // ========== API PUBBLICA SESSIONI (Per visuale giocatori) ==========
-Route::get('/dm/api/public/sessions/{share_code}', [DmController::class, 'publicLoadSession']);
+Route::get('/dm/api/public/sessions/{share_code}', [DmController::class, 'publicLoadSession'])->name('dm.api.public.sessions.load');
 
 // ========== PLAYER VIEW (Pubblica) ==========
 Route::get('/dm/player', [DmController::class, 'playerIndex'])->name('dm.player.index');

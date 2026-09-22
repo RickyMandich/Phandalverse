@@ -71,7 +71,7 @@
                     <label for="campaign-select" class="form-label text-warning small fw-bold mb-1 d-flex align-items-center">
                         <i class="bi bi-compass me-1"></i> Campagna
                     </label>
-                    <select class="form-select form-select-sm bg-dark text-white border-secondary" id="campaign-select" onchange="window.location.href='/vault/' + this.value">
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary" id="campaign-select" onchange="window.location.href='{{ route('vault.index') }}/' + this.value">
                         @foreach($accessibleCampaigns as $camp)
                             <option value="{{ $camp->folder_name }}" {{ $campaignFolder === $camp->folder_name ? 'selected' : '' }}>
                                 {{ $camp->display_name }}

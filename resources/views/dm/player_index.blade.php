@@ -20,7 +20,7 @@
                         </p>
 
                         <form
-                            onsubmit="event.preventDefault(); window.location.href='/dm/player/' + document.getElementById('shareCode').value.toUpperCase();">
+                            onsubmit="event.preventDefault(); window.location.href='{{ route('dm.player.index') }}/' + document.getElementById('shareCode').value.toUpperCase();">
                             <div class="mb-4 text-center">
                                 <label for="shareCode" class="form-label small text-uppercase fw-bold text-muted">Codice
                                     Sessione</label>

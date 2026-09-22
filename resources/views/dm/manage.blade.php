@@ -27,7 +27,7 @@
                 },
 
                 async reloadData() {
-                    const response = await fetch('/dm/api/manage-data');
+                    const response = await fetch('{{ route('dm.api.manage-data') }}');
                     const data = await response.json();
                     this.characters = data.characters;
                     this.sessions = data.sessions;
@@ -64,7 +64,7 @@
                 async deleteChar(id) {
                     if (!confirm('Eliminare definitivamente questo personaggio?')) return;
                     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    await fetch(`/dm/api/characters/${id}`, {
+                    await fetch(`{{ route('dm.api.characters.index') }}/${id}`, {
                         method: 'DELETE',
                         headers: { 'X-CSRF-TOKEN': token }
                     });
@@ -75,7 +75,7 @@
                     const newName = prompt("Nuovo nome per la sessione:", s.name);
                     if (!newName || newName === s.name) return;
                     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    await fetch(`/dm/api/sessions/${s.id}`, {
+                    await fetch(`{{ route('dm.api.sessions.index') }}/${s.id}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
                         body: JSON.stringify({ name: newName, data: this.getData(s) })
@@ -86,7 +86,7 @@
                 async deleteSession(id) {
                     if (!confirm('Eliminare definitivamente questa sessione?')) return;
                     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    await fetch(`/dm/api/sessions/${id}`, {
+                    await fetch(`{{ route('dm.api.sessions.index') }}/${id}`, {
                         method: 'DELETE',
                         headers: { 'X-CSRF-TOKEN': token }
                     });
@@ -98,7 +98,7 @@
                     this.importLoading = true;
                     this.importItems = [];
                     try {
-                        const response = await fetch('/dm/api/materiale/stat-blocks');
+                        const response = await fetch('{{ route('dm.api.materiale.stat-blocks.index') }}');
                         const data = await response.json();
                         this.importItems = (data.stat_blocks || []).map(sb => ({
                             ...sb,
@@ -126,7 +126,7 @@
                     this.importSubmitting = true;
                     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                     try {
-                        const response = await fetch('/dm/api/materiale/stat-blocks/import', {
+                        const response = await fetch('{{ route('dm.api.materiale.stat-blocks.import') }}', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
                             body: JSON.stringify({
@@ -223,7 +223,8 @@
                             <i class="bi bi-cloud-download"></i> Importa da Materiali
                         </button>
                         <div class="input-group" style="width: 320px;">
-                            <span class="input-group-text bg-secondary border-0 text-white"><i class="bi bi-search"></i></span>
+                            <span class="input-group-text bg-secondary border-0 text-white"><i
+                                    class="bi bi-search"></i></span>
                             <input type="text" class="form-control bg-dark text-white border-0"
                                 placeholder="Filtra per nome o tipo..." x-model="charFilter">
                         </div>
@@ -336,16 +337,14 @@
         </div>
 
         <!-- MODALE IMPORT DA MATERIALI -->
-        <div class="modal fade" tabindex="-1" role="dialog" aria-hidden="true"
-            x-show="importModalOpen" x-cloak
-            :class="{ 'show d-block': importModalOpen }"
-            :style="importModalOpen ? 'background: rgba(0, 0, 0, 0.7);' : ''"
-            @click.self="closeImportModal()"
-            @keydown.escape.window="closeImportModal()">
+        <div class="modal fade" tabindex="-1" role="dialog" aria-hidden="true" x-show="importModalOpen" x-cloak
+            :class="{ 'show d-block': importModalOpen }" :style="importModalOpen ? 'background: rgba(0, 0, 0, 0.7);' : ''"
+            @click.self="closeImportModal()" @keydown.escape.window="closeImportModal()">
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content bg-dark text-white border-secondary">
                     <div class="modal-header border-secondary">
-                        <h5 class="modal-title"><i class="bi bi-cloud-download me-2"></i>Importa stat-block da Materiali</h5>
+                        <h5 class="modal-title"><i class="bi bi-cloud-download me-2"></i>Importa stat-block da Materiali
+                        </h5>
                         <button type="button" class="btn-close btn-close-white" @click="closeImportModal()"></button>
                     </div>
                     <div class="modal-body">
@@ -354,7 +353,8 @@
                             <p class="mt-2 text-muted">Scansione di <code>manuali/stat-block</code> in corso...</p>
                         </div>
                         <template x-if="!importLoading && importItems.length === 0">
-                            <p class="text-muted">Nessuna stat-block trovata in <code>materiale/manuali/stat-block</code>.</p>
+                            <p class="text-muted">Nessuna stat-block trovata in <code>materiale/manuali/stat-block</code>.
+                            </p>
                         </template>
                         <template x-if="!importLoading && importItems.length > 0">
                             <table class="table table-dark table-sm align-middle">
@@ -371,17 +371,21 @@
                                     <template x-for="item in importItems" :key="item.path">
                                         <tr :class="item.error ? 'opacity-50' : ''">
                                             <td>
-                                                <input type="checkbox" class="form-check-input" x-model="item.selected" :disabled="!!item.error">
+                                                <input type="checkbox" class="form-check-input" x-model="item.selected"
+                                                    :disabled="!!item.error">
                                             </td>
                                             <td>
                                                 <span x-text="item.name"></span>
-                                                <span class="badge bg-warning text-dark ms-1" x-show="item.conflict">già presente</span>
-                                                <div class="small text-danger" x-show="item.error" x-text="item.error"></div>
+                                                <span class="badge bg-warning text-dark ms-1" x-show="item.conflict">già
+                                                    presente</span>
+                                                <div class="small text-danger" x-show="item.error" x-text="item.error">
+                                                </div>
                                             </td>
                                             <td x-text="item.ac || '-'"></td>
                                             <td x-text="item.hp_formula || '-'"></td>
                                             <td>
-                                                <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                                                <select
+                                                    class="form-select form-select-sm bg-dark text-white border-secondary"
                                                     x-model="item.resolution" x-show="item.conflict">
                                                     <option value="overwrite">Sovrascrivi</option>
                                                     <option value="duplicate">Duplica (nuova copia)</option>
