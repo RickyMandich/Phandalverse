@@ -1,5 +1,9 @@
 @use "bootstrap/scss/bootstrap" as *;
 
+[x-cloak] {
+    display: none !important;
+}
+
 .wikilink {
     @extend .text-uppercase;
     @extend .text-info;

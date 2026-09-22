@@ -2,6 +2,11 @@
 
 @section('include')
     <script src="//unpkg.com/alpinejs" defer></script>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
 @endsection
 
 @section('script')
@@ -329,72 +334,75 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- MODALE IMPORT DA MATERIALI -->
-    <div class="modal" tabindex="-1" style="display: none;" x-show="importModalOpen" x-cloak
-        @keydown.escape.window="closeImportModal()">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content bg-dark text-white border-secondary">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title"><i class="bi bi-cloud-download me-2"></i>Importa stat-block da Materiali</h5>
-                    <button type="button" class="btn-close btn-close-white" @click="closeImportModal()"></button>
-                </div>
-                <div class="modal-body">
-                    <div x-show="importLoading" class="text-center py-4">
-                        <div class="spinner-border text-warning"></div>
-                        <p class="mt-2 text-muted">Scansione di <code>manuali/stat-block</code> in corso...</p>
+        <!-- MODALE IMPORT DA MATERIALI -->
+        <div class="modal fade" tabindex="-1" role="dialog" aria-hidden="true"
+            x-show="importModalOpen" x-cloak
+            :class="{ 'show d-block': importModalOpen }"
+            :style="importModalOpen ? 'background: rgba(0, 0, 0, 0.7);' : ''"
+            @click.self="closeImportModal()"
+            @keydown.escape.window="closeImportModal()">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content bg-dark text-white border-secondary">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title"><i class="bi bi-cloud-download me-2"></i>Importa stat-block da Materiali</h5>
+                        <button type="button" class="btn-close btn-close-white" @click="closeImportModal()"></button>
                     </div>
-                    <template x-if="!importLoading && importItems.length === 0">
-                        <p class="text-muted">Nessuna stat-block trovata in <code>materiale/manuali/stat-block</code>.</p>
-                    </template>
-                    <template x-if="!importLoading && importItems.length > 0">
-                        <table class="table table-dark table-sm align-middle">
-                            <thead>
-                                <tr>
-                                    <th style="width: 2rem;"></th>
-                                    <th>Nome</th>
-                                    <th>CA</th>
-                                    <th>HP</th>
-                                    <th style="width: 12rem;">Se già esistente</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="item in importItems" :key="item.path">
-                                    <tr :class="item.error ? 'opacity-50' : ''">
-                                        <td>
-                                            <input type="checkbox" class="form-check-input" x-model="item.selected" :disabled="!!item.error">
-                                        </td>
-                                        <td>
-                                            <span x-text="item.name"></span>
-                                            <span class="badge bg-warning text-dark ms-1" x-show="item.conflict">già presente</span>
-                                            <div class="small text-danger" x-show="item.error" x-text="item.error"></div>
-                                        </td>
-                                        <td x-text="item.ac || '-'"></td>
-                                        <td x-text="item.hp_formula || '-'"></td>
-                                        <td>
-                                            <select class="form-select form-select-sm bg-dark text-white border-secondary"
-                                                x-model="item.resolution" x-show="item.conflict">
-                                                <option value="overwrite">Sovrascrivi</option>
-                                                <option value="duplicate">Duplica (nuova copia)</option>
-                                            </select>
-                                        </td>
+                    <div class="modal-body">
+                        <div x-show="importLoading" class="text-center py-4">
+                            <div class="spinner-border text-warning"></div>
+                            <p class="mt-2 text-muted">Scansione di <code>manuali/stat-block</code> in corso...</p>
+                        </div>
+                        <template x-if="!importLoading && importItems.length === 0">
+                            <p class="text-muted">Nessuna stat-block trovata in <code>materiale/manuali/stat-block</code>.</p>
+                        </template>
+                        <template x-if="!importLoading && importItems.length > 0">
+                            <table class="table table-dark table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 2rem;"></th>
+                                        <th>Nome</th>
+                                        <th>CA</th>
+                                        <th>HP</th>
+                                        <th style="width: 12rem;">Se già esistente</th>
                                     </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </template>
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button class="btn btn-outline-secondary" @click="closeImportModal()">Annulla</button>
-                    <button class="btn btn-warning" @click="submitImport()"
-                        :disabled="importSelectedCount === 0 || importSubmitting">
-                        <span x-show="importSubmitting" class="spinner-border spinner-border-sm me-1"></span>
-                        Importa (<span x-text="importSelectedCount"></span>)
-                    </button>
+                                </thead>
+                                <tbody>
+                                    <template x-for="item in importItems" :key="item.path">
+                                        <tr :class="item.error ? 'opacity-50' : ''">
+                                            <td>
+                                                <input type="checkbox" class="form-check-input" x-model="item.selected" :disabled="!!item.error">
+                                            </td>
+                                            <td>
+                                                <span x-text="item.name"></span>
+                                                <span class="badge bg-warning text-dark ms-1" x-show="item.conflict">già presente</span>
+                                                <div class="small text-danger" x-show="item.error" x-text="item.error"></div>
+                                            </td>
+                                            <td x-text="item.ac || '-'"></td>
+                                            <td x-text="item.hp_formula || '-'"></td>
+                                            <td>
+                                                <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                                                    x-model="item.resolution" x-show="item.conflict">
+                                                    <option value="overwrite">Sovrascrivi</option>
+                                                    <option value="duplicate">Duplica (nuova copia)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </template>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button class="btn btn-outline-secondary" @click="closeImportModal()">Annulla</button>
+                        <button class="btn btn-warning" @click="submitImport()"
+                            :disabled="importSelectedCount === 0 || importSubmitting">
+                            <span x-show="importSubmitting" class="spinner-border spinner-border-sm me-1"></span>
+                            Importa (<span x-text="importSelectedCount"></span>)
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="modal-backdrop" x-show="importModalOpen" x-cloak></div>
 @endsection
