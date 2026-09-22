@@ -133,7 +133,53 @@ class MarkdownPreprocessor
             return $index[$cleanName];
         }
 
+        // Fallback: non trovata nella campagna corrente, cerca nel materiale condiviso
+        // (stessa priorità decisa per i wikilink: campagna locale prima, poi materiale).
+        if (!self::isMateriale($campaign)) {
+            $sharedIndex = self::buildFileIndex('materiale');
+            if (isset($sharedIndex[$cleanName . '.pdf'])) {
+                return $sharedIndex[$cleanName . '.pdf'];
+            }
+            if (isset($sharedIndex[$cleanName])) {
+                return $sharedIndex[$cleanName];
+            }
+        }
+
         return $cleanName;
+    }
+
+    protected static function isMateriale(Campaign|string|null $campaign): bool
+    {
+        return VaultHelper::resolveCampaignFolder($campaign) === 'materiale';
+    }
+
+    /**
+     * Risolve un nome di nota tentando prima l'indice della campagna corrente e poi,
+     * se non trovato, l'indice del materiale condiviso. Ritorna [path, originCampaign, found].
+     */
+    protected static function resolveNoteWithFallback(string $noteName, Campaign|string|null $campaign): array
+    {
+        $cleanName = strtolower(trim(str_replace('\\', '/', $noteName)));
+        $cleanName = rtrim($cleanName, '/');
+        if (str_ends_with($cleanName, '.md')) {
+            $cleanName = substr($cleanName, 0, -3);
+        } elseif (str_ends_with($cleanName, '.pdf')) {
+            $cleanName = substr($cleanName, 0, -4);
+        }
+
+        $localIndex = self::buildFileIndex($campaign);
+        if (isset($localIndex[$cleanName])) {
+            return [$localIndex[$cleanName], $campaign, true];
+        }
+
+        if (!self::isMateriale($campaign)) {
+            $sharedIndex = self::buildFileIndex('materiale');
+            if (isset($sharedIndex[$cleanName])) {
+                return [$sharedIndex[$cleanName], 'materiale', true];
+            }
+        }
+
+        return [$cleanName, $campaign, false];
     }
 
     /**
@@ -204,35 +250,19 @@ class MarkdownPreprocessor
 
     public static function convertWikilinks(string $text, string $note = '', Campaign|string|null $campaign = null): string
     {
-        $folder = VaultHelper::resolveCampaignFolder($campaign);
-
         return preg_replace_callback(
             '/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/',
-            function ($matches) use ($note, $campaign, $folder) {
+            function ($matches) use ($note, $campaign) {
                 $nota = trim($matches[1]);
-                $index = self::buildFileIndex($campaign);
-                $cleanName = strtolower(trim(str_replace('\\', '/', $nota)));
-                $cleanName = rtrim($cleanName, '/');
 
-                // Rimuovi estensione se presente per il lookup nell'indice
-                if (str_ends_with($cleanName, '.md')) {
-                    $cleanName = substr($cleanName, 0, -3);
-                } elseif (str_ends_with($cleanName, '.pdf')) {
-                    $cleanName = substr($cleanName, 0, -4);
-                }
-
-                $found = false;
-                $path = $cleanName;
-                if (isset($index[$cleanName])) {
-                    $path = $index[$cleanName];
-                    $found = true;
-                }
+                // Cerca prima nella campagna corrente, poi (fallback) nel materiale condiviso.
+                [$path, $originCampaign, $found] = self::resolveNoteWithFallback($nota, $campaign);
 
                 if (isset($matches[2]) && !empty(trim($matches[2]))) {
                     $label = trim($matches[2]);
                 } else {
-                    // Se non c'è alias, prova a prendere il nome originale dalla mappa della campagna
-                    $label = VaultHelper::getOriginalName($path, $note, $campaign);
+                    // Se non c'è alias, prova a prendere il nome originale dalla mappa di provenienza
+                    $label = VaultHelper::getOriginalName($path, $note, $originCampaign);
                 }
 
                 // Genera il link solo se la nota è nell'indice (quindi è pubblica o l'utente ha accesso)
@@ -240,8 +270,9 @@ class MarkdownPreprocessor
                     return htmlspecialchars($label);
                 }
 
+                $originFolder = VaultHelper::resolveCampaignFolder($originCampaign);
                 $camelPath = VaultController::pathToCamelCase($path);
-                $url = '/vault/' . $folder . '/' . $camelPath;
+                $url = '/vault/' . $originFolder . '/' . $camelPath;
                 return '<a href="' . $url . '" class="wikilink">' . htmlspecialchars($label) . '</a>';
             },
             $text
@@ -308,8 +339,6 @@ class MarkdownPreprocessor
      */
     public static function loadEmbedContent(string $embedRef, string $note, int $index, Campaign|string|null $campaign = null, bool $debug = false): string
     {
-        $folder = VaultHelper::resolveCampaignFolder($campaign);
-
         if (self::$embedDepth >= self::$maxEmbedDepth) {
             return '<div class="embed-note embed-error"> Embed troppo annidato</div>';
         }
@@ -318,8 +347,10 @@ class MarkdownPreprocessor
         $noteName = trim($parts[0]);
         $sectionPath = isset($parts[1]) ? $parts[1] . ($parts[2] ?? '') : '';
 
-        $relativePath = self::findNotePath($noteName, $campaign);
-        $fullPath = base_path('Vault/' . $folder . '/' . $relativePath . '.md');
+        // Cerca prima nella campagna corrente, poi (fallback) nel materiale condiviso.
+        [$relativePath, $originCampaign, $embedFound] = self::resolveNoteWithFallback($noteName, $campaign);
+        $originFolder = VaultHelper::resolveCampaignFolder($originCampaign);
+        $fullPath = base_path('Vault/' . $originFolder . '/' . $relativePath . '.md');
 
         if (!File::exists($fullPath)) {
             // Fallback legacy
@@ -329,15 +360,15 @@ class MarkdownPreprocessor
             }
         }
 
-        if (!File::exists($fullPath)) {
+        if (!$embedFound || !File::exists($fullPath)) {
             $camelPath = VaultController::pathToCamelCase($relativePath . '.md');
-            $url = '/vault/' . $folder . '/' . $camelPath;
+            $url = '/vault/' . $originFolder . '/' . $camelPath;
             return '<div class="embed-note embed-missing"><a href="' . $url . '" class="wikilink"> ' . htmlspecialchars($noteName) . ' (non trovato)</a></div>';
         }
 
         $content = File::get($fullPath);
 
-        if (!AccessControlService::noteIsVisibleTo($content, null, $campaign)) {
+        if (!AccessControlService::noteIsVisibleTo($content, null, $originCampaign)) {
             return '<div class="embed-note embed-restricted text-muted fst-italic"><i class="bi bi-lock"></i> Contenuto riservato</div>';
         }
 
@@ -352,17 +383,17 @@ class MarkdownPreprocessor
         }
 
         self::$embedDepth++;
-        $html = self::toHtml($content, $note, $campaign);
+        $html = self::toHtml($content, $note, $originCampaign);
         self::$embedDepth--;
 
         $camelPath = VaultController::pathToCamelCase($relativePath);
-        $url = '/vault/' . $folder . '/' . $camelPath;
+        $url = '/vault/' . $originFolder . '/' . $camelPath;
         $embedDepth = self::$embedDepth;
         $user = Auth::check() ? Auth::user() : null;
         $showEmbedLink = $user ? $user->showEmbedLink : false;
         $collapseEmbed = $user ? $user->collapseEmbed : false;
 
-        $title = VaultHelper::getOriginalName($embedRef, $note, $campaign);
+        $title = VaultHelper::getOriginalName($embedRef, $note, $originCampaign);
         $title = explode('#', $title);
         $title = htmlspecialchars(end($title));
 

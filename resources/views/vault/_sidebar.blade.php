@@ -82,7 +82,7 @@
             @elseif(isset($campaign))
                 <div class="mb-3 pb-2 border-bottom border-secondary">
                     <span class="badge bg-dark border border-warning text-warning px-2 py-1">
-                        <i class="bi bi-compass me-1"></i> {{ $campaign->display_name }}
+                        <i class="bi bi-compass me-1"></i> {{ \App\Helpers\VaultHelper::resolveCampaignDisplayName($campaign) }}
                     </span>
                 </div>
             @endif
@@ -90,7 +90,7 @@
             @if(isset($campaign))
                 <div class="mb-3 pb-2 border-bottom border-secondary">
                     <span class="badge bg-dark border border-warning text-warning px-2 py-1">
-                        <i class="bi bi-compass me-1"></i> {{ $campaign->display_name }}
+                        <i class="bi bi-compass me-1"></i> {{ \App\Helpers\VaultHelper::resolveCampaignDisplayName($campaign) }}
                     </span>
                 </div>
             @endif

@@ -299,4 +299,26 @@ class VaultHelper
         $name = preg_replace('/\.(md|pdf)$/i', '', basename($slug));
         return ucwords(str_replace(['-', '_'], ' ', $name));
     }
+
+    /**
+     * Etichetta leggibile per intestazioni/titoli pagina, valida sia per una vera
+     * Campaign (usa display_name) sia per una pseudo-campagna passata come stringa
+     * (es. 'materiale' -> 'Materiali'), che non ha una riga corrispondente nel DB.
+     */
+    public static function resolveCampaignDisplayName(Campaign|string|null $campaign = null): string
+    {
+        if ($campaign instanceof Campaign) {
+            return $campaign->display_name;
+        }
+
+        if ($campaign === 'materiale') {
+            return 'Materiali';
+        }
+
+        if (is_string($campaign) && $campaign !== '') {
+            return self::prettify($campaign);
+        }
+
+        return self::resolveCampaignFolder($campaign);
+    }
 }

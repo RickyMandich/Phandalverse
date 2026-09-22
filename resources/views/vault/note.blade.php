@@ -74,7 +74,7 @@
             <div class="title-container">
                 <div class="mb-1">
                     <span class="badge rounded-pill bg-dark-subtle border border-secondary text-info fw-normal" style="font-size: 0.75rem;" title="Campagna corrente">
-                        <i class="bi bi-collection me-1"></i>{{ $campaign->display_name }}
+                        <i class="bi bi-collection me-1"></i>{{ \App\Helpers\VaultHelper::resolveCampaignDisplayName($campaign) }}
                     </span>
                 </div>
                 <h1 class="display-5 mb-4 border-bottom pb-2 text-warning fw-bold">{{ $title }}</h1>
@@ -89,7 +89,7 @@
                     @endif
 
                     @if (!$isPdf && Auth::check() && Auth::user()->isMaster())
-                        <a href="{{ route('vault.raw', ['campaign' => $campaign->folder_name, 'note' => $note]) }}" class="btn btn-sm btn-outline-warning"
+                        <a href="{{ route('vault.raw', ['campaign' => \App\Helpers\VaultHelper::resolveCampaignFolder($campaign), 'note' => $note]) }}" class="btn btn-sm btn-outline-warning"
                             title="Scarica Markdown">
                             <i class="bi bi-download"></i> Scarica MD
                         </a>

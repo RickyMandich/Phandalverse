@@ -64,6 +64,11 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link" href="{{ route('materiale.show') }}">
+                                    <i class="bi bi-folder2-open"></i> {{ __('Materiali') }}
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link" href="{{ route('vault.changelog.index', ['campaign' => $navCampaignFolder]) }}">
                                     <i class="bi bi-clock-history"></i> {{ __('Changelog') }}
                                 </a>
@@ -85,6 +90,13 @@
 
                     <!-- Right Side Of Navbar -->
                     <ul class="navbar-nav ms-auto">
+                        @guest
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('materiale.show') }}">
+                                    <i class="bi bi-folder2-open"></i> {{ __('Materiali') }}
+                                </a>
+                            </li>
+                        @endguest
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('dm.player.index') }}">
                                 <i class="bi bi-eye"></i> Visuale Giocatori

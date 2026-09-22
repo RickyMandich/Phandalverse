@@ -20,9 +20,11 @@ Questa documentazione fornisce una panoramica completa sull'architettura, le sce
    - [Permessi di Lettura e Gruppi di Accesso (`#access-`, `#dm`, `#startAccess-`)](#permessi-di-lettura-e-gruppi-di-accesso-access--dm-startaccess-)
    - [Pannello ad Albero, Selettore Campagne e Grafo Interattivo](#pannello-ad-albero-selettore-campagne-e-grafo-interattivo)
    - [Ricerca, API Raw e Embed Immagini Scoped](#ricerca-api-raw-e-embed-immagini-scoped)
+   - [Materiale Condiviso tra Campagne (`/vault/materiale`)](#materiale-condiviso-tra-campagne-vaultmateriale)
 5. [⚔️ DM Screen & Gestione Sessioni D&D (`/dm`)](#%EF%B8%8F-dm-screen--gestione-sessioni-dd-dm)
    - [Iniziative, Turni e Stat Block](#iniziative-turni-e-stat-block)
    - [Libreria Personaggi (`DmCharacter`)](#libreria-personaggi-dmcharacter)
+   - [Import Stat-Block da Materiale](#import-stat-block-da-materiale)
    - [Player Live View (`/dm/player/{share_code}`)](#player-live-view-dmplayershare_code)
 6. [👤 Sistema di Autenticazione, Ruoli e Profilo Utente](#-sistema-di-autenticazione-ruoli-e-profilo-utente)
 7. [✈️ Coda Email Asincrona (Fire-and-Forget su Hosting Limiti)](#%EF%B8%8F-coda-email-asincrona-fire-and-forget-su-hosting-limiti)
@@ -53,12 +55,12 @@ Il progetto è costruito sul framework **Laravel 12** con frontend basato su **B
 phandalverse/
 ├── app/
 │   ├── Helpers/
-│   │   └── VaultHelper.php          # Risoluzione map.json per campagna, nomi originali, ricerca note
+│   │   └── VaultHelper.php          # Risoluzione map.json per campagna, nomi originali, ricerca note, display name (anche per la pseudo-campagna 'materiale')
 │   ├── Http/
 │   │   ├── Controllers/
 │   │   │   ├── AdminController.php  # Gestione campagne, utenti, gruppi, errori, SQL console, stats, iscrizioni telegram
-│   │   │   ├── DmController.php     # Logica DM Screen, sessioni combat, player view
-│   │   │   ├── VaultController.php  # Rendering note, albero, grafo interattivo, API raw per campagna
+│   │   │   ├── DmController.php     # Logica DM Screen, sessioni combat, player view, import stat-block da Materiali
+│   │   │   ├── VaultController.php  # Rendering note, albero, grafo interattivo, API raw per campagna + varianti pubbliche per Materiali
 │   │   │   ├── TelegramBotController.php # Webhook telegram, comandi, notifiche multi-campagna
 │   │   │   ├── TelegramLinkController.php # Conferma web dei token /link (account personale o gruppo↔campagna)
 │   │   │   ├── JobController.php    # Processore asincrono della coda email
@@ -71,7 +73,7 @@ phandalverse/
 │   │   ├── User.php                 # Modello Utente (Admin, Master, default_campaign_id, telegram_user_id/telegram_username, accessibleCampaigns)
 │   │   ├── AccessGroup.php          # Gruppi di accesso gerarchici al Vault legati a campaign_id
 │   │   ├── DmSession.php            # Sessione di combattimento (dati JSON + share_code)
-│   │   ├── DmCharacter.php          # Template e PG/PNG salvati
+│   │   ├── DmCharacter.php          # Template e PG/PNG salvati (i mostri importati da Materiali sono type=template)
 │   │   ├── SystemError.php          # Log errori di sistema per admin
 │   │   ├── SystemSetting.php        # Impostazioni di sistema (es. default vault view)
 │   │   ├── Statistic.php            # Statistiche visite e tempo di risposta
@@ -79,7 +81,8 @@ phandalverse/
 │   │   └── TelegramLinkToken.php    # Token temporanei (1h) per il collegamento account/gruppo Telegram
 │   └── Services/
 │       ├── AccessControlService.php # Controllo accessi unificato note/blocchi e gerarchia gruppi
-│       ├── MarkdownPreprocessor.php # Engine di parsing Markdown (Wikilink, Embed, AccessBlock, Statblock)
+│       ├── MarkdownPreprocessor.php # Engine di parsing Markdown (Wikilink, Embed, AccessBlock, Statblock; fallback wikilink/embed verso 'materiale')
+│       ├── StatBlockParser.php      # Estrae i campi strutturati (nome, CA, PV, velocità, caratteristiche) da una nota stat-block del Vault materiale
 │       ├── TelegramService.php      # Client API Telegram (invio messaggi, broadcastCampaign, notifiche)
 │       ├── EmailQueueService.php    # Dispatcher coda email
 │       ├── EmailLogService.php      # Logger dedicato sistema mail
@@ -94,15 +97,16 @@ phandalverse/
 │   ├── sass/ & css/                 # Stili CSS personalizzati e Bootstrap
 │   └── views/
 │       ├── admin/                   # Dashboard amministrativa (campagne, utenti, gruppi, errori, db, stats, iscrizioni telegram)
-│       ├── dm/                      # Schermate DM Screen, Manage e Player View
-│       ├── vault/                   # Note, albero side-bar, grafo, ricerca, changelog
+│       ├── dm/                      # Schermate DM Screen, Manage (con modale import da Materiali) e Player View
+│       ├── vault/                   # Note, albero side-bar, grafo, ricerca, changelog (riusate anche per /vault/materiale)
 │       ├── telegram/                # Pagine web di conferma /link (account personale e gruppo↔campagna)
-│       └── layouts/                 # Master layout dell'applicazione
+│       └── layouts/                 # Master layout dell'applicazione (link "Materiali" in header, accanto a "Vault")
 ├── routes/
-│   └── web.php                      # Rotte web, scoping campagne, API pubbliche e webhook
+│   └── web.php                      # Rotte web, scoping campagne, rotte pubbliche /vault/materiale, API pubbliche e webhook
 └── Vault/                           # Cartella del Vault (PRESENTE SOLO SUL SERVER DI PRODUZIONE)
     ├── newCampaign/                 # Vault della campagna principale
-    └── secondCampaign/              # Vault di un'altra campagna
+    ├── secondCampaign/              # Vault di un'altra campagna
+    └── materiale/                   # Materiale condiviso tra tutte le campagne (manuali, bestiario, stat-block) — NON è una riga in `campaigns`
 ```
 
 ---
@@ -228,6 +232,18 @@ Per evitare che un utente non autenticato possa consultare e navigare liberament
      - Se la nota ha `#dm` o tag `#access-gruppo`, viene restituito `404 Not Found`.
      - All'interno della nota pubblica, eventuali blocchi `#startMaster...#endMaster` e `#startAccess-...#endAccess` vengono automaticamente rimossi.
 
+### Materiale Condiviso tra Campagne (`/vault/materiale`)
+Dall'esigenza di non dover duplicare in ogni campagna gli stessi manuali/bestiario/incantesimi, esiste una pseudo-campagna condivisa **"materiale"**:
+- **Nessuna riga in `campaigns`**: `materiale` è gestita a livello di codice come un `Campaign|string|null` in cui la stringa letterale `'materiale'` scorre negli stessi helper (`VaultHelper`, `AccessControlService`, `MarkdownPreprocessor`) già pensati per accettarla. Non compare quindi nella tabella `campaigns`, né nel selettore campagne, né ha un grafo interattivo dedicato (solo vista ad albero).
+- **Percorso su disco**: `Vault/materiale/` — stesso branch/volume delle campagne, aggiornato dalla stessa GitHub Action generica (`on: push branches: ['**']` → `pull-vault.sh {branch}`) già in uso, nessuna modifica infrastrutturale necessaria.
+- **Rotte pubbliche** (nessun login richiesto, registrate *prima* del gruppo con route model binding su `{campaign:folder_name}` così che il segmento letterale `materiale` non tenti mai un binding Eloquent):
+  - `GET /vault/materiale/{note?}` (`VaultController::showMateriale`, nome rotta `materiale.show`): home ad albero (senza grafo) o singola nota/cartella, consultabile anche da anonimo.
+  - `GET /api/vault/materiale/{note?}` (`VaultController::rawShowMateriale`, nome rotta `materiale.raw`): download markdown raw.
+  - Entrambe delegano alla stessa logica di `show()`/`rawShow()` (estratta nei metodi condivisi `renderVaultNote()`/`renderVaultRaw()`), passando `'materiale'` al posto di un'istanza `Campaign` e disattivando i redirect al login altrimenti imposti sulla home/vista cartella delle campagne vere.
+- **Nessun filtro di accesso dedicato**: materiale è interamente pubblica. Il meccanismo `#dm`/`#access-` resta tecnicamente attivo (stesso codice delle campagne, nessuna eccezione), ma per design nessuna nota in materiale dovrebbe usarlo.
+- **Wikilink ed embed con fallback automatico**: `[[Nome Nota]]` e `![[Nome Nota]]` cercano prima nell'indice della campagna corrente e, solo se non trovati, nell'indice di `materiale` (`MarkdownPreprocessor::resolveNoteWithFallback()`). Nessuna sintassi speciale: un `[[Manuale dei Mostri]]` scritto in una nota di campagna resta un wikilink Obsidian valido (verde, click-to-open) sia in locale che sul sito, e il link generato punta automaticamente a `/vault/materiale/...` quando la nota vive lì.
+- **Header**: pulsante "Materiali" accanto a "Vault" (stessa icona `bi-folder2-open`), visibile sia agli utenti loggati che ai guest (per questi ultimi è l'unico link di navigazione del Vault mostrato in header).
+
 ### Visualizzazione Note Markdown e Note PDF (`vault.show`)
 Nella schermata di visualizzazione della singola nota (`resources/views/vault/note.blade.php`):
 - **Badge Campagna nell'Header**: sopra il titolo compare sempre un piccolo badge con il `display_name` della campagna corrente (icona `bi-collection`), utile su mobile dove la sidebar è collassata di default e, soprattutto dopo una ricerca multi-campagna, altrimenti non sarebbe subito chiaro in quale campagna ci si trova.
@@ -259,6 +275,13 @@ Permette di salvare schede di personaggi e mostri suddivisi in tre categorie:
 1. `player`: Personaggi giocanti.
 2. `template`: Mostri e PNG riutilizzabili disponibili come modello.
 3. `group`: Gruppi preconfigurati di combattanti.
+
+### Import Stat-Block da Materiale
+Per evitare di dover inserire a mano i dati di un mostro già scritto come nota nel Vault materiale ([`/vault/materiale`](#materiale-condiviso-tra-campagne-vaultmateriale)):
+- **`GET /dm/api/materiale/stat-blocks`** (`DmController::scanMaterialeStatBlocks`): scansiona on-demand (nessuna cache: il costo di rifarla ad ogni apertura è accettato in cambio di semplicità) `Vault/materiale/manuali/stat-block/*.md`, interpreta ciascun file con [`App\Services\StatBlockParser`](file:///c:/Users/RickyMandich/PROJECT/Phandalverse/phandalverse/app/Services/StatBlockParser.php) ed elenca nome/CA/PV trovati, segnalando se esiste già un `DmCharacter` (`type=template`) con lo stesso nome.
+- **`StatBlockParser`**: dal confronto tra il template ufficiale delle stat-block e le note reali (che si discostano parecchio: sezioni libere di Tiri Salvezza/Abilità/Sensi/Linguaggi/Sfida/Azioni/Varianti), estrae solo i pochi campi affidabili in ogni nota (nome, sottotitolo specie/taglia/allineamento, CA, Punti Vita, Velocità, tabella delle 6 caratteristiche) e mette **tutto il resto come testo grezzo in `notes`** — lo stesso campo già usato per contenuto libero e già renderizzato via `MarkdownPreprocessor::toHtml()` (`DmController::renderStatBlock`), oltre che già soggetto a `[ACCESSO LIMITATO]` per chi non è `isMasterUtils()`.
+- **`GET dm.manage` → modale "Importa da Materiali"**: il master seleziona una o più stat-block (batch) dalla lista; per ciascun nome già esistente sceglie **Sovrascrivi** o **Duplica** (nuovo record con suffisso incrementale stile Esplora File: "Nome (2)", "Nome (3)", ...).
+- **`POST /dm/api/materiale/stat-blocks/import`** (`DmController::importMaterialeStatBlocks`): crea/aggiorna i `DmCharacter` (`type=template`, quindi automaticamente visibili a tutti i master come i mostri pubblici già esistenti). **Nessun collegamento persistente alla nota sorgente**: la nota è solo la fonte iniziale, così un rename/spostamento del file in Materiali non rompe nulla lato Fight Manager.
 
 ### Player Live View (`/dm/player/{share_code}`)
 - Ogni sessione di combattimento genera un codice di condivisione univoco (`share_code`).

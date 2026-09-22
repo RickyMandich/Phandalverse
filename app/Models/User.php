@@ -172,6 +172,13 @@ class User extends Authenticatable implements MustVerifyEmail
             return true;
         }
 
+        // Pseudo-campagna condivisa e pubblica: nessuna riga in `campaigns`, accessibile a chiunque
+        // (loggato o meno). Senza questa eccezione, un utente loggato non-master la vedrebbe negata
+        // qui sotto perché la ricerca per folder_name='materiale' non trova mai nulla.
+        if ($campaign === 'materiale') {
+            return true;
+        }
+
         if ($campaign instanceof Campaign) {
             $campaignId = $campaign->id;
         } elseif (is_numeric($campaign)) {

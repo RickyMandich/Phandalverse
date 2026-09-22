@@ -53,7 +53,7 @@ class VaultController extends Controller
      * Carica la configurazione estetica del grafo da `Vault/{folder}/.obsidian/graph-config.json`
      * Se il file non esiste o è invalido, ritorna una configurazione di default.
      */
-    private function loadGraphConfig(?Campaign $campaign = null): array
+    private function loadGraphConfig(Campaign|string|null $campaign = null): array
     {
         $folder = VaultHelper::resolveCampaignFolder($campaign);
         $obsidianDir = base_path('Vault/' . $folder . '/.obsidian');
@@ -196,7 +196,7 @@ class VaultController extends Controller
      * Costruisce l'albero dei file del vault partendo dalla mappa (map.json)
      * e verificando l'esistenza dei file su disco per la specifica campagna.
      */
-    public function buildFileTree(?string $basePath = null, $note = '', ?Campaign $campaign = null): array
+    public function buildFileTree(?string $basePath = null, $note = '', Campaign|string|null $campaign = null): array
     {
         $folder = VaultHelper::resolveCampaignFolder($campaign);
         $map = VaultHelper::getMap($note, $campaign);
@@ -275,7 +275,7 @@ class VaultController extends Controller
         return $tree;
     }
 
-    private function traverseMapAndBuildTree($mapNode, $currentPath, $note, $currentRealPath = '', ?Campaign $campaign = null): array
+    private function traverseMapAndBuildTree($mapNode, $currentPath, $note, $currentRealPath = '', Campaign|string|null $campaign = null): array
     {
         $folder = VaultHelper::resolveCampaignFolder($campaign);
         $branch = ['_files' => []];
@@ -599,7 +599,7 @@ class VaultController extends Controller
     /**
      * Converte il parametro dell'URL nel path reale di una cartella.
      */
-    public static function camelCaseToFolderPath(string $camelPath, ?Campaign $campaign = null): ?string
+    public static function camelCaseToFolderPath(string $camelPath, Campaign|string|null $campaign = null): ?string
     {
         $folder = VaultHelper::resolveCampaignFolder($campaign);
         $full = base_path('Vault/' . $folder . '/' . $camelPath);
@@ -764,6 +764,24 @@ class VaultController extends Controller
     {
         $this->checkCampaignAccess($request, $campaign);
 
+        return $this->renderVaultNote($request, $campaign, $note, false);
+    }
+
+    /**
+     * Variante pubblica di `show()` per la pseudo-campagna condivisa "materiale":
+     * nessuna riga in `campagne`, nessun controllo di accesso, consultabile anche da anonimo.
+     */
+    public function showMateriale(Request $request, $note = null)
+    {
+        return $this->renderVaultNote($request, 'materiale', $note, true);
+    }
+
+    /**
+     * Corpo effettivo di `show()`/`showMateriale()`. $publicShared=true disattiva i redirect
+     * al login imposti per le home/albero delle campagne vere (materiale è sempre pubblica).
+     */
+    protected function renderVaultNote(Request $request, Campaign|string $campaign, $note = null, bool $publicShared = false)
+    {
         $folder = VaultHelper::resolveCampaignFolder($campaign);
 
         // Servire file binari (immagini) direttamente, ad eccezione dei PDF che se non richiesti con ?raw=1 o ?download=1 vanno visualizzati nella vista nota
@@ -807,17 +825,33 @@ class VaultController extends Controller
 
         // Vista Home (Grafo + Albero)
         if ($note === null || $note === '') {
-            if (!Auth::check()) {
+            if (!$publicShared && !Auth::check()) {
                 return redirect()->route('login');
             }
 
             $note = "graph";
             $tree = $this->buildFileTree(null, note: $note, campaign: $campaign);
+
+            // Materiale non ha un grafo (non richiesto): mostra solo l'albero, come la vista cartella.
+            if ($publicShared) {
+                return view('vault.tree', [
+                    'title' => VaultHelper::resolveCampaignDisplayName($campaign),
+                    'tree' => $tree,
+                    'fullTree' => $tree,
+                    'currentView' => 'tree',
+                    'folderPath' => null,
+                    'graphConfig' => [],
+                    'note' => $note,
+                    'campaign' => $campaign,
+                    'accessibleCampaigns' => $this->getAccessibleCampaigns(),
+                ]);
+            }
+
             $graphData = $this->buildGraphData($campaign);
             $graphConfig = $this->loadGraphConfig($campaign);
 
             return view('vault.index', [
-                'title' => 'Vault - ' . $campaign->display_name,
+                'title' => 'Vault - ' . VaultHelper::resolveCampaignDisplayName($campaign),
                 'tree' => $tree,
                 'graphData' => $graphData,
                 'graphConfig' => $graphConfig,
@@ -827,12 +861,12 @@ class VaultController extends Controller
             ]);
         }
 
-        CustomLogger::note($note, "Visualizzazione nota $note per campagna {$campaign->folder_name}");
+        CustomLogger::note($note, "Visualizzazione nota $note per campagna {$folder}");
 
         // Vista Cartella
         $folderPath = self::camelCaseToFolderPath($note, $campaign);
         if ($folderPath !== null) {
-            if (!Auth::check()) {
+            if (!$publicShared && !Auth::check()) {
                 return redirect()->route('login');
             }
 
@@ -911,15 +945,16 @@ class VaultController extends Controller
             $accessBadges = [];
             $pdfRequiredGroups = AccessControlService::requiredGroupsFromNoteTag($pdfTag);
             if (!empty($pdfRequiredGroups)) {
-                $accessBadges = AccessControlService::computeBadgeGroups($currentUser, $pdfRequiredGroups, $campaign->id);
+                $pdfCampaignId = ($campaign instanceof Campaign) ? $campaign->id : null;
+                $accessBadges = AccessControlService::computeBadgeGroups($currentUser, $pdfRequiredGroups, $pdfCampaignId);
             }
 
             $title = VaultHelper::getOriginalName($cleanFilePath . '.pdf', $note, $campaign);
             $tree = $this->buildFileTree(null, note: $note, campaign: $campaign);
             $graphConfig = $this->loadGraphConfig($campaign);
 
-            $pdfUrl = route('vault.raw', ['campaign' => $campaign->folder_name, 'note' => self::pathToCamelCase($cleanFilePath . '.pdf')]);
-            $pdfDownloadUrl = route('vault.raw', ['campaign' => $campaign->folder_name, 'note' => self::pathToCamelCase($cleanFilePath . '.pdf'), 'download' => 1]);
+            $pdfUrl = route('vault.raw', ['campaign' => $folder, 'note' => self::pathToCamelCase($cleanFilePath . '.pdf')]);
+            $pdfDownloadUrl = route('vault.raw', ['campaign' => $folder, 'note' => self::pathToCamelCase($cleanFilePath . '.pdf'), 'download' => 1]);
 
             return view('vault.note', [
                 'title' => $title,
@@ -952,7 +987,8 @@ class VaultController extends Controller
         $accessBadges = [];
         $requiredGroups = AccessControlService::requiredGroupsFromNoteTag($content);
         if (!empty($requiredGroups)) {
-            $accessBadges = AccessControlService::computeBadgeGroups($currentUser, $requiredGroups, $campaign->id);
+            $noteCampaignId = ($campaign instanceof Campaign) ? $campaign->id : null;
+            $accessBadges = AccessControlService::computeBadgeGroups($currentUser, $requiredGroups, $noteCampaignId);
         }
 
         // Estrai tutti i gruppi menzionati nella nota (sia a livello nota che a livello blocco)
@@ -979,7 +1015,7 @@ class VaultController extends Controller
         }
 
         if (!empty($noteGroupSlugs)) {
-            $allGroups = AccessControlService::getAllGroups($campaign->id);
+            $allGroups = AccessControlService::getAllGroups(($campaign instanceof Campaign) ? $campaign->id : null);
             foreach ($allGroups as $group) {
                 $gSlug = strtolower($group->slug);
                 if (in_array($gSlug, $noteGroupSlugs, true)) {
@@ -998,6 +1034,8 @@ class VaultController extends Controller
         }
 
         $title = VaultHelper::getOriginalName($filePath . '.md', $note, $campaign);
+        // (nota) $campaign->id non viene mai letto direttamente qui sotto: le uniche letture
+        // dirette sono già state sostituite sopra con l'accesso protetto instanceof-safe.
 
         $html = MarkdownPreprocessor::toHtml($content, $note, $campaign);
         $tree = $this->buildFileTree(null, note: $note, campaign: $campaign);
@@ -1028,6 +1066,19 @@ class VaultController extends Controller
     {
         $this->checkCampaignAccess($request, $campaign);
 
+        return $this->renderVaultRaw($request, $campaign, $note);
+    }
+
+    /**
+     * Variante pubblica di `rawShow()` per la pseudo-campagna condivisa "materiale".
+     */
+    public function rawShowMateriale(Request $request, $note = null)
+    {
+        return $this->renderVaultRaw($request, 'materiale', $note);
+    }
+
+    protected function renderVaultRaw(Request $request, Campaign|string $campaign, $note = null)
+    {
         $folder = VaultHelper::resolveCampaignFolder($campaign);
 
         if ($note !== null) {

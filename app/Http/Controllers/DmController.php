@@ -7,6 +7,7 @@ use App\Models\DmCharacter;
 use App\Models\DmSession;
 use Illuminate\Support\Facades\Auth;
 use App\Services\MarkdownPreprocessor;
+use App\Services\StatBlockParser;
 use App\Services\CustomLogger;
 
 class DmController extends Controller
@@ -273,6 +274,154 @@ class DmController extends Controller
         $content = $request->input('content');
         // Use static toHtml method from MarkdownPreprocessor
         return response()->json(['html' => MarkdownPreprocessor::toHtml($content, 'DM Screen')]);
+    }
+
+    /**
+     * Scansiona Vault/materiale/manuali/stat-block/*.md (on-demand, nessuna cache: il master
+     * la apre quando vuole importare, va bene anche se un po' lenta con molti file) e ritorna
+     * l'elenco delle stat-block trovate con il nome che avrebbero da importate, segnalando
+     * per ciascuna se esiste già un DmCharacter (type=template) con lo stesso nome.
+     */
+    public function scanMaterialeStatBlocks()
+    {
+        $dir = base_path('Vault/materiale/manuali/stat-block');
+        $results = [];
+
+        if (is_dir($dir)) {
+            $files = glob($dir . DIRECTORY_SEPARATOR . '*.md') ?: [];
+            sort($files);
+
+            $existingNames = DmCharacter::where('type', 'template')
+                ->pluck('name')
+                ->map(fn($n) => strtolower($n))
+                ->all();
+
+            foreach ($files as $file) {
+                try {
+                    $markdown = file_get_contents($file);
+                    $parsed = StatBlockParser::parse($markdown);
+                    $name = $parsed['name'] ?: StatBlockParser::fallbackNameFromFilename($file);
+
+                    $results[] = [
+                        'path' => basename($file),
+                        'name' => $name,
+                        'subtitle' => $parsed['subtitle'],
+                        'ac' => $parsed['ac'],
+                        'hp_formula' => $parsed['hp_formula'],
+                        'conflict' => in_array(strtolower($name), $existingNames, true),
+                    ];
+                } catch (\Throwable $e) {
+                    $results[] = [
+                        'path' => basename($file),
+                        'name' => StatBlockParser::fallbackNameFromFilename($file),
+                        'error' => 'Impossibile leggere/interpretare il file: ' . $e->getMessage(),
+                        'conflict' => false,
+                    ];
+                }
+            }
+        }
+
+        return response()->json(['stat_blocks' => $results]);
+    }
+
+    /**
+     * Importa in batch le stat-block selezionate. Ogni nota è solo la fonte iniziale: una volta
+     * importato, il DmCharacter creato/aggiornato non resta collegato al file (nessun campo che
+     * lo referenzi), così un rename/spostamento della nota non rompe nulla lato Fight Manager.
+     */
+    public function importMaterialeStatBlocks(Request $request)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.path' => 'required|string',
+            'items.*.resolution' => 'required|in:skip,overwrite,duplicate',
+        ]);
+
+        $dir = base_path('Vault/materiale/manuali/stat-block');
+        $imported = [];
+        $skipped = [];
+        $errors = [];
+
+        foreach ($validated['items'] as $item) {
+            if ($item['resolution'] === 'skip') {
+                $skipped[] = $item['path'];
+                continue;
+            }
+
+            // Nessuna traversal fuori dalla cartella stat-block: solo il nome file, non un path.
+            $safePath = basename($item['path']);
+            $fullPath = $dir . DIRECTORY_SEPARATOR . $safePath;
+
+            if (!is_file($fullPath)) {
+                $errors[] = ['path' => $item['path'], 'error' => 'File non trovato'];
+                continue;
+            }
+
+            try {
+                $parsed = StatBlockParser::parse(file_get_contents($fullPath));
+                $name = $parsed['name'] ?: StatBlockParser::fallbackNameFromFilename($fullPath);
+
+                $stats = [
+                    'ac' => $parsed['ac'],
+                    'hp_formula' => $parsed['hp_formula'],
+                    'speed' => $parsed['speed'],
+                    'subtitle' => $parsed['subtitle'],
+                    'attributes' => $parsed['attributes'],
+                    'saving_throws' => null,
+                    'notes' => $parsed['notes'],
+                ];
+
+                $existing = DmCharacter::where('type', 'template')
+                    ->whereRaw('LOWER(name) = ?', [strtolower($name)])
+                    ->first();
+
+                if ($existing && $item['resolution'] === 'overwrite') {
+                    $existing->update(['stats' => $stats]);
+                    $imported[] = ['path' => $item['path'], 'name' => $existing->name, 'action' => 'overwritten', 'id' => $existing->id];
+                    continue;
+                }
+
+                $finalName = $name;
+                if ($existing && $item['resolution'] === 'duplicate') {
+                    $finalName = $this->nextAvailableCharacterName($name);
+                }
+
+                $character = DmCharacter::create([
+                    'user_id' => Auth::id(),
+                    'name' => $finalName,
+                    'type' => 'template',
+                    'stats' => $stats,
+                ]);
+
+                $imported[] = ['path' => $item['path'], 'name' => $character->name, 'action' => 'created', 'id' => $character->id];
+            } catch (\Throwable $e) {
+                $errors[] = ['path' => $item['path'], 'error' => $e->getMessage()];
+            }
+        }
+
+        return response()->json(['imported' => $imported, 'skipped' => $skipped, 'errors' => $errors]);
+    }
+
+    /**
+     * Prossimo nome libero in stile Esplora File: "Nome", "Nome (2)", "Nome (3)", ...
+     */
+    protected function nextAvailableCharacterName(string $baseName): string
+    {
+        $existingNames = DmCharacter::where('type', 'template')
+            ->where(function ($q) use ($baseName) {
+                $q->whereRaw('LOWER(name) = ?', [strtolower($baseName)])
+                    ->orWhereRaw('LOWER(name) LIKE ?', [strtolower($baseName) . ' (%']);
+            })
+            ->pluck('name')
+            ->map(fn($n) => strtolower($n))
+            ->all();
+
+        $n = 2;
+        while (in_array(strtolower($baseName) . ' (' . $n . ')', $existingNames, true)) {
+            $n++;
+        }
+
+        return $baseName . ' (' . $n . ')';
     }
 
     public function playerIndex()

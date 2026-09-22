@@ -24,6 +24,18 @@ Route::get('/vault', [VaultController::class, 'index'])->name('vault.index');
 // Ricerca svincolata da una singola campagna: copre tutte quelle accessibili all'utente
 Route::get('/vault/search', [VaultController::class, 'search'])->name('vault.search');
 
+// ========== MATERIALE CONDIVISO (pseudo-campagna pubblica, nessuna riga in `campagne`) ==========
+// Registrate PRIMA del gruppo con route model binding {campaign:folder_name} sottostante,
+// così che il segmento letterale "materiale" non tenti mai il binding Eloquent su Campaign
+// (che fallirebbe con 404, non esistendo una riga corrispondente).
+Route::get('/vault/materiale/{note?}', [VaultController::class, 'showMateriale'])
+    ->where('note', '.*')
+    ->name('materiale.show');
+
+Route::get('/api/vault/materiale/{note?}', [VaultController::class, 'rawShowMateriale'])
+    ->where('note', '.*')
+    ->name('materiale.raw');
+
 Route::prefix('vault/{campaign:folder_name}')->group(function () {
     Route::get('/changelog', [ChangelogController::class, 'index'])->name('vault.changelog.index');
     Route::get('/changelog/{version}', [ChangelogController::class, 'show'])->name('vault.changelog.show');
@@ -83,6 +95,9 @@ Route::middleware(['auth', 'verified', 'master_utils'])->prefix('dm')->group(fun
     Route::get('/api/session', [DmController::class, 'legacyLoadSession'])->name('dm.api.session.load');
 
     Route::post('/api/render-stat-block', [DmController::class, 'renderStatBlock'])->name('dm.api.render-stat-block');
+
+    Route::get('/api/materiale/stat-blocks', [DmController::class, 'scanMaterialeStatBlocks'])->name('dm.api.materiale.stat-blocks.index');
+    Route::post('/api/materiale/stat-blocks/import', [DmController::class, 'importMaterialeStatBlocks'])->name('dm.api.materiale.stat-blocks.import');
 });
 
 // ========== ADMIN ROUTES (solo amministratori) ==========

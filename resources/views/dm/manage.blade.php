@@ -12,6 +12,10 @@
                 characters: [],
                 sessions: [],
                 charFilter: '',
+                importModalOpen: false,
+                importLoading: false,
+                importItems: [],
+                importSubmitting: false,
 
                 init() {
                     this.reloadData();
@@ -82,6 +86,58 @@
                         headers: { 'X-CSRF-TOKEN': token }
                     });
                     this.reloadData();
+                },
+
+                async openImportModal() {
+                    this.importModalOpen = true;
+                    this.importLoading = true;
+                    this.importItems = [];
+                    try {
+                        const response = await fetch('/dm/api/materiale/stat-blocks');
+                        const data = await response.json();
+                        this.importItems = (data.stat_blocks || []).map(sb => ({
+                            ...sb,
+                            selected: !sb.error,
+                            resolution: sb.conflict ? 'duplicate' : 'overwrite',
+                        }));
+                    } catch (e) {
+                        alert('Errore durante la scansione della cartella stat-block in Materiali.');
+                    }
+                    this.importLoading = false;
+                },
+
+                closeImportModal() {
+                    this.importModalOpen = false;
+                },
+
+                get importSelectedCount() {
+                    return this.importItems.filter(i => i.selected).length;
+                },
+
+                async submitImport() {
+                    const selected = this.importItems.filter(i => i.selected && !i.error);
+                    if (selected.length === 0) return;
+
+                    this.importSubmitting = true;
+                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    try {
+                        const response = await fetch('/dm/api/materiale/stat-blocks/import', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+                            body: JSON.stringify({
+                                items: selected.map(i => ({ path: i.path, resolution: i.resolution }))
+                            })
+                        });
+                        const data = await response.json();
+                        if (data.errors && data.errors.length) {
+                            alert('Alcuni file non sono stati importati:\n' + data.errors.map(e => `${e.path}: ${e.error}`).join('\n'));
+                        }
+                        this.importModalOpen = false;
+                        this.reloadData();
+                    } catch (e) {
+                        alert('Errore durante l\'importazione.');
+                    }
+                    this.importSubmitting = false;
                 }
             }
         }
@@ -157,10 +213,15 @@
             <div x-show="activeTab === 'characters'">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h3>Personaggi e Modelli</h3>
-                    <div class="input-group w-50">
-                        <span class="input-group-text bg-secondary border-0 text-white"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control bg-dark text-white border-0"
-                            placeholder="Filtra per nome o tipo..." x-model="charFilter">
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-warning" @click="openImportModal()">
+                            <i class="bi bi-cloud-download"></i> Importa da Materiali
+                        </button>
+                        <div class="input-group" style="width: 320px;">
+                            <span class="input-group-text bg-secondary border-0 text-white"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control bg-dark text-white border-0"
+                                placeholder="Filtra per nome o tipo..." x-model="charFilter">
+                        </div>
                     </div>
                 </div>
 
@@ -269,4 +330,71 @@
             </div>
         </div>
     </div>
+
+    <!-- MODALE IMPORT DA MATERIALI -->
+    <div class="modal" tabindex="-1" style="display: none;" x-show="importModalOpen" x-cloak
+        @keydown.escape.window="closeImportModal()">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content bg-dark text-white border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title"><i class="bi bi-cloud-download me-2"></i>Importa stat-block da Materiali</h5>
+                    <button type="button" class="btn-close btn-close-white" @click="closeImportModal()"></button>
+                </div>
+                <div class="modal-body">
+                    <div x-show="importLoading" class="text-center py-4">
+                        <div class="spinner-border text-warning"></div>
+                        <p class="mt-2 text-muted">Scansione di <code>manuali/stat-block</code> in corso...</p>
+                    </div>
+                    <template x-if="!importLoading && importItems.length === 0">
+                        <p class="text-muted">Nessuna stat-block trovata in <code>materiale/manuali/stat-block</code>.</p>
+                    </template>
+                    <template x-if="!importLoading && importItems.length > 0">
+                        <table class="table table-dark table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th style="width: 2rem;"></th>
+                                    <th>Nome</th>
+                                    <th>CA</th>
+                                    <th>HP</th>
+                                    <th style="width: 12rem;">Se già esistente</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="item in importItems" :key="item.path">
+                                    <tr :class="item.error ? 'opacity-50' : ''">
+                                        <td>
+                                            <input type="checkbox" class="form-check-input" x-model="item.selected" :disabled="!!item.error">
+                                        </td>
+                                        <td>
+                                            <span x-text="item.name"></span>
+                                            <span class="badge bg-warning text-dark ms-1" x-show="item.conflict">già presente</span>
+                                            <div class="small text-danger" x-show="item.error" x-text="item.error"></div>
+                                        </td>
+                                        <td x-text="item.ac || '-'"></td>
+                                        <td x-text="item.hp_formula || '-'"></td>
+                                        <td>
+                                            <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                                                x-model="item.resolution" x-show="item.conflict">
+                                                <option value="overwrite">Sovrascrivi</option>
+                                                <option value="duplicate">Duplica (nuova copia)</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </template>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button class="btn btn-outline-secondary" @click="closeImportModal()">Annulla</button>
+                    <button class="btn btn-warning" @click="submitImport()"
+                        :disabled="importSelectedCount === 0 || importSubmitting">
+                        <span x-show="importSubmitting" class="spinner-border spinner-border-sm me-1"></span>
+                        Importa (<span x-text="importSelectedCount"></span>)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop" x-show="importModalOpen" x-cloak></div>
 @endsection
