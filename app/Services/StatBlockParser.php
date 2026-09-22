@@ -3,7 +3,7 @@
 namespace App\Services;
 
 /**
- * Estrae dai file markdown in `Vault/materiale/manuali/stat-block/*.md` i pochi campi
+ * Estrae dai file markdown in `Vault/materiale/stat-block/*.md` i pochi campi
  * strutturati affidabili definiti dal template
  * (C:\Users\RickyMandich\PROJECT\Phandalverse\cronacheIntrecciate\definizioni\template\stat-block.md),
  * lasciando tutto il resto (tiri salvezza, abilità, sensi, linguaggi, sfida, azioni, azioni

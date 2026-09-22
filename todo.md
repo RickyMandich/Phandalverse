@@ -30,7 +30,7 @@
 - [X] capire un modo per inserire il filtro master/gruppi di accesso per i pdf
 - [X] sistemare il sistema di ricerca per mostrare i risultati da tutte le campagna a cui si ha accesso e ben divisi tra esse (prima tutti quelli di una campagna, poi tutti quelli dell'altra, usando ordine di priorità dalla tabella campagne e dando priorità alla campagna di default dell'utente corrente)
 - [] aggiungere gestione calendario delle sessioni relative a una specifica campagna tramite server ics
-- [X] materiale condiviso tra campagne: pseudo-campagna pubblica `/vault/materiale` (nessuna riga in `campaigns`), fallback wikilink/embed campagna→materiale, pulsante header "Materiali", import batch stat-block da `materiale/manuali/stat-block/*.md` verso il Fight Manager (`dm.manage`)
+- [X] materiale condiviso tra campagne: pseudo-campagna pubblica `/vault/materiale` (nessuna riga in `campaigns`), fallback wikilink/embed campagna→materiale, pulsante header "Materiali", import batch stat-block da `materiale/stat-block/*.md` verso il Fight Manager (`dm.manage`)
 - [X] fix schermata nera in `/dm/manage` dovuta a modale e `modal-backdrop` fuori dal context Alpine `x-data`
 - [X] sostituzione link ed endpoint interni hardcoded con helper route()
 # inabion

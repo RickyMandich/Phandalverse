@@ -31,7 +31,7 @@ Ho esplorato il codice sorgente per validare il piano (non solo il template): `V
 - Il branch `materiali` andrà creato come sibling dei branch di campagna nel repo `PhandalverseVault` (stesso volume di storage, stessa GitHub Action, stesso script `pull-vault.sh` — nessuna azione di mia competenza qui, la gestisci tu come da tua richiesta).
 - Struttura minima attesa dentro il branch, per essere compatibile con `VaultHelper`/`MarkdownPreprocessor`:
   - `.normalize/map.json` (generato da `bash/normalize.sh`, stessa pipeline delle campagne)
-  - `manuali/stat-block/*.md` — le note stat-block da cui importare (path esplicitamente citato nella richiesta originale)
+  - `stat-block/*.md` — le note stat-block da cui importare (path esplicitamente citato nella richiesta originale)
   - resto dei materiali liberi (manuali, incantesimi, ecc.)
 - Non copio io il contenuto delle cartelle `materiale/` esistenti nelle campagne: come richiesto, mi limito al codice.
 
@@ -124,7 +124,7 @@ Approccio pragmatico, coerente con la forma già prevista da `stats` in `dm_char
 
 ### 8.2 Scan on-demand
 
-- Nuovo endpoint `GET /dm/api/materiali/stat-blocks` (dentro il gruppo di rotte già protetto da `auth`+`verified`+`master_utils`): scansiona `Vault/materiali/manuali/stat-block/*.md`, parsa ciascun file con `StatBlockParser`, e per ciascuno controlla se esiste già un `DmCharacter` (`type = 'template'`) con lo stesso nome (case-insensitive). Ritorna un elenco `{path, name, conflict: bool}`.
+- Nuovo endpoint `GET /dm/api/materiali/stat-blocks` (dentro il gruppo di rotte già protetto da `auth`+`verified`+`master_utils`): scansiona `Vault/materiali/stat-block/*.md`, parsa ciascun file con `StatBlockParser`, e per ciascuno controlla se esiste già un `DmCharacter` (`type = 'template'`) con lo stesso nome (case-insensitive). Ritorna un elenco `{path, name, conflict: bool}`.
 - Nessuna scrittura né cache persistente: rifatto ad ogni apertura della schermata, accettabile come da tua indicazione (il batch ammortizza il costo).
 
 ### 8.3 UI di selezione (in `dm.manage` — "Gestione Risorse")

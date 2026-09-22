@@ -350,10 +350,10 @@
                     <div class="modal-body">
                         <div x-show="importLoading" class="text-center py-4">
                             <div class="spinner-border text-warning"></div>
-                            <p class="mt-2 text-muted">Scansione di <code>manuali/stat-block</code> in corso...</p>
+                            <p class="mt-2 text-muted">Scansione di <code>materiale/stat-block</code> in corso...</p>
                         </div>
                         <template x-if="!importLoading && importItems.length === 0">
-                            <p class="text-muted">Nessuna stat-block trovata in <code>materiale/manuali/stat-block</code>.
+                            <p class="text-muted">Nessuna stat-block trovata in <code>materiale/stat-block</code>.
                             </p>
                         </template>
                         <template x-if="!importLoading && importItems.length > 0">

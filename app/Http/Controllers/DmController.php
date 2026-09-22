@@ -277,7 +277,7 @@ class DmController extends Controller
     }
 
     /**
-     * Scansiona Vault/materiale/manuali/stat-block/*.md (on-demand, nessuna cache: il master
+     * Scansiona Vault/materiale/stat-block/*.md (on-demand, nessuna cache: il master
      * la apre quando vuole importare, va bene anche se un po' lenta con molti file) e ritorna
      * l'elenco delle stat-block trovate con il nome che avrebbero da importate, segnalando
      * per ciascuna se esiste già un DmCharacter (type=template) con lo stesso nome.
@@ -337,7 +337,7 @@ class DmController extends Controller
             'items.*.resolution' => 'required|in:skip,overwrite,duplicate',
         ]);
 
-        $dir = base_path('Vault/materiale/manuali/stat-block');
+        $dir = base_path('Vault/materiale/stat-block');
         $imported = [];
         $skipped = [];
         $errors = [];
