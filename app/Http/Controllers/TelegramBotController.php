@@ -640,6 +640,15 @@ class TelegramBotController extends Controller
         }
 
         $campaignFolder = $request->query('campaign');
+
+        // "materiale" non è una vera campagna (nessuna riga in `campaigns`, condivisa da tutte):
+        // non ha iscritti propri, quindi qui sotto NON deve ricadere sul fallback "prima campagna per
+        // ordine" (che notificherebbe gli iscritti di una campagna a caso, sbagliata). Notifica solo
+        // gli admin collegati via /link.
+        if ($campaignFolder === 'materiale') {
+            return $this->notifyMaterialeUpdate($request);
+        }
+
         $campaign = null;
         if ($campaignFolder) {
             $campaign = Campaign::where('folder_name', $campaignFolder)->first();
@@ -707,6 +716,52 @@ class TelegramBotController extends Controller
             'campaign' => $campaign->folder_name,
             'version' => $version,
             'notified' => true
+        ]);
+    }
+
+    /**
+     * Notifica di aggiornamento per il materiale condiviso: nessuna lista di iscritti propria,
+     * quindi avvisa solo gli admin che hanno collegato il proprio account Telegram (/link), sulla
+     * loro chat privata (in una chat privata Telegram il chat_id coincide con l'id utente).
+     */
+    protected function notifyMaterialeUpdate(Request $request)
+    {
+        $baseUrl = config('app.url');
+        if ($baseUrl === 'http://localhost' || str_contains($baseUrl, 'localhost') || !str_starts_with($baseUrl, 'https')) {
+            $baseUrl = $request->getSchemeAndHttpHost();
+            if (!str_contains($baseUrl, 'localhost')) {
+                $baseUrl = str_replace('http://', 'https://', $baseUrl);
+            }
+        }
+        $url = rtrim($baseUrl, '/') . '/vault/materiale';
+
+        $message = "🚀 <b>Materiali aggiornati!</b>\n";
+        $message .= "Il Vault condiviso \"Materiali\" è stato aggiornato.\n\n";
+        $message .= "Clicca il pulsante sotto per consultarlo!";
+
+        $replyMarkup = [
+            'inline_keyboard' => [
+                [
+                    ['text' => '📚 Apri Materiali', 'url' => $url]
+                ]
+            ]
+        ];
+
+        $notified = 0;
+        foreach (User::getAdmins() as $admin) {
+            if (!$admin->isTelegramLinked()) {
+                continue;
+            }
+
+            if (TelegramService::sendToChat((string) $admin->telegram_user_id, $message, 'HTML', $replyMarkup)) {
+                $notified++;
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'campaign' => 'materiale',
+            'notified_admins' => $notified,
         ]);
     }
 }
