@@ -55,14 +55,59 @@
                                     $navCampaignFolder = 'newCampaign';
                                 }
                             }
+
+                            // Campagne accessibili all'utente loggato (master: tutte), usate dal dropdown del pulsante Vault
+                            try {
+                                $navCampaigns = Auth::user()->accessibleCampaigns();
+
+                                // La campagna di default dell'utente (se accessibile) va in cima, le altre restano in ordine di `order`
+                                $navDefaultCampaignId = Auth::user()->default_campaign_id;
+                                if ($navDefaultCampaignId) {
+                                    $navCampaigns = $navCampaigns
+                                        ->sortBy(fn($c) => $c->id === $navDefaultCampaignId ? 0 : 1)
+                                        ->values();
+                                }
+                            } catch (\Throwable $e) {
+                                $navCampaigns = collect();
+                            }
                         @endphp
                         <!-- Left Side Of Navbar -->
                         <ul class="navbar-nav me-auto">
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('vault.index') }}">
-                                    <i class="bi bi-folder2-open"></i> {{ __('Vault') }}
-                                </a>
-                            </li>
+                            @if($navCampaigns->count() > 1)
+                                {{-- Pulsante Vault "split": il link apre il Vault della campagna iniziale (comportamento storico),
+                                     la freccetta apre l'elenco delle campagne accessibili per sceglierne una --}}
+                                <li class="nav-item dropdown d-flex align-items-center">
+                                    <a class="nav-link pe-1" href="{{ route('vault.index') }}">
+                                        <i class="bi bi-folder2-open"></i> {{ __('Vault') }}
+                                    </a>
+                                    <a id="vaultCampaignDropdown" class="nav-link dropdown-toggle ps-1" href="#" role="button"
+                                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                                        title="Scegli la campagna" aria-label="Scegli la campagna di cui aprire il Vault"></a>
+                                    <ul class="dropdown-menu" aria-labelledby="vaultCampaignDropdown">
+                                        <li>
+                                            <h6 class="dropdown-header"><i class="bi bi-compass"></i> Campagna</h6>
+                                        </li>
+                                        @foreach($navCampaigns as $navCamp)
+                                            <li>
+                                                <a class="dropdown-item {{ $navCamp->folder_name === $navCampaignFolder ? 'active' : '' }}"
+                                                    href="{{ route('vault.show', ['campaign' => $navCamp->folder_name]) }}"
+                                                    @if($navCamp->folder_name === $navCampaignFolder) aria-current="true" @endif>
+                                                    {{ $navCamp->display_name }}
+                                                    @if($navCamp->id === Auth::user()->default_campaign_id)
+                                                        <i class="bi bi-star-fill text-warning ms-1" title="Campagna predefinita"></i>
+                                                    @endif
+                                                </a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </li>
+                            @else
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ route('vault.index') }}">
+                                        <i class="bi bi-folder2-open"></i> {{ __('Vault') }}
+                                    </a>
+                                </li>
+                            @endif
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('materiale.show') }}">
                                     <i class="bi bi-folder2-open"></i> {{ __('Materiali') }}

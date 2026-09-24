@@ -100,7 +100,7 @@ phandalverse/
 │       ├── dm/                      # Schermate DM Screen, Manage (con modale import da Materiali) e Player View
 │       ├── vault/                   # Note, albero side-bar, grafo, ricerca, changelog (riusate anche per /vault/materiale)
 │       ├── telegram/                # Pagine web di conferma /link (account personale e gruppo↔campagna)
-│       └── layouts/                 # Master layout dell'applicazione (link "Materiali" in header, accanto a "Vault")
+│       └── layouts/                 # Master layout dell'applicazione (header: pulsante "Vault" con dropdown campagne e link "Materiali" accanto)
 ├── routes/
 │   └── web.php                      # Rotte web, scoping campagne, rotte pubbliche /vault/materiale, API pubbliche e webhook
 └── Vault/                           # Cartella del Vault (PRESENTE SOLO SUL SERVER DI PRODUZIONE)
@@ -205,6 +205,11 @@ Il Vault gestisce un sistema granulare di visibilità parametrizzato sui **Grupp
 
 ### Pannello ad Albero, Selettore Campagne e Grafo Interattivo
 - **Selettore Campagne nella Sidebar**: In cima alla barra laterale del Vault è presente un dropdown dinamico che mostra tutte le campagne accessibili all'utente autenticato (`@auth`). La selezione reindirizza immediatamente a `/vault/{selected_campaign}`.
+- **Pulsante "Vault" con Dropdown Campagne (Header)**: nella navbar globale (`layouts/app.blade.php`, solo `@auth`) il pulsante Vault è un *split button* quando l'utente ha accesso a **più di una campagna** (`User::accessibleCampaigns()`, master: tutte):
+  - **Click sul pulsante "Vault"**: comportamento storico invariato, `route('vault.index')` → redirect alla campagna iniziale (`User::resolveInitialCampaign()`).
+  - **Click sulla freccetta**: apre un dropdown Bootstrap con le sole campagne accessibili (ordinate per `order`, con la `default_campaign_id` dell'utente in cima se accessibile, come nella ricerca, e contrassegnata da una stellina), ciascuna con link a `route('vault.show', ['campaign' => folder_name])`. La campagna corrente (sessione `current_campaign`, altrimenti la default dell'utente) è evidenziata come `active`. Scegliere una campagna passa da `VaultController::show()`, che aggiorna `current_campaign` (e quindi anche il link Changelog dell'header e il contesto della ricerca).
+  - Con **una sola campagna accessibile** (o nessuna) il dropdown non viene mostrato e resta il semplice link Vault, coerentemente con il selettore della sidebar (visibile solo con più di una campagna).
+  - La pseudo-campagna `materiale` non compare nel dropdown: ha già il proprio pulsante "Materiali".
 - **Vista ad Albero (`VaultController@buildFileTree`)**: Costruisce la navigazione laterale analizzando il `map.json` della campagna ed escludendo tutte le note non visibili per l'utente corrente tramite `AccessControlService::noteIsVisibleTo()`.
 - **Distinzione Visiva Formati nell'Albero**:
   - **File PDF**: evidenziati con icona dedicata rossa (<i class="bi bi-file-earmark-pdf-fill text-danger"></i>).
@@ -242,7 +247,7 @@ Dall'esigenza di non dover duplicare in ogni campagna gli stessi manuali/bestiar
   - Entrambe delegano alla stessa logica di `show()`/`rawShow()` (estratta nei metodi condivisi `renderVaultNote()`/`renderVaultRaw()`), passando `'materiale'` al posto di un'istanza `Campaign` e disattivando i redirect al login altrimenti imposti sulla home/vista cartella delle campagne vere.
 - **Nessun filtro di accesso dedicato**: materiale è interamente pubblica. Il meccanismo `#dm`/`#access-` resta tecnicamente attivo (stesso codice delle campagne, nessuna eccezione), ma per design nessuna nota in materiale dovrebbe usarlo.
 - **Wikilink ed embed con fallback automatico**: `[[Nome Nota]]` e `![[Nome Nota]]` cercano prima nell'indice della campagna corrente e, solo se non trovati, nell'indice di `materiale` (`MarkdownPreprocessor::resolveNoteWithFallback()`). Nessuna sintassi speciale: un `[[Manuale dei Mostri]]` scritto in una nota di campagna resta un wikilink Obsidian valido (verde, click-to-open) sia in locale che sul sito, e il link generato punta automaticamente a `/vault/materiale/...` quando la nota vive lì.
-- **Header**: pulsante "Materiali" accanto a "Vault" (stessa icona `bi-folder2-open`), visibile sia agli utenti loggati che ai guest (per questi ultimi è l'unico link di navigazione del Vault mostrato in header).
+- **Header**: pulsante "Materiali" accanto a "Vault" (stessa icona `bi-folder2-open`), visibile sia agli utenti loggati che ai guest (per questi ultimi è l'unico link di navigazione del Vault mostrato in header). Il pulsante "Vault" ha a sua volta un dropdown per scegliere la campagna (vedi [Pannello ad Albero, Selettore Campagne e Grafo Interattivo](#pannello-ad-albero-selettore-campagne-e-grafo-interattivo)).
 
 ### Visualizzazione Note Markdown e Note PDF (`vault.show`)
 Nella schermata di visualizzazione della singola nota (`resources/views/vault/note.blade.php`):

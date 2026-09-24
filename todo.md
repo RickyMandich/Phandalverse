@@ -35,6 +35,7 @@
 - [X] sostituzione link ed endpoint interni hardcoded con helper route()
 - [X] parsing stat-block: estrarre solo il valore numerico delle caratteristiche ignorando il bonus tra parentesi
 - [X] fix notifica telegram push su branch materiale: ricadeva sugli iscritti della prima campagna per ordine invece di notificare solo gli admin collegati via /link (`TelegramBotController::notifyMaterialeUpdate`)
+- [X] pulsante Vault dell'header con dropdown (freccetta) per scegliere la campagna di cui aprire il Vault tra quelle accessibili all'utente loggato (campagna di default in cima con una stellina, poi per `order`); il click sul pulsante mantiene il comportamento attuale (`vault.index`)
 # inabion
 ## dadi
 - [X] manca la possibilità di ritirare i singoli dadi
