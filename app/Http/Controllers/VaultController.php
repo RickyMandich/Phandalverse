@@ -863,39 +863,6 @@ class VaultController extends Controller
 
         CustomLogger::note($note, "Visualizzazione nota $note per campagna {$folder}");
 
-        // Vista Cartella
-        $folderPath = self::camelCaseToFolderPath($note, $campaign);
-        if ($folderPath !== null) {
-            if (!$publicShared && !Auth::check()) {
-                return redirect()->route('login');
-            }
-
-            $defaultView = SystemSetting::getVaultDefaultView();
-            $requestedView = $request->query('view');
-
-            if (Auth::check() && Auth::user()->isMaster() && $requestedView) {
-                $currentView = $requestedView;
-            } else {
-                $currentView = $defaultView;
-            }
-
-            $tree = $this->buildFileTree($folderPath, $note, $campaign);
-            $fullTree = $this->buildFileTree(null, note: $note, campaign: $campaign);
-            $graphConfig = $this->loadGraphConfig($campaign);
-
-            return view('vault.tree', [
-                'title' => 'Vault - ' . basename($folderPath),
-                'tree' => $tree,
-                'fullTree' => $fullTree,
-                'currentView' => 'tree',
-                'folderPath' => $folderPath,
-                'graphConfig' => $graphConfig,
-                'note' => $note,
-                'campaign' => $campaign,
-                'accessibleCampaigns' => $this->getAccessibleCampaigns(),
-            ]);
-        }
-
         // Risoluzione Nota
         $filePath = MarkdownPreprocessor::findNotePath($note, $campaign);
         $cleanFilePath = preg_replace('/\.(md|pdf)$/i', '', $filePath);
@@ -1057,6 +1024,39 @@ class VaultController extends Controller
             'pdfUrl' => null,
             'pdfDownloadUrl' => null,
         ]);
+
+        // Vista Cartella
+        $folderPath = self::camelCaseToFolderPath($note, $campaign);
+        if ($folderPath !== null) {
+            if (!$publicShared && !Auth::check()) {
+                return redirect()->route('login');
+            }
+
+            $defaultView = SystemSetting::getVaultDefaultView();
+            $requestedView = $request->query('view');
+
+            if (Auth::check() && Auth::user()->isMaster() && $requestedView) {
+                $currentView = $requestedView;
+            } else {
+                $currentView = $defaultView;
+            }
+
+            $tree = $this->buildFileTree($folderPath, $note, $campaign);
+            $fullTree = $this->buildFileTree(null, note: $note, campaign: $campaign);
+            $graphConfig = $this->loadGraphConfig($campaign);
+
+            return view('vault.tree', [
+                'title' => 'Vault - ' . basename($folderPath),
+                'tree' => $tree,
+                'fullTree' => $fullTree,
+                'currentView' => 'tree',
+                'folderPath' => $folderPath,
+                'graphConfig' => $graphConfig,
+                'note' => $note,
+                'campaign' => $campaign,
+                'accessibleCampaigns' => $this->getAccessibleCampaigns(),
+            ]);
+        }
     }
 
     /**
