@@ -36,6 +36,8 @@
 - [X] parsing stat-block: estrarre solo il valore numerico delle caratteristiche ignorando il bonus tra parentesi
 - [X] fix notifica telegram push su branch materiale: ricadeva sugli iscritti della prima campagna per ordine invece di notificare solo gli admin collegati via /link (`TelegramBotController::notifyMaterialeUpdate`)
 - [X] pulsante Vault dell'header con dropdown (freccetta) per scegliere la campagna di cui aprire il Vault tra quelle accessibili all'utente loggato (campagna di default in cima con una stellina, poi per `order`); il click sul pulsante mantiene il comportamento attuale (`vault.index`)
+- [X] pulsante "Copia" nei gruppi di accesso (`/admin/access-groups`) per copiare un gruppo in un'altra campagna (copia nome/slug/descrizione/colore; padre ricollegato per slug se presente nella destinazione; membri e figli non copiati; errore se lo slug esiste già nella destinazione)
+- [X] elenco gruppi di accesso (`/admin/access-groups`) ordinato prima per nome visualizzato della campagna e poi per nome del gruppo
 # inabion
 ## dadi
 - [X] manca la possibilità di ritirare i singoli dadi

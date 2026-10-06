@@ -373,7 +373,10 @@ Accessibile solo agli utenti con flag `admin = 1`:
 
 - **Gestione Campagne (`/admin/campaigns`)**: Creazione, modifica di nome visualizzato, cartella Vault/branch, ordine di priorità, assegnazione utenti con accesso e visualizzazione/scollegamento del gruppo Telegram eventualmente collegato alla campagna.
 - **Iscrizioni Telegram (`/admin/telegram-subscribers`)**: Elenco di tutte le iscrizioni alle notifiche (chat private e gruppi), con indicazione dell'utente o della campagna collegata, filtro per campagna ed eliminazione delle singole iscrizioni.
-- **Gestione Gruppi di Accesso (`/admin/access-groups`)**: Creazione e modifica di gruppi gerarchici legati a una specifica campagna.
+- **Gestione Gruppi di Accesso (`/admin/access-groups`)**: Creazione e modifica di gruppi gerarchici legati a una specifica campagna. Il pulsante **"Copia"** di ogni riga (`POST /admin/access-groups/{group}/copy`, `AdminController::copyAccessGroup`) apre un modale per copiare il gruppo in un'altra campagna, con queste regole:
+  - vengono copiati `name`, `slug`, `description` e `color`; **i membri (`access_group_user`) e i gruppi figli non vengono copiati** (gli utenti potrebbero non avere accesso alla campagna di destinazione);
+  - il padre viene ricollegato **per slug**: se nella campagna di destinazione esiste un gruppo con lo stesso slug del padre sorgente diventa il padre della copia, altrimenti la copia nasce senza padre (`parent_id` non può puntare a gruppi di un'altra campagna; il padre non viene copiato implicitamente);
+  - se nella destinazione esiste già un gruppo con lo stesso slug la copia viene annullata (nessuna sovrascrittura); la campagna di destinazione deve essere diversa da quella del gruppo.
 - **Gestione Utenti (`/admin/users`)**: Assegnazione ruoli (Admin, Master, MasterUtils), campagne abilitate, campagna predefinita e gruppi di accesso.
 - **Gestione Errori (`/admin/errors`)**: Tracciamento eccezioni di runtime con stato (`new`, `in_progress`, `resolved`, `ignored`).
 - **Web Console Database (`/admin/database`)**: Interfaccia per eseguire query SQL arbitrarie (SELECT, UPDATE, INSERT, ALTER TABLE) direttamente sul database del server.

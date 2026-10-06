@@ -152,6 +152,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->group(functio
     Route::post('/access-groups', [AdminController::class, 'storeAccessGroup'])->name('admin.access_groups.store');
     Route::get('/access-groups/{group}/edit', [AdminController::class, 'editAccessGroup'])->name('admin.access_groups.edit');
     Route::patch('/access-groups/{group}', [AdminController::class, 'updateAccessGroup'])->name('admin.access_groups.update');
+    Route::post('/access-groups/{group}/copy', [AdminController::class, 'copyAccessGroup'])->name('admin.access_groups.copy');
     Route::delete('/access-groups/{group}', [AdminController::class, 'deleteAccessGroup'])->name('admin.access_groups.delete');
 
     // Statistiche

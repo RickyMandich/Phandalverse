@@ -851,9 +851,18 @@ class AdminController extends Controller
             return $response;
         }
 
-        $groups = AccessGroup::with(['parent', 'children', 'campaign'])->withCount('users')->orderBy('name')->get();
+        // Ordinamento: prima per nome visualizzato della campagna (così i gruppi di una campagna restano raggruppati),
+        // poi per nome del gruppo. Fatto in PHP perché 'campaign.display_name' non è una colonna di access_groups
+        // e un join renderebbe ambigue le colonne (id, created_at...) usate da withCount.
+        $groups = AccessGroup::with(['parent', 'children', 'campaign'])->withCount('users')->get()
+            ->sortBy([
+                fn ($a, $b) => strcasecmp($a->campaign?->display_name ?? '', $b->campaign?->display_name ?? ''),
+                fn ($a, $b) => strcasecmp($a->name, $b->name),
+            ])
+            ->values();
+        $campaigns = Campaign::orderBy('order')->get();
 
-        return view('admin.access_groups.index', compact('groups'));
+        return view('admin.access_groups.index', compact('groups', 'campaigns'));
     }
 
     public function createAccessGroup()
@@ -952,6 +961,69 @@ class AdminController extends Controller
         AccessControlService::clearCache();
 
         return redirect()->route('admin.access_groups')->with('success', 'Gruppo di accesso aggiornato con successo');
+    }
+
+    /**
+     * Copia un gruppo di accesso in un'altra campagna.
+     *
+     * Vengono copiati name, slug, description e color. I membri e i gruppi figli NON vengono copiati.
+     * Il padre viene ricollegato solo se nella campagna di destinazione esiste già un gruppo con lo
+     * stesso slug del padre sorgente (parent_id non può puntare a gruppi di un'altra campagna).
+     */
+    public function copyAccessGroup(Request $request, AccessGroup $group)
+    {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $validated = $request->validate([
+            'target_campaign_id' => [
+                'required',
+                'exists:campaigns,id',
+                Rule::notIn([$group->campaign_id]),
+            ],
+        ], [
+            'target_campaign_id.not_in' => 'La campagna di destinazione deve essere diversa da quella del gruppo.',
+        ]);
+
+        $target = Campaign::findOrFail($validated['target_campaign_id']);
+
+        $alreadyExists = AccessGroup::where('campaign_id', $target->id)->where('slug', $group->slug)->exists();
+        if ($alreadyExists) {
+            return redirect()->route('admin.access_groups')->with(
+                'error',
+                "Nella campagna {$target->display_name} esiste già un gruppo con slug \"{$group->slug}\": copia annullata."
+            );
+        }
+
+        $parentId = null;
+        $parentLinked = false;
+        if ($group->parent) {
+            $targetParent = AccessGroup::where('campaign_id', $target->id)->where('slug', $group->parent->slug)->first();
+            if ($targetParent) {
+                $parentId = $targetParent->id;
+                $parentLinked = true;
+            }
+        }
+
+        AccessGroup::create([
+            'campaign_id' => $target->id,
+            'slug' => $group->slug,
+            'name' => $group->name,
+            'description' => $group->description,
+            'color' => $group->color,
+            'parent_id' => $parentId,
+        ]);
+        AccessControlService::clearCache();
+
+        $message = "Gruppo \"{$group->name}\" copiato nella campagna {$target->display_name}.";
+        if ($group->parent) {
+            $message .= $parentLinked
+                ? " Il gruppo padre \"{$group->parent->name}\" è stato ricollegato."
+                : " Il gruppo padre \"{$group->parent->name}\" non esiste nella campagna di destinazione: il nuovo gruppo è senza padre.";
+        }
+
+        return redirect()->route('admin.access_groups')->with('success', $message);
     }
 
     public function deleteAccessGroup(AccessGroup $group)
