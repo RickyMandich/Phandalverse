@@ -39,6 +39,7 @@
 - [X] pulsante "Copia" nei gruppi di accesso (`/admin/access-groups`) per copiare un gruppo in un'altra campagna (copia nome/slug/descrizione/colore; padre ricollegato per slug se presente nella destinazione; membri e figli non copiati; errore se lo slug esiste già nella destinazione)
 - [X] elenco gruppi di accesso (`/admin/access-groups`) ordinato prima per nome visualizzato della campagna e poi per nome del gruppo
 - [X] fix stili non caricati su `phandalverse.mandich.dev` (CSS servito come `text/html`): asset Vite condivisi tra `app` e `nginx` tramite volume `build_assets` e 404 reale su `/build/`
+- [X] ridotto il build context Docker (`.dockerignore`: Vault, storage/logs, cache framework, .github) perche' sulla VM il trasferimento superava il timeout dell'healthcheck di BuildKit
 # inabion
 ## dadi
 - [X] manca la possibilità di ritirare i singoli dadi

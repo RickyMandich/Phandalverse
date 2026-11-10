@@ -1,4 +1,16 @@
 .env
 .git
+.github
 node_modules
 vendor
+
+# montati come volume in docker-compose.yml, non servono nell'immagine
+Vault
+storage/logs
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+storage/framework/lsp-*.php
+
+# documentazione di lavoro
+implementationPlan-*.md
