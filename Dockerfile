@@ -26,7 +26,9 @@ RUN apk add --no-cache \
 WORKDIR /var/www/html
 
 COPY --from=composer-builder /app /var/www/html
-COPY --from=node-builder /app/public/build /var/www/html/public/build
+# La build Vite va fuori da public/build: quella cartella e' un volume condiviso con nginx,
+# popolato dall'entrypoint a ogni avvio (vedi docker/entrypoint.sh)
+COPY --from=node-builder /app/public/build /opt/build-seed
 
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 

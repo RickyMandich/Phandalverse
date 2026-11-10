@@ -466,5 +466,14 @@ ALTER TABLE `telegram_subscribers` ADD COLUMN `campaign_id` BIGINT UNSIGNED NOT 
 ALTER TABLE `telegram_subscribers` ADD CONSTRAINT `telegram_subscribers_campaign_id_foreign` FOREIGN KEY (`campaign_id`) REFERENCES `campaigns` (`id`) ON DELETE CASCADE;
 ```
 
-### 3. Gestione della Cartella `/Vault`
+### 3. Deploy Docker (VM Oracle + Traefik) e Asset Vite
+Sul server `*.mandich.dev` il sito gira con `docker-compose.yml` (servizi `app` PHP-FPM, `nginx`, `db`, dietro Traefik sulla rete esterna `proxy`).
+
+- Gli asset frontend (`public/build`, generati da `npm run build` nello stage `node-builder` del `Dockerfile`) **non sono nel repo** e **non esistono nella cartella `./public` dell'host** che nginx monta in sola lettura.
+- Per questo la build viene copiata nell'immagine in `/opt/build-seed`, e `docker/entrypoint.sh` la ricopia a ogni avvio del container `app` nel volume nominato `build_assets` (montato in `/var/www/html/public/build` sia in `app` che, in sola lettura, in `nginx`). Il volume viene svuotato prima della copia, quindi i file hashati delle build precedenti non si accumulano.
+- `docker/nginx/default.conf` ha una `location ^~ /build/` con `try_files $uri =404`: un asset mancante restituisce un vero 404. Senza questa regola il fallback `/index.php` farebbe rispondere Laravel con una pagina HTML, e il browser segnalerebbe un errore di MIME type (`text/html`) sul CSS/JS.
+- Aggiornare il sito: `cd ~/sites/phandalverse && git pull && docker compose up -d --build`.
+- Diagnosi errori di stile/script: `curl -I https://phandalverse.mandich.dev/build/assets/<file>` deve dare `200` e `content-type: text/css` (o `text/javascript`).
+
+### 4. Gestione della Cartella `/Vault`
 La cartella `/Vault` contiene i diversi Vault Markdown e le risorse multimediali ed **esiste esclusivamente sul server di produzione** (non viene tracciata integralmente nel repository Git per ragioni di peso e riservatezza).
